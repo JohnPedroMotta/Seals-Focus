@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Plataforma profissional de estudos: cronômetro, métricas semanais, estatísticas e histórico." />
+  <title>Foco · Plataforma de Estudos</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎯</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Topbar -->
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">🎯</span>
+      <span class="brand-name">Foco</span>
+    </div>
+    <nav aria-label="Navegação principal">
+      <button class="nav-btn active" data-view="study">Estudo</button>
+      <button class="nav-btn" data-view="stats">Stats</button>
+      <button class="nav-btn" data-view="feed">Feed</button>
+    </nav>
+    <div class="topbar-right">
+      <button class="chip chip-btn" id="syncChip" hidden title="Status da sincronização">
+        <span class="sync-dot" id="syncDot"></span><span id="syncLabel">Local</span>
+      </button>
+      <div class="avatar-wrap">
+        <button class="avatar avatar-btn" id="avatarBtn" aria-haspopup="true" aria-expanded="false" title="Conectar conta">
+          <span id="avatarInitials">?</span>
+        </button>
+        <div class="user-menu" id="userMenu" role="menu" hidden>
+          <p class="menu-email" id="userEmail"></p>
+          <button class="menu-item danger" id="logoutBtn">Sair da conta</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- ===================== VISÃO: ESTUDO ===================== -->
+    <section class="view active" id="view-study">
+
+      <section class="timer-card card">
+        <p class="timer-hint" id="timerHint">Pronto para começar</p>
+        <div class="timer-display" id="timer" role="timer" aria-live="off">00:00:00</div>
+        <div class="timer-controls">
+          <button class="btn btn-primary btn-lg" id="startBtn">
+            <span class="btn-icon">▶</span>Iniciar
+          </button>
+          <button class="btn btn-lg" id="pauseBtn" hidden>
+            <span class="btn-icon">⏸</span>Pausar
+          </button>
+          <button class="btn btn-success btn-lg" id="saveBtn" hidden>
+            <span class="btn-icon">✓</span>Salvar
+          </button>
+          <button class="btn btn-danger" id="resetBtn" hidden>Descartar</button>
+        </div>
+      </section>
+
+      <!-- Métricas -->
+      <section class="dashboard card" aria-label="Métricas da semana">
+        <div class="metric-card">
+          <span class="metric-label">Horas de Estudo</span>
+          <span class="metric-value" id="totalHours">0h 0m</span>
+          <span class="metric-sub">Últimos 7 dias</span>
+        </div>
+        <div class="metric-card">
+          <span class="metric-label">Média Diária</span>
+          <span class="metric-value" id="avgHours">0h 0m</span>
+          <span class="metric-sub">Por dia ativo</span>
+        </div>
+        <div class="metric-card">
+          <span class="metric-label">Questões</span>
+          <span class="metric-value" id="totalQuestions">0</span>
+          <span class="metric-sub" id="accuracySub">— acertos</span>
+        </div>
+        <div class="metric-card">
+          <span class="metric-label">Ofensiva</span>
+          <span class="metric-value highlight" id="streakDays">⚡ 0 dias</span>
+          <span class="metric-sub">Dias consecutivos</span>
+        </div>
+      </section>
+
+      <!-- Últimas atividades -->
+      <section class="card">
+        <div class="card-head">
+          <h3 class="panel-title">Últimas Atividades</h3>
+          <button class="link-btn" data-goto="feed">Ver tudo →</button>
+        </div>
+        <div class="history-list" id="historyList"></div>
+      </section>
+    </section>
+
+    <!-- ===================== VISÃO: STATS ===================== -->
+    <section class="view" id="view-stats" hidden>
+
+      <section class="card">
+        <div class="card-head">
+          <h3 class="panel-title">Horas por Dia</h3>
+          <span class="chip" id="weekTotalChip">Total: 0h</span>
+        </div>
+        <div class="chart" id="weekChart" role="img" aria-label="Gráfico de horas estudadas nos últimos 7 dias"></div>
+      </section>
+
+      <div class="grid-2">
+        <section class="card">
+          <h3 class="panel-title">Desempenho por Matéria</h3>
+          <div class="subject-stats" id="subjectStats"><p class="empty">Sem dados ainda.</p></div>
+        </section>
+        <section class="card">
+          <h3 class="panel-title">Resumo Geral</h3>
+          <ul class="summary-list" id="summaryList"></ul>
+        </section>
+      </div>
+    </section>
+
+    <!-- ===================== VISÃO: FEED ===================== -->
+    <section class="view" id="view-feed" hidden>
+      <section class="card">
+        <div class="card-head">
+          <h3 class="panel-title">Histórico Completo</h3>
+          <span class="chip" id="sessionCount">0 sessões</span>
+        </div>
+        <input type="search" id="feedSearch" class="search-input" placeholder="Buscar por matéria, assunto ou observação..." aria-label="Buscar sessões" />
+        <div class="history-list" id="feedList"></div>
+      </section>
+    </section>
+  </main>
+
+  <!-- Modal Salvar Período -->
+  <div class="modal-overlay" id="saveModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal card">
+      <h2 id="modalTitle">Salvar Período de Estudo</h2>
+      <p class="modal-duration" id="modalDuration">00:00:00 registrados</p>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="subjectSelect">Matéria existente</label>
+          <select id="subjectSelect">
+            <option value="">Selecione...</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="newSubjectInput">ou criar nova</label>
+          <input type="text" id="newSubjectInput" placeholder="Ex.: Direito Constitucional" maxlength="60" />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="topicSelect">Assunto existente</label>
+          <select id="topicSelect">
+            <option value="">Selecione...</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="newTopicInput">ou criar novo</label>
+          <input type="text" id="newTopicInput" placeholder="Ex.: Controle de constitucionalidade" maxlength="80" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="obsInput">Observação <span class="optional">(opcional)</span></label>
+        <textarea id="obsInput" rows="2" maxlength="200" placeholder="Anotações sobre a sessão..."></textarea>
+      </div>
+
+      <label class="checkbox-container">
+        <input type="checkbox" id="toggleQuestions" />
+        <span>Registrar questões</span>
+      </label>
+
+      <div class="questions-box" id="questionsBox" hidden>
+        <div class="form-row-3">
+          <div class="form-group">
+            <label for="qTotal">Total</label>
+            <input type="number" id="qTotal" value="" min="0" placeholder="0" inputmode="numeric" />
+          </div>
+          <div class="form-group">
+            <label for="qWrong">Erradas</label>
+            <input type="number" id="qWrong" value="" min="0" placeholder="0" inputmode="numeric" />
+          </div>
+          <div class="form-group">
+            <label for="qRight">Acertos</label>
+            <input type="number" id="qRight" value="0" readonly tabindex="-1" />
+          </div>
+        </div>
+        <p class="field-error" id="qError" hidden></p>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn" id="cancelModalBtn">Cancelar</button>
+        <button class="btn btn-primary" id="confirmSaveBtn">Salvar Sessão</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Entrar / Criar conta -->
+  <div class="modal-overlay" id="authModal" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+    <div class="modal card">
+      <h2 id="authTitle">Entrar</h2>
+      <p class="modal-sub">Sincronize seus estudos entre dispositivos.</p>
+
+      <div class="form-group">
+        <label for="authEmail">E-mail</label>
+        <input type="email" id="authEmail" autocomplete="email" placeholder="voce@email.com" />
+      </div>
+      <div class="form-group">
+        <label for="authPass">Senha</label>
+        <input type="password" id="authPass" autocomplete="current-password" minlength="6" placeholder="mínimo 6 caracteres" />
+      </div>
+
+      <p class="field-error" id="authError" hidden></p>
+
+      <div class="modal-actions">
+        <button class="btn" id="authCancelBtn">Cancelar</button>
+        <button class="btn btn-primary" id="authSubmitBtn">Entrar</button>
+      </div>
+      <button class="link-btn auth-switch" id="authSwitchBtn">Não tem conta? Criar uma</button>
+    </div>
+  </div>
+
+  <!-- Toasts -->
+  <div class="toast-stack" id="toastStack" aria-live="polite"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="config.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
