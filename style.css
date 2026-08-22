@@ -69,8 +69,10 @@ body {
 }
 
 .brand-mark {
-  font-size: 1.45rem;
-  line-height: 1;
+  width: 30px;
+  height: 30px;
+  display: block;
+  filter: drop-shadow(0 0 10px rgba(240, 166, 60, 0.3));
   transition: transform 0.25s ease;
 }
 
@@ -473,6 +475,26 @@ main {
   font-size: 0.88rem;
   text-align: center;
   padding: 24px 0;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 0;
+}
+
+.empty-seal {
+  width: 64px;
+  height: auto;
+  opacity: 0.95;
+  animation: sealFloat 3s ease-in-out infinite;
+}
+
+@keyframes sealFloat {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-5px) rotate(-3deg); }
 }
 
 .search-input { width: 100%; margin-bottom: 14px; }

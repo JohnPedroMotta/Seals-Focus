@@ -511,10 +511,18 @@ function buildSessionCard(session, showDelete) {
 }
 
 function emptyRow(msg) {
+  const wrap = document.createElement('div');
+  wrap.className = 'empty-state';
+  const img = document.createElement('img');
+  img.src = 'seal.svg';
+  img.alt = '';
+  img.className = 'empty-seal';
   const p = document.createElement('p');
   p.className = 'empty';
+  p.style.padding = '0';
   p.textContent = msg;
-  return p;
+  wrap.append(img, p);
+  return wrap;
 }
 
 function renderHistory() {
@@ -522,7 +530,7 @@ function renderHistory() {
   list.innerHTML = '';
   const recent = state.sessions.slice(0, 5);
   if (recent.length === 0) {
-    list.appendChild(emptyRow('🦭 Nenhuma sessão ainda. Inicie o cronômetro e registre seu primeiro estudo!'));
+    list.appendChild(emptyRow('Nenhuma sessão ainda. Inicie o cronômetro e registre seu primeiro estudo!'));
     return;
   }
   recent.forEach(s => list.appendChild(buildSessionCard(s, false)));
