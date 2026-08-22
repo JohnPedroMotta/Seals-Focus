@@ -9,38 +9,50 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=6" />
+  <link rel="stylesheet" href="style.css?v=7" />
 </head>
 <body>
 
-  <!-- Topbar -->
-  <header class="topbar">
-    <div class="brand">
-      <img src="seal.svg" alt="Seals Focus" class="brand-mark" />
-      <span class="brand-name">Seals Focus</span>
-    </div>
-    <nav aria-label="Navegação principal">
-      <button class="nav-btn active" data-view="study">Estudo</button>
-      <button class="nav-btn" data-view="stats">Stats</button>
-      <button class="nav-btn" data-view="feed">Feed</button>
-    </nav>
-    <div class="topbar-right">
-      <button class="chip chip-btn" id="syncChip" hidden title="Status da sincronização">
-        <span class="sync-dot" id="syncDot"></span><span id="syncLabel">Local</span>
-      </button>
-      <div class="avatar-wrap">
-        <button class="avatar avatar-btn" id="avatarBtn" aria-haspopup="true" aria-expanded="false" title="Conectar conta">
-          <span id="avatarInitials">?</span>
+  <!-- Navegação lateral -->
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <img src="seal.svg" alt="Seals Focus" class="brand-mark" />
+        <span class="brand-name">Seals Focus</span>
+      </div>
+
+      <nav class="side-nav" aria-label="Navegação principal">
+        <button class="nav-btn active" data-view="study">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+          Estudo
         </button>
-        <div class="user-menu" id="userMenu" role="menu" hidden>
-          <p class="menu-email" id="userEmail"></p>
-          <button class="menu-item danger" id="logoutBtn">Sair da conta</button>
+        <button class="nav-btn" data-view="stats">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-6"/></svg>
+          Stats
+        </button>
+        <button class="nav-btn" data-view="feed">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h10"/></svg>
+          Feed
+        </button>
+      </nav>
+
+      <div class="sidebar-foot">
+        <button class="chip chip-btn" id="syncChip" hidden title="Status da sincronização">
+          <span class="sync-dot" id="syncDot"></span><span id="syncLabel">Local</span>
+        </button>
+        <div class="avatar-wrap">
+          <button class="avatar avatar-btn" id="avatarBtn" aria-haspopup="true" aria-expanded="false" title="Conectar conta">
+            <span id="avatarInitials">?</span>
+          </button>
+          <div class="user-menu" id="userMenu" role="menu" hidden>
+            <p class="menu-email" id="userEmail"></p>
+            <button class="menu-item danger" id="logoutBtn">Sair da conta</button>
+          </div>
         </div>
       </div>
-    </div>
-  </header>
+    </aside>
 
-  <main>
+    <main>
 
     <!-- ===================== VISÃO: ESTUDO ===================== -->
     <section class="view active" id="view-study">
@@ -140,6 +152,23 @@
       </section>
     </section>
   </main>
+  </div>
+
+  <!-- Tab bar (mobile) -->
+  <nav class="tabbar" aria-label="Navegação">
+    <button class="tab-btn active" data-view="study">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+      <span>Estudo</span>
+    </button>
+    <button class="tab-btn" data-view="stats">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-6"/></svg>
+      <span>Stats</span>
+    </button>
+    <button class="tab-btn" data-view="feed">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h10"/></svg>
+      <span>Feed</span>
+    </button>
+  </nav>
 
   <!-- Modal Salvar Período -->
   <div class="modal-overlay" id="saveModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
@@ -238,6 +267,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="config.js?v=2"></script>
-  <script src="script.js?v=5"></script>
+  <script src="script.js?v=6"></script>
 </body>
 </html>

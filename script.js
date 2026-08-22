@@ -334,10 +334,14 @@ function switchView(name) {
   document.querySelectorAll('.nav-btn').forEach(b =>
     b.classList.toggle('active', b.dataset.view === name)
   );
+  document.querySelectorAll('.tab-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.view === name)
+  );
+  window.scrollTo({ top: 0 });
   if (name !== 'study') renderStatsAndFeed();
 }
 
-document.querySelectorAll('.nav-btn').forEach(btn =>
+document.querySelectorAll('.nav-btn, .tab-btn').forEach(btn =>
   btn.addEventListener('click', () => switchView(btn.dataset.view))
 );
 
