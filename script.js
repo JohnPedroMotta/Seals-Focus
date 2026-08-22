@@ -439,7 +439,7 @@ function renderMetrics() {
   const streak = calcStreak();
   $('streakDays').textContent = streak > 0 ? `⚡ ${streak} ${streak === 1 ? 'dia' : 'dias'}` : '⚡ 0 dias';
 
-  // Dias estudados na semana corrente (segunda a domingo), mínimo 30 min
+  // Tira da semana corrente (segunda a domingo), mínimo 30 min por dia
   const monday = mondayOfCurrentWeek();
   const perDay = new Map();
   for (let i = 0; i < 7; i++) {
@@ -451,13 +451,51 @@ function renderMetrics() {
     const k = dateKey(new Date(s.dateISO));
     if (perDay.has(k)) perDay.set(k, perDay.get(k) + s.duration);
   });
-  const daysStudied = [...perDay.values()].filter(v => v >= MIN_DAY_SECS).length;
-  const weekDaysEl = $('weekDays');
-  weekDaysEl.textContent = `${daysStudied}/7`;
-  weekDaysEl.classList.toggle('highlight', daysStudied > 0);
-  weekDaysEl.classList.toggle('complete', daysStudied === 7);
+  renderWeekStrip(perDay);
 
   window._weekData = week;
+}
+
+const STRIP_LABELS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+
+function renderWeekStrip(perDay) {
+  const row = $('weekStrip');
+  if (!row) return;
+  row.innerHTML = '';
+
+  const today = dateKey(new Date());
+  const keys = [...perDay.keys()];
+  const daysDone = [...perDay.values()].filter(v => v >= MIN_DAY_SECS).length;
+
+  $('weekDaysChip').textContent = `${daysDone} de 7 dias · mín. 30 min/dia`;
+
+  keys.forEach((key, i) => {
+    const secs = perDay.get(key);
+    const day = document.createElement('div');
+    day.className = 'strip-day';
+
+    const circle = document.createElement('div');
+    circle.className = 'strip-circle';
+
+    const label = document.createElement('span');
+    label.className = 'strip-label';
+    label.textContent = STRIP_LABELS[i];
+
+    if (secs >= MIN_DAY_SECS) {
+      day.classList.add('done');
+      circle.textContent = '✓';
+    } else if (key < today) {
+      day.classList.add('missed');
+      circle.textContent = '✕';
+    } else {
+      day.classList.add('future');
+    }
+
+    if (key === today) day.classList.add('today');
+
+    day.append(circle, label);
+    row.appendChild(day);
+  });
 }
 
 /* ================= Cards de sessão (DOM seguro) ================= */

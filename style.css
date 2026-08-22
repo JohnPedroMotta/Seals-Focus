@@ -1,19 +1,19 @@
 :root {
-  --bg-color: #131110;
-  --card-bg: #1c1915;
-  --card-hover: #262119;
-  --modal-bg: #1a1612;
-  --input-bg: #14110d;
-  --border-color: #352c1e;
-  --text-main: #f4efe6;
-  --text-muted: #9a9081;
+  --bg-color: #262019;
+  --card-bg: #2f281e;
+  --card-hover: #3a3123;
+  --modal-bg: #2a2318;
+  --input-bg: #1d1811;
+  --border-color: #483d2a;
+  --text-main: #f7f2e8;
+  --text-muted: #ab9f8b;
   --accent-color: #f0a63c;      /* Âmbar */
   --accent-hover: #db8f22;
   --accent-glow: rgba(240, 166, 60, 0.22);
   --success-color: #34d399;
   --danger-color: #f87171;
   --radius: 14px;
-  --shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+  --shadow: 0 10px 32px rgba(0, 0, 0, 0.4);
 }
 
 ::selection {
@@ -34,7 +34,7 @@
 body {
   font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
   background:
-    radial-gradient(1100px 550px at 85% -10%, rgba(240, 166, 60, 0.07), transparent 60%),
+    radial-gradient(1100px 550px at 85% -10%, rgba(240, 166, 60, 0.09), transparent 60%),
     var(--bg-color);
   color: var(--text-main);
   display: flex;
@@ -392,9 +392,70 @@ main {
 
 .highlight { color: var(--accent-color); }
 
-.metric-value.complete {
-  color: var(--success-color);
-  text-shadow: 0 0 18px rgba(52, 211, 153, 0.25);
+/* ---------- Tira da Semana ---------- */
+.week-strip { padding: 18px 22px; }
+
+.strip-row {
+  display: flex;
+  gap: 6px;
+}
+
+.strip-day {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.strip-circle {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 2px solid var(--border-color);
+  display: grid;
+  place-items: center;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: transparent;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.strip-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.strip-day.done .strip-circle {
+  background: linear-gradient(160deg, var(--accent-hover), var(--accent-color));
+  border-color: var(--accent-color);
+  color: #241e17;
+  box-shadow: 0 0 16px var(--accent-glow);
+}
+
+.strip-day.done .strip-label { color: var(--accent-color); }
+
+.strip-day.missed .strip-circle {
+  color: rgba(248, 113, 113, 0.65);
+  border-color: rgba(248, 113, 113, 0.35);
+}
+
+.strip-day.future .strip-circle {
+  border-style: dashed;
+  opacity: 0.55;
+}
+
+.strip-day.today .strip-circle {
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.strip-day.today .strip-label { color: var(--text-main); }
+
+@media (max-width: 480px) {
+  .strip-circle { width: 34px; height: 34px; font-size: 0.9rem; }
 }
 
 /* ---------- Histórico / Feed ---------- */

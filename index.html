@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=5" />
+  <link rel="stylesheet" href="style.css?v=6" />
 </head>
 <body>
 
@@ -69,11 +69,6 @@
         <span class="metric-value" id="totalHours">0h 0m</span>
         <span class="metric-sub">Últimos 7 dias</span>
       </div>
-      <div class="metric-card">
-        <span class="metric-label">Dias na Semana</span>
-        <span class="metric-value" id="weekDays">0/7</span>
-        <span class="metric-sub">Seg–dom · mín. 30 min</span>
-      </div>
         <div class="metric-card">
           <span class="metric-label">Média Diária</span>
           <span class="metric-value" id="avgHours">0h 0m</span>
@@ -89,6 +84,15 @@
           <span class="metric-value highlight" id="streakDays">⚡ 0 dias</span>
           <span class="metric-sub">Dias consecutivos</span>
         </div>
+      </section>
+
+      <!-- Tira da Semana -->
+      <section class="week-strip card" aria-label="Dias estudados na semana">
+        <div class="card-head">
+          <h3 class="panel-title">Semana Atual</h3>
+          <span class="chip" id="weekDaysChip">0 de 7 dias · mín. 30 min/dia</span>
+        </div>
+        <div class="strip-row" id="weekStrip"></div>
       </section>
 
       <!-- Últimas atividades -->
@@ -234,6 +238,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="config.js?v=2"></script>
-  <script src="script.js?v=4"></script>
+  <script src="script.js?v=5"></script>
 </body>
 </html>
