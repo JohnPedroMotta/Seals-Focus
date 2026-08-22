@@ -1,18 +1,24 @@
 :root {
-  --bg-color: #0b132b;
-  --card-bg: #141d38;
-  --card-hover: #1a2547;
-  --modal-bg: #151e38;
-  --input-bg: #0e162d;
-  --border-color: #263356;
-  --text-main: #edf2f4;
-  --text-muted: #8d99ae;
-  --accent-color: #3a86ff;
-  --accent-hover: #2563eb;
-  --success-color: #22c55e;
-  --danger-color: #ef4444;
+  --bg-color: #131110;
+  --card-bg: #1c1915;
+  --card-hover: #262119;
+  --modal-bg: #1a1612;
+  --input-bg: #14110d;
+  --border-color: #352c1e;
+  --text-main: #f4efe6;
+  --text-muted: #9a9081;
+  --accent-color: #f0a63c;      /* Âmbar */
+  --accent-hover: #db8f22;
+  --accent-glow: rgba(240, 166, 60, 0.22);
+  --success-color: #34d399;
+  --danger-color: #f87171;
   --radius: 14px;
-  --shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  --shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+}
+
+::selection {
+  background: var(--accent-color);
+  color: #131110;
 }
 
 * {
@@ -28,7 +34,7 @@
 body {
   font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
   background:
-    radial-gradient(1200px 600px at 80% -10%, rgba(58, 134, 255, 0.08), transparent 60%),
+    radial-gradient(1100px 550px at 85% -10%, rgba(240, 166, 60, 0.07), transparent 60%),
     var(--bg-color);
   color: var(--text-main);
   display: flex;
@@ -56,12 +62,17 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-weight: 800;
+  font-family: 'Space Grotesk', 'Inter', sans-serif;
+  font-weight: 700;
   font-size: 1.15rem;
   letter-spacing: -0.02em;
 }
 
-.brand-mark { font-size: 1.3rem; }
+.brand-mark {
+  color: var(--accent-color);
+  font-size: 1.3rem;
+  text-shadow: 0 0 16px var(--accent-glow);
+}
 
 nav {
   display: flex;
@@ -142,7 +153,7 @@ nav {
   transition: box-shadow 0.18s;
 }
 
-.avatar-btn:hover { box-shadow: 0 0 0 3px rgba(58, 134, 255, 0.25); }
+.avatar-btn:hover { box-shadow: 0 0 0 3px var(--accent-glow); }
 
 .user-menu {
   position: absolute;
@@ -235,6 +246,7 @@ main {
 }
 
 .panel-title {
+  font-family: 'Space Grotesk', 'Inter', sans-serif;
   font-size: 1.05rem;
   font-weight: 700;
   letter-spacing: -0.01em;
@@ -284,14 +296,15 @@ main {
 }
 
 .timer-display {
+  font-family: 'Space Grotesk', 'Inter', sans-serif;
   font-size: clamp(3.4rem, 10vw, 5.5rem);
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 2px;
   font-variant-numeric: tabular-nums;
   line-height: 1.1;
 }
 
-.timer-display.running { color: var(--accent-color); }
+.timer-display.running { color: var(--accent-color); text-shadow: 0 0 30px var(--accent-glow); }
 .timer-display.paused { color: var(--text-muted); }
 
 .timer-controls {
@@ -364,8 +377,9 @@ main {
 }
 
 .metric-value {
+  font-family: 'Space Grotesk', 'Inter', sans-serif;
   font-size: 1.7rem;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
 }
@@ -442,7 +456,7 @@ main {
   font-weight: 700;
   padding: 2px 8px;
   border-radius: 999px;
-  background: rgba(58, 134, 255, 0.15);
+  background: rgba(240, 166, 60, 0.14);
   color: var(--accent-color);
   margin-left: 8px;
 }
@@ -603,6 +617,7 @@ main {
 }
 
 .modal h2 {
+  font-family: 'Space Grotesk', 'Inter', sans-serif;
   font-size: 1.15rem;
   letter-spacing: -0.01em;
 }
