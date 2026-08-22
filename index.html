@@ -5,18 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="Seals Focus — plataforma de estudos com cronômetro, métricas semanais, estatísticas e histórico sincronizado." />
   <title>Seals Focus · Plataforma de Estudos</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%23131110'/><path d='M50 16 L61.5 38.5 L84 50 L61.5 61.5 L50 84 L38.5 61.5 L16 50 L38.5 38.5 Z' fill='%23f0a63c'/></svg>" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%231c1915'/><text y='0.92em' x='50%25' text-anchor='middle' font-size='64'>🦭</text></svg>" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=3" />
+  <link rel="stylesheet" href="style.css?v=4" />
 </head>
 <body>
 
   <!-- Topbar -->
   <header class="topbar">
     <div class="brand">
-      <span class="brand-mark">✦</span>
+      <span class="brand-mark">🦭</span>
       <span class="brand-name">Seals Focus</span>
     </div>
     <nav aria-label="Navegação principal">
@@ -64,11 +64,16 @@
 
       <!-- Métricas -->
       <section class="dashboard card" aria-label="Métricas da semana">
-        <div class="metric-card">
-          <span class="metric-label">Horas de Estudo</span>
-          <span class="metric-value" id="totalHours">0h 0m</span>
-          <span class="metric-sub">Últimos 7 dias</span>
-        </div>
+      <div class="metric-card">
+        <span class="metric-label">Horas de Estudo</span>
+        <span class="metric-value" id="totalHours">0h 0m</span>
+        <span class="metric-sub">Últimos 7 dias</span>
+      </div>
+      <div class="metric-card">
+        <span class="metric-label">Dias na Semana</span>
+        <span class="metric-value" id="weekDays">0/7</span>
+        <span class="metric-sub">Seg–dom · mín. 30 min</span>
+      </div>
         <div class="metric-card">
           <span class="metric-label">Média Diária</span>
           <span class="metric-value" id="avgHours">0h 0m</span>
@@ -229,6 +234,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="config.js?v=2"></script>
-  <script src="script.js?v=2"></script>
+  <script src="script.js?v=3"></script>
 </body>
 </html>

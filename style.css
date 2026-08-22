@@ -69,10 +69,12 @@ body {
 }
 
 .brand-mark {
-  color: var(--accent-color);
-  font-size: 1.3rem;
-  text-shadow: 0 0 16px var(--accent-glow);
+  font-size: 1.45rem;
+  line-height: 1;
+  transition: transform 0.25s ease;
 }
+
+.brand:hover .brand-mark { transform: rotate(-8deg) scale(1.1); }
 
 nav {
   display: flex;
@@ -387,6 +389,11 @@ main {
 .metric-sub { font-size: 0.75rem; color: var(--text-muted); }
 
 .highlight { color: var(--accent-color); }
+
+.metric-value.complete {
+  color: var(--success-color);
+  text-shadow: 0 0 18px rgba(52, 211, 153, 0.25);
+}
 
 /* ---------- Histórico / Feed ---------- */
 .history-list {

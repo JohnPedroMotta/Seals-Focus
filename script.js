@@ -370,6 +370,17 @@ $('resetBtn').addEventListener('click', () => {
 });
 
 /* ================= Métricas ================= */
+function mondayOfCurrentWeek() {
+  const d = new Date();
+  const day = d.getDay(); // 0=dom ... 6=sáb
+  const mon = new Date(d);
+  mon.setDate(d.getDate() + (day === 0 ? -6 : 1 - day));
+  mon.setHours(0, 0, 0, 0);
+  return mon;
+}
+
+const MIN_DAY_SECS = 30 * 60; // 30 minutos para contar como dia estudado
+
 function last7Days() {
   const days = [];
   for (let i = 6; i >= 0; i--) {
@@ -427,6 +438,24 @@ function renderMetrics() {
 
   const streak = calcStreak();
   $('streakDays').textContent = streak > 0 ? `⚡ ${streak} ${streak === 1 ? 'dia' : 'dias'}` : '⚡ 0 dias';
+
+  // Dias estudados na semana corrente (segunda a domingo), mínimo 30 min
+  const monday = mondayOfCurrentWeek();
+  const perDay = new Map();
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    perDay.set(dateKey(d), 0);
+  }
+  state.sessions.forEach(s => {
+    const k = dateKey(new Date(s.dateISO));
+    if (perDay.has(k)) perDay.set(k, perDay.get(k) + s.duration);
+  });
+  const daysStudied = [...perDay.values()].filter(v => v >= MIN_DAY_SECS).length;
+  const weekDaysEl = $('weekDays');
+  weekDaysEl.textContent = `${daysStudied}/7`;
+  weekDaysEl.classList.toggle('highlight', daysStudied > 0);
+  weekDaysEl.classList.toggle('complete', daysStudied === 7);
 
   window._weekData = week;
 }
@@ -493,7 +522,7 @@ function renderHistory() {
   list.innerHTML = '';
   const recent = state.sessions.slice(0, 5);
   if (recent.length === 0) {
-    list.appendChild(emptyRow('Nenhuma sessão ainda. Inicie o cronômetro e registre seu primeiro estudo!'));
+    list.appendChild(emptyRow('🦭 Nenhuma sessão ainda. Inicie o cronômetro e registre seu primeiro estudo!'));
     return;
   }
   recent.forEach(s => list.appendChild(buildSessionCard(s, false)));
