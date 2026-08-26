@@ -1203,7 +1203,8 @@ function syncProfilePreview() {
   if (hasPhoto) previewImg.src = profile.avatarUrl;
   previewImg.hidden = !hasPhoto;
   previewEmpty.hidden = hasPhoto;
-  nameEl.textContent = profile.displayName || profile.username || 'Seu nome';
+  const label = profile.username ? `@${profile.username}` : profile.displayName || 'Seu nome';
+  nameEl.textContent = label;
 }
 
 function resetProfileForm() {
@@ -1228,8 +1229,9 @@ function syncProfileUI() {
 
   const nameEl = $('footName');
   if (logged) {
-    nameEl.textContent = profile.displayName || profile.username || '';
-    nameEl.hidden = !(profile.displayName || profile.username);
+    const label = profile.username ? `@${profile.username}` : profile.displayName || '';
+    nameEl.textContent = label;
+    nameEl.hidden = !label;
   } else {
     nameEl.textContent = 'Fazer login';
     nameEl.hidden = false;
@@ -1333,17 +1335,23 @@ $('profileUsernameInput').addEventListener('input', updateProfileButtons);
 
 $('profileSaveBtn').addEventListener('click', async () => {
   const newName = $('profileNameInput').value.trim();
-  const newUsername = $('profileUsernameInput').value.trim().toLowerCase();
+  let newUsername = $('profileUsernameInput').value.trim().toLowerCase();
+  if (newUsername.startsWith('@')) newUsername = newUsername.slice(1);
 
   if (newUsername && !/^[a-zA-Z0-9_.-]+$/.test(newUsername)) {
-    $('usernameError').textContent = 'Apenas letras, números, _ . -';
+    $('usernameError').textContent = 'Apenas letras, números, _ . - (sem @)';
+    $('usernameError').hidden = false;
+    return;
+  }
+  if (newUsername && newUsername.length < 2) {
+    $('usernameError').textContent = 'Mínimo de 2 caracteres.';
     $('usernameError').hidden = false;
     return;
   }
   if (newUsername) {
     const avail = await checkUsernameAvailable(newUsername);
     if (!avail) {
-      $('usernameError').textContent = 'Esse nome de usuário já está em uso.';
+      $('usernameError').textContent = 'Esse @username já está em uso.';
       $('usernameError').hidden = false;
       return;
     }
