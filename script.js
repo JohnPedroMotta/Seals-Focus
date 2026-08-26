@@ -1199,13 +1199,14 @@ function resetProfileForm() {
 function syncProfileUI() {
   const img = $('avatarPhoto');
   const initials = $('avatarInitials');
-  const hasPhoto = !!profile.photo;
+  const logged = !!sb.user;
+  const hasPhoto = logged && !!profile.photo;
   if (hasPhoto) img.src = profile.photo;
   img.hidden = !hasPhoto;
   initials.hidden = hasPhoto;
 
   const nameEl = $('footName');
-  if (sb.user) {
+  if (logged) {
     nameEl.textContent = profile.name || '';
     nameEl.hidden = !profile.name;
   } else {
