@@ -16,7 +16,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons@2/tabler-icons.min.css" />
   </noscript>
-  <link rel="stylesheet" href="style.css?v=11" />
+  <link rel="stylesheet" href="style.css?v=12" />
   <!-- Anti-bfcache + popup auto-close -->
   <script>
     window.addEventListener('pageshow', function(e) {
@@ -26,7 +26,7 @@
   </script>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script defer src="config.js?v=3"></script>
-  <script defer src="script.js?v=20"></script>
+  <script defer src="script.js?v=21"></script>
 </head>
 <body>
 
@@ -208,110 +208,101 @@
     <section class="view" id="view-settings" hidden>
 
       <section class="card" id="settingsProfileCard" hidden>
-        <div class="card-head">
-          <h3 class="panel-title">Perfil</h3>
+        <div class="profile-header">
+          <label class="profile-avatar" title="Escolher foto" id="profileAvatarLabel">
+            <img id="profilePhoto" alt="" hidden />
+            <span class="profile-avatar-empty" id="profileAvatarEmpty"><i class="ti ti-camera"></i></span>
+            <span class="profile-avatar-overlay"><i class="ti ti-pencil"></i></span>
+            <input type="file" id="profilePhotoInput" accept="image/*" hidden />
+          </label>
+          <span class="profile-header-name" id="profileSummaryName">Seu nome</span>
+          <span class="profile-header-sub" id="profileSummarySub"></span>
         </div>
 
-        <button class="profile-summary-row" id="profileEditToggle" type="button">
-          <div class="profile-summary-left">
-            <div class="profile-summary-avatar">
-              <img id="profilePhotoPreview" alt="" hidden />
-              <span class="profile-avatar-empty" id="profileAvatarPreview"><i class="ti ti-user"></i></span>
-            </div>
-            <div class="profile-summary-info">
-              <span class="profile-summary-name" id="profileSummaryName">Seu nome</span>
-              <span class="profile-summary-sub">Editar perfil</span>
-            </div>
-          </div>
-          <i class="ti ti-chevron-right profile-chevron"></i>
-        </button>
+        <div class="profile-section-divider"></div>
 
-        <div class="profile-edit-section" id="profileEditSection" hidden>
-          <div class="profile-edit-fields">
-            <label class="profile-avatar" title="Escolher foto">
-              <img id="profilePhoto" alt="" hidden />
-              <span class="profile-avatar-empty" id="profileAvatarEmpty"><i class="ti ti-camera"></i></span>
-              <span class="profile-avatar-overlay"><i class="ti ti-pencil"></i></span>
-              <input type="file" id="profilePhotoInput" accept="image/*" hidden />
-            </label>
-            <div class="form-group profile-name">
-              <label for="profileNameInput">Seu nome</label>
-              <input type="text" id="profileNameInput" maxlength="60" />
-            </div>
-            <div class="form-group profile-name">
-              <label for="profileUsernameInput">Nome de usuário (ID)</label>
-              <input type="text" id="profileUsernameInput" maxlength="20" placeholder="@tsuy_ru" />
-              <p class="field-hint">Único. Será exibido como @usuario (usado para adicionar amigos)</p>
-              <p class="field-error" id="usernameError" hidden></p>
-            </div>
+        <div class="profile-fields">
+          <div class="form-group">
+            <label for="profileNameInput">Nome de exibição</label>
+            <input type="text" id="profileNameInput" maxlength="60" placeholder="Como você quer ser chamado?" />
           </div>
-          <div class="modal-actions">
+          <div class="form-group">
+            <label for="profileUsernameInput">Nome de usuário (ID)</label>
+            <input type="text" id="profileUsernameInput" maxlength="20" placeholder="@seu_usuario" />
+            <p class="field-hint">Único. Será exibido como @usuario.</p>
+            <p class="field-error" id="usernameError" hidden></p>
+          </div>
+          <div class="profile-actions">
             <button class="btn btn-sm" id="profileUndoBtn" disabled><i class="ti ti-arrow-back-up"></i> Desfazer</button>
             <button class="btn btn-primary btn-sm" id="profileSaveBtn" disabled><i class="ti ti-device-floppy"></i> Salvar</button>
           </div>
         </div>
 
-        <!-- Conta (só aparece logado) -->
+        <!-- Conta -->
         <div class="profile-account-section" id="accountSection" hidden>
           <div class="profile-section-divider"></div>
 
-          <button class="profile-account-row" id="accountEmailRow" type="button">
-            <div class="profile-account-left">
-              <i class="ti ti-mail"></i>
-              <div class="profile-account-info">
-                <span class="profile-account-label">E-mail</span>
-                <span class="profile-account-value" id="accountEmail">—</span>
+          <div class="profile-account-list">
+            <div class="profile-account-row">
+              <div class="profile-account-left">
+                <i class="ti ti-mail"></i>
+                <div class="profile-account-info">
+                  <span class="profile-account-label">E-mail</span>
+                  <span class="profile-account-value" id="accountEmail">—</span>
+                </div>
               </div>
             </div>
-          </button>
 
-          <button class="profile-account-row" id="passwordToggle" type="button">
-            <div class="profile-account-left">
-              <i class="ti ti-lock"></i>
-              <span class="profile-account-label">Alterar senha</span>
-            </div>
-            <i class="ti ti-chevron-right profile-chevron"></i>
-          </button>
-          <div class="profile-account-sub" id="passwordSection" hidden>
-            <div class="form-group">
-              <label for="currentPassInput">Senha atual</label>
-              <input type="password" id="currentPassInput" autocomplete="current-password" minlength="6" placeholder="mínimo 6 caracteres" />
-            </div>
-            <div class="form-group">
-              <label for="newPassInput">Nova senha</label>
-              <input type="password" id="newPassInput" autocomplete="new-password" minlength="6" placeholder="mínimo 6 caracteres" />
-            </div>
-            <p class="field-error" id="passError" hidden></p>
-            <div class="modal-actions">
-              <button class="btn btn-primary btn-sm" id="changePassBtn">Atualizar senha</button>
+            <button class="profile-account-row" id="passwordToggle" type="button">
+              <div class="profile-account-left">
+                <i class="ti ti-lock"></i>
+                <span class="profile-account-label">Alterar senha</span>
+              </div>
+              <i class="ti ti-chevron-right profile-chevron"></i>
+            </button>
+            <div class="profile-account-sub" id="passwordSection" hidden>
+              <div class="form-group">
+                <label for="currentPassInput">Senha atual</label>
+                <input type="password" id="currentPassInput" autocomplete="current-password" minlength="6" placeholder="mínimo 6 caracteres" />
+              </div>
+              <div class="form-group">
+                <label for="newPassInput">Nova senha</label>
+                <input type="password" id="newPassInput" autocomplete="new-password" minlength="6" placeholder="mínimo 6 caracteres" />
+              </div>
+              <p class="field-error" id="passError" hidden></p>
+              <div class="modal-actions">
+                <button class="btn btn-primary btn-sm" id="changePassBtn">Atualizar senha</button>
+              </div>
             </div>
           </div>
 
           <div class="profile-section-divider"></div>
 
-          <button class="profile-account-row" id="logoutBtn" type="button">
-            <div class="profile-account-left">
-              <i class="ti ti-logout"></i>
-              <span class="profile-account-label">Sair da conta</span>
-            </div>
-          </button>
+          <div class="profile-account-list">
+            <button class="profile-account-row" id="logoutBtn" type="button">
+              <div class="profile-account-left">
+                <i class="ti ti-logout"></i>
+                <span class="profile-account-label">Sair da conta</span>
+              </div>
+            </button>
 
-          <button class="profile-account-row profile-account-danger" id="deleteAccountToggle" type="button">
-            <div class="profile-account-left">
-              <i class="ti ti-trash"></i>
-              <span class="profile-account-label">Excluir conta</span>
-            </div>
-            <i class="ti ti-chevron-right profile-chevron"></i>
-          </button>
-          <div class="profile-account-sub" id="deleteAccountSection" hidden>
-            <p class="field-hint">Essa ação é irreversível. Todos os seus dados serão apagados.</p>
-            <div class="form-group">
-              <label for="deletePassConfirm">Digite sua senha para confirmar</label>
-              <input type="password" id="deletePassConfirm" autocomplete="current-password" minlength="6" placeholder="Confirme com sua senha" />
-            </div>
-            <p class="field-error" id="deleteError" hidden></p>
-            <div class="modal-actions">
-              <button class="btn btn-danger btn-sm" id="deleteAccountBtn"><i class="ti ti-trash"></i> Excluir permanentemente</button>
+            <button class="profile-account-row profile-account-danger" id="deleteAccountToggle" type="button">
+              <div class="profile-account-left">
+                <i class="ti ti-trash"></i>
+                <span class="profile-account-label">Excluir conta</span>
+              </div>
+              <i class="ti ti-chevron-right profile-chevron"></i>
+            </button>
+            <div class="profile-account-sub" id="deleteAccountSection" hidden>
+              <p class="field-hint">Essa ação é irreversível. Todos os seus dados serão apagados.</p>
+              <div class="form-group">
+                <label for="deletePassConfirm">Digite sua senha para confirmar</label>
+                <input type="password" id="deletePassConfirm" autocomplete="current-password" minlength="6" placeholder="Confirme com sua senha" />
+              </div>
+              <p class="field-error" id="deleteError" hidden></p>
+              <div class="modal-actions">
+                <button class="btn btn-danger btn-sm" id="deleteAccountBtn"><i class="ti ti-trash"></i> Excluir permanentemente</button>
+              </div>
             </div>
           </div>
         </div>

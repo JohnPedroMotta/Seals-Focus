@@ -1259,15 +1259,10 @@ function applyProfilePhoto(src) {
 }
 
 function syncProfilePreview() {
-  const previewImg = $('profilePhotoPreview');
-  const previewEmpty = $('profileAvatarPreview');
   const nameEl = $('profileSummaryName');
-  const hasPhoto = !!profile.avatarUrl;
-  if (hasPhoto) previewImg.src = profile.avatarUrl;
-  previewImg.hidden = !hasPhoto;
-  previewEmpty.hidden = hasPhoto;
-  const label = profile.displayName || profile.username ? `@${profile.username}` : 'Seu nome';
+  const subEl = $('profileSummarySub');
   nameEl.textContent = profile.displayName || (profile.username ? `@${profile.username}` : 'Seu nome');
+  if (subEl) subEl.textContent = profile.username ? `@${profile.username}` : '';
 }
 
 function resetProfileForm() {
@@ -1462,20 +1457,10 @@ $('profileSaveBtn').addEventListener('click', async () => {
   updateProfileButtons();
   syncProfileUI();
   syncProfilePreview();
-  $('profileEditSection').hidden = true;
-  $('profileEditToggle').classList.remove('open');
   toast('Perfil salvo.', 'success');
 });
 
 $('profileUndoBtn').addEventListener('click', resetProfileForm);
-
-$('profileEditToggle').addEventListener('click', () => {
-  const section = $('profileEditSection');
-  const toggle = $('profileEditToggle');
-  const isOpen = !section.hidden;
-  section.hidden = isOpen;
-  toggle.classList.toggle('open', !isOpen);
-});
 
 $('profilePhotoInput').addEventListener('change', async e => {
   const file = e.target.files && e.target.files[0];
