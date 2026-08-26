@@ -350,6 +350,34 @@
 
       <section class="card">
         <div class="card-head">
+          <h3 class="panel-title">Gerenciar Pontos</h3>
+        </div>
+        <div class="form-group">
+          <label for="adminUserSearch">Buscar por @username</label>
+          <div style="display:flex;gap:8px;">
+            <input type="text" id="adminUserSearch" placeholder="@usuario" style="flex:1;" />
+            <button class="btn btn-sm" id="adminSearchBtn"><i class="ti ti-search"></i></button>
+          </div>
+        </div>
+        <div id="adminResults" hidden>
+          <div class="admin-user-card" id="adminUserCard">
+            <div class="admin-user-info">
+              <span class="admin-user-name" id="adminUserName">—</span>
+              <span class="admin-user-pts" id="adminUserPts">0 pontos</span>
+            </div>
+            <div class="admin-actions">
+              <input type="number" id="adminPtsInput" placeholder="Qtd" min="0" style="width:80px;" />
+              <button class="btn btn-sm btn-success" id="adminAddPts"><i class="ti ti-plus"></i></button>
+              <button class="btn btn-sm btn-danger" id="adminRemovePts"><i class="ti ti-minus"></i></button>
+              <button class="btn btn-sm" id="adminSetPtsBtn"><i class="ti ti-device-floppy"></i> Definir</button>
+            </div>
+          </div>
+        </div>
+        <p class="field-error" id="adminError" hidden></p>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
           <h3 class="panel-title">Dados</h3>
         </div>
         <p class="muted-p">Exporte seu histórico completo em CSV.</p>

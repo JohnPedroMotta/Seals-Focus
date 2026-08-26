@@ -18,6 +18,80 @@ let storeKey = DATA_KEY;
 /* ================= Recompensas ================= */
 let rewardedDays = new Set();
 const POINTS_PER_DAY = 100;
+const SIGNUP_BONUS = 200;
+
+/* ================= Pontos do usuário (user_points) ================= */
+let userPoints = 0;
+
+function getTotalPoints() { return userPoints + (rewardedDays.size * POINTS_PER_DAY); }
+
+async function loadUserPoints() {
+  if (!sb.client || !sb.user) { userPoints = 0; return; }
+  try {
+    const { data, error } = await sb.client.from('user_points').select('total_points').eq('user_id', sb.user.id).maybeSingle();
+    if (error) throw error;
+    userPoints = data?.total_points ?? 0;
+  } catch { userPoints = 0; }
+}
+
+async function setUserPoints(pts) {
+  if (!sb.client || !sb.user) return;
+  userPoints = Math.max(0, pts);
+  try {
+    await sb.client.from('user_points').upsert({
+      user_id: sb.user.id,
+      total_points: userPoints,
+      updated_at: new Date().toISOString()
+    });
+  } catch (e) { console.error('setUserPoints:', e); }
+}
+
+async function awardSignupBonus() {
+  if (!sb.client || !sb.user) return;
+  try {
+    const { data } = await sb.client.from('user_points').select('total_points').eq('user_id', sb.user.id).maybeSingle();
+    if (!data) {
+      await sb.client.from('user_points').upsert({
+        user_id: sb.user.id,
+        total_points: SIGNUP_BONUS,
+        updated_at: new Date().toISOString()
+      });
+      userPoints = SIGNUP_BONUS;
+      toast(`+${SIGNUP_BONUS} pontos de boas-vindas! 🎉`, 'success');
+    }
+  } catch (e) { console.error('awardSignupBonus:', e); }
+}
+
+async function adminSearchUser(query) {
+  if (!sb.client || !query) return [];
+  try {
+    const { data, error } = await sb.client.from('profiles')
+      .select('user_id, username, display_name, avatar_url')
+      .ilike('username', query.replace('@', '') + '%')
+      .limit(10);
+    if (error) throw error;
+    return data || [];
+  } catch { return []; }
+}
+
+async function adminSetUserPoints(userId, pts) {
+  if (!sb.client) return;
+  try {
+    await sb.client.from('user_points').upsert({
+      user_id: userId,
+      total_points: Math.max(0, pts),
+      updated_at: new Date().toISOString()
+    });
+  } catch (e) { console.error('adminSetUserPoints:', e); }
+}
+
+async function adminGetUserPoints(userId) {
+  if (!sb.client) return 0;
+  try {
+    const { data } = await sb.client.from('user_points').select('total_points').eq('user_id', userId).maybeSingle();
+    return data?.total_points ?? 0;
+  } catch { return 0; }
+}
 
 function loadRewards() {
   try {
@@ -30,7 +104,7 @@ function saveRewards() {
   localStorage.setItem(REWARDS_KEY, JSON.stringify([...rewardedDays]));
 }
 
-function getPoints() { return rewardedDays.size * POINTS_PER_DAY; }
+function getPoints() { return getTotalPoints(); }
 
 function awardPendingRewards(perDay) {
   const newDays = [];
@@ -220,6 +294,9 @@ async function syncFromCloud() {
       localStorage.setItem(profileStoreKey(), JSON.stringify(profile));
       resetProfileForm();
     }
+
+    await loadUserPoints();
+    await awardSignupBonus();
 
     saveState();
     await syncToCloud();
@@ -585,7 +662,10 @@ function renderMetrics() {
   renderWeekStrip(perDay);
 
   $('totalPoints').textContent = getPoints();
-  $('pointsSub').textContent = `${rewardedDays.size} ${rewardedDays.size === 1 ? 'dia' : 'dias'} concluído${rewardedDays.size === 1 ? '' : 's'}`;
+  const breakdown = [];
+  if (userPoints > 0) breakdown.push(`${userPoints} bônus`);
+  if (rewardedDays.size > 0) breakdown.push(`${rewardedDays.size * POINTS_PER_DAY} de metas`);
+  $('pointsSub').textContent = breakdown.length > 0 ? breakdown.join(' + ') : '100 pts por meta cumprida';
 
   window._weekData = week;
 }
@@ -1435,6 +1515,61 @@ $('profilePhotoInput').addEventListener('change', async e => {
   const url = URL.createObjectURL(file);
   applyProfilePhoto(url);
   updateProfileButtons();
+});
+
+/* ================= Admin: Gerenciar Pontos ================= */
+let adminSelectedUser = null;
+
+$('adminSearchBtn').addEventListener('click', async () => {
+  const q = $('adminUserSearch').value.trim();
+  if (!q) return;
+  $('adminError').hidden = true;
+  $('adminResults').hidden = true;
+  const results = await adminSearchUser(q);
+  if (results.length === 0) {
+    $('adminError').textContent = 'Nenhum usuário encontrado.';
+    $('adminError').hidden = false;
+    return;
+  }
+  const u = results[0];
+  adminSelectedUser = u;
+  const pts = await adminGetUserPoints(u.user_id);
+  $('adminUserName').textContent = `@${u.username || 'sem_id'} — ${u.display_name || ''}`;
+  $('adminUserPts').textContent = `${pts} pontos`;
+  $('adminPtsInput').value = '';
+  $('adminResults').hidden = false;
+});
+
+$('adminAddPts').addEventListener('click', async () => {
+  if (!adminSelectedUser) return;
+  const add = parseInt($('adminPtsInput').value, 10);
+  if (!Number.isFinite(add) || add <= 0) return;
+  const current = await adminGetUserPoints(adminSelectedUser.user_id);
+  await adminSetUserPoints(adminSelectedUser.user_id, current + add);
+  $('adminUserPts').textContent = `${current + add} pontos`;
+  toast(`+${add} pontos para @${adminSelectedUser.username}.`, 'success');
+  $('adminPtsInput').value = '';
+});
+
+$('adminRemovePts').addEventListener('click', async () => {
+  if (!adminSelectedUser) return;
+  const rem = parseInt($('adminPtsInput').value, 10);
+  if (!Number.isFinite(rem) || rem <= 0) return;
+  const current = await adminGetUserPoints(adminSelectedUser.user_id);
+  await adminSetUserPoints(adminSelectedUser.user_id, Math.max(0, current - rem));
+  $('adminUserPts').textContent = `${Math.max(0, current - rem)} pontos`;
+  toast(`-${rem} pontos de @${adminSelectedUser.username}.`, 'success');
+  $('adminPtsInput').value = '';
+});
+
+$('adminSetPtsBtn').addEventListener('click', async () => {
+  if (!adminSelectedUser) return;
+  const set = parseInt($('adminPtsInput').value, 10);
+  if (!Number.isFinite(set) || set < 0) return;
+  await adminSetUserPoints(adminSelectedUser.user_id, set);
+  $('adminUserPts').textContent = `${set} pontos`;
+  toast(`Pontos de @${adminSelectedUser.username} definidos para ${set}.`, 'success');
+  $('adminPtsInput').value = '';
 });
 
 /* ================= Conta: logout / senha / excluir ================= */

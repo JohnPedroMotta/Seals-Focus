@@ -1256,6 +1256,22 @@ body.light ::selection { color: #fff; }
 
 .profile-account-danger:hover { background: rgba(248, 113, 113, 0.08); }
 
+/* ---------- Admin: Gerenciar Pontos ---------- */
+.admin-user-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  background: var(--bg-secondary);
+  border-radius: 10px;
+  margin-top: 8px;
+}
+.admin-user-info { display: flex; flex-direction: column; gap: 2px; }
+.admin-user-name { font-weight: 600; font-size: 0.95rem; }
+.admin-user-pts { font-size: 0.8rem; color: var(--text-muted); }
+.admin-actions { display: flex; align-items: center; gap: 6px; }
+
 /* ---------- Mini timer flutuante ---------- */
 .mini-timer {
   position: fixed;

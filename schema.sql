@@ -82,3 +82,22 @@ create policy "perfil legivel por qualquer um"
 
 create index if not exists idx_profiles_username
   on public.profiles (username);
+
+-- Pontos do usuário (total editável) -----------------------------
+create table if not exists public.user_points (
+  user_id      uuid primary key references auth.users (id) on delete cascade,
+  total_points integer not null default 0,
+  updated_at   timestamptz not null default now()
+);
+
+alter table public.user_points enable row level security;
+
+create policy "dono dos pontos"
+  on public.user_points for all
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+create policy "pontos legiveis por qualquer um"
+  on public.user_points for select
+  to authenticated
+  using (true);
