@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Seals Focus · Entrar</title>
+  <link rel="icon" type="image/svg+xml" href="seal.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons@2/tabler-icons.min.css" media="print" onload="this.media='all'" />
+  <noscript>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons@2/tabler-icons.min.css" />
+  </noscript>
+  <link rel="stylesheet" href="style.css?v=9" />
+  <script>
+    window.addEventListener('pageshow', function(e) {
+      if (e.persisted) location.reload();
+    });
+    window.addEventListener('beforeunload', function() {
+      window.location.replace(window.location.href);
+    });
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script defer src="config.js?v=3"></script>
+  <script defer src="login.js?v=1"></script>
+</head>
+<body class="login-body">
+
+  <div class="login-screen">
+    <div class="login-card">
+      <img src="seal.svg" alt="Seals Focus" class="login-logo" />
+      <h1 class="login-brand">Seals Focus</h1>
+      <p class="login-sub">Plataforma de estudos</p>
+
+      <div class="login-form" id="loginEmailForm">
+        <div class="form-group">
+          <label for="authEmail">E-mail</label>
+          <input type="email" id="authEmail" autocomplete="email" placeholder="voce@email.com" />
+        </div>
+        <div class="form-group">
+          <label for="authPass">Senha</label>
+          <div class="pass-wrap">
+            <input type="password" id="authPass" autocomplete="current-password" minlength="6" placeholder="mínimo 6 caracteres" />
+            <button type="button" class="pass-eye" id="authPassEye" aria-label="Mostrar senha">
+              <i class="ti ti-eye"></i>
+            </button>
+          </div>
+        </div>
+        <label class="remember-check">
+          <input type="checkbox" id="rememberLogin" checked /> Lembrar login
+        </label>
+        <p class="field-error" id="authError" hidden></p>
+        <button class="btn btn-primary btn-block" id="authSubmitBtn" type="button">Entrar</button>
+      </div>
+
+      <button class="link-btn auth-switch" id="authSwitchBtn" type="button">Não tem conta? Criar uma</button>
+      <button class="link-btn login-skip" id="loginSkipBtn" type="button">Continuar sem conta</button>
+    </div>
+  </div>
+
+  <div class="toast-stack" id="toastStack" aria-live="polite"></div>
+
+</body>
+</html>

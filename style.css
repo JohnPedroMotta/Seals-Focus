@@ -1409,6 +1409,8 @@ body.light ::selection { color: #fff; }
 }
 
 /* ---------- Login Screen ---------- */
+.login-body { margin: 0; }
+
 .login-screen {
   position: fixed;
   inset: 0;

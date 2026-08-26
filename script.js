@@ -218,7 +218,6 @@ function setCloudUser(user) {
     $('accountEmail').textContent = user.email;
     loadProfile();
     pullProfile().then(() => syncProfileUI());
-    closeLoginScreen();
   } else {
     avatar.textContent = '?';
     avatar.title = 'Conectar conta';
@@ -1136,39 +1135,16 @@ $('confirmSaveBtn').addEventListener('click', () => {
 });
 
 /* ================= Autenticação ================= */
-let authMode = 'login';
-
-function showAuthError(msg) {
-  const err = $('authError');
-  err.textContent = msg || '';
-  err.hidden = !msg;
+function goToLogin() {
+  window.location.href = 'login.html';
 }
-
-function setAuthMode(mode, keepError = false) {
-  authMode = mode;
-  $('authSubmitBtn').textContent = mode === 'login' ? 'Entrar' : 'Criar conta';
-  $('authSwitchBtn').textContent = mode === 'login'
-    ? 'Não tem conta? Criar uma'
-    : 'Já tem conta? Entrar';
-  $('authPass').autocomplete = mode === 'login' ? 'current-password' : 'new-password';
-  if (!keepError) showAuthError('');
-}
-
-function openLoginScreen() {
-  setAuthMode('login');
-  const savedEmail = localStorage.getItem('foco.remember.email') || '';
-  $('authEmail').value = savedEmail;
-  $('authPass').value = '';
-  $('loginScreen').classList.remove('hidden');
-}
-
-function closeLoginScreen() {
-  $('loginScreen').classList.add('hidden');
+function goToApp() {
+  window.location.href = 'index.html';
 }
 
 $('avatarBtn').addEventListener('click', e => {
   e.stopPropagation();
-  if (!sb.user && isCloudConfigured()) { openLoginScreen(); return; }
+  if (!sb.user && isCloudConfigured()) { goToLogin(); return; }
   if (!sb.user) {
     toast('Configure o Supabase em config.js para sincronizar.', 'error');
     return;
@@ -1179,7 +1155,7 @@ $('avatarBtn').addEventListener('click', e => {
 });
 
 $('footName').addEventListener('click', () => {
-  if (!sb.user && isCloudConfigured()) openLoginScreen();
+  if (!sb.user && isCloudConfigured()) goToLogin();
 });
 
 document.addEventListener('click', e => {
@@ -1189,69 +1165,10 @@ document.addEventListener('click', e => {
   }
 });
 
-$('authSwitchBtn').addEventListener('click', () => setAuthMode(authMode === 'login' ? 'signup' : 'login'));
-
-$('loginSkipBtn').addEventListener('click', closeLoginScreen);
-
-$('authPassEye').addEventListener('click', () => {
-  const inp = $('authPass');
-  const icon = $('authPassEye').querySelector('i');
-  const isPass = inp.type === 'password';
-  inp.type = isPass ? 'text' : 'password';
-  icon.className = isPass ? 'ti ti-eye-off' : 'ti ti-eye';
-});
-
-$('authSubmitBtn').addEventListener('click', async () => {
-  const email = $('authEmail').value.trim();
-  const pass = $('authPass').value;
-
-  if (!/^\S+@\S+\.\S+$/.test(email)) return showAuthError('Informe um e-mail válido.');
-  if (pass.length < 6) return showAuthError('A senha precisa de pelo menos 6 caracteres.');
-
-  const btn = $('authSubmitBtn');
-  btn.disabled = true;
-  btn.textContent = 'Aguarde...';
-
-  try {
-    const result = authMode === 'login'
-      ? await sb.client.auth.signInWithPassword({ email, password: pass })
-      : await sb.client.auth.signUp({ email, password: pass });
-
-    if (result.error) throw result.error;
-
-    if ($('rememberLogin').checked) {
-      localStorage.setItem('foco.remember.email', email);
-    } else {
-      localStorage.removeItem('foco.remember.email');
-    }
-
-    if (authMode === 'signup' && !result.data.session) {
-      toast('Conta criada! Confirme no e-mail que enviamos antes de entrar.', 'success');
-    } else {
-      toast(`Bem-vindo, ${email}!`, 'success');
-    }
-  } catch (e) {
-    const msg = (e.message || '').toLowerCase();
-    if (authMode === 'login') {
-      if (msg.includes('invalid login')) showAuthError('E-mail ou senha incorretos.');
-      else if (msg.includes('not found')) showAuthError('Conta não encontrada. Crie uma conta primeiro.');
-      else if (msg.includes('rate limit')) showAuthError('Muitas tentativas. Aguarde um momento.');
-      else showAuthError(e.message || 'Falha no login.');
-    } else {
-      if (msg.includes('already registered')) showAuthError('Este e-mail já tem conta. Faça login.');
-      else if (msg.includes('rate limit')) showAuthError('Muitas tentativas. Aguarde um momento.');
-      else showAuthError(e.message || 'Falha ao criar conta.');
-    }
-  } finally {
-    btn.disabled = false;
-    setAuthMode(authMode, true);
-  }
-});
-
 /* ================= Atalhos de teclado ================= */
 document.addEventListener('keydown', e => {
   const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName);
-  if (typing || modal.classList.contains('active') || !$('loginScreen').classList.contains('hidden')) return;
+  if (typing || modal.classList.contains('active')) return;
 
   if (e.code === 'Space') {
     e.preventDefault();
@@ -1674,7 +1591,7 @@ $('logoutBtn').addEventListener('click', async () => {
   try {
     await sb.client.auth.signOut();
     toast('Conta desconectada.', 'success');
-    openLoginScreen();
+    goToLogin();
   } catch {
     toast('Erro ao sair.', 'error');
   }
@@ -1734,7 +1651,7 @@ $('deleteAccountBtn').addEventListener('click', async () => {
     localStorage.removeItem(storeKey);
     localStorage.removeItem(profileStoreKey());
     sb.user = null;
-    openLoginScreen();
+    goToLogin();
   } catch (e) {
     errEl.textContent = e.message || 'Erro ao excluir conta.';
     errEl.hidden = false;
@@ -1984,8 +1901,6 @@ initCloud();
 initSettingsUI();
 initMiniTimer();
 renderAll();
-
-if (isCloudConfigured() && !sb.user) openLoginScreen();
 
 window.addEventListener('pageshow', e => {
   if (e.persisted) location.reload();
