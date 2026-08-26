@@ -1708,11 +1708,15 @@ $('deleteAccountBtn').addEventListener('click', async () => {
     if (loginErr) {
       errEl.textContent = 'Senha incorreta.';
       errEl.hidden = false;
+      $('deleteAccountBtn').disabled = false;
       return;
     }
+    const { error: delErr } = await sb.client.rpc('delete_my_account');
+    if (delErr) throw delErr;
     localStorage.removeItem(storeKey);
-    await sb.client.auth.signOut();
-    toast('Conta desconectada. Para exclusão permanente, entre em contato.', 'success');
+    localStorage.removeItem(profileStoreKey());
+    toast('Conta excluída com sucesso.', 'success');
+    sb.user = null;
     openLoginScreen();
   } catch (e) {
     errEl.textContent = e.message || 'Erro ao excluir conta.';

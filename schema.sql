@@ -101,3 +101,19 @@ create policy "pontos legiveis por qualquer um"
   on public.user_points for select
   to authenticated
   using (true);
+
+-- Função para excluir conta e todos os dados do usuário -----------
+create or replace function delete_my_account()
+returns void
+language plpgsql
+security definer
+as $$
+begin
+  delete from public.user_points where user_id = auth.uid();
+  delete from public.profiles where user_id = auth.uid();
+  delete from public.rewards where user_id = auth.uid();
+  delete from public.subjects where user_id = auth.uid();
+  delete from public.sessions where user_id = auth.uid();
+  delete from auth.users where id = auth.uid();
+end;
+$$;
