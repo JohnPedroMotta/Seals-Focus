@@ -75,5 +75,10 @@ create policy "dono do perfil"
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
 
+create policy "perfil legivel por qualquer um"
+  on public.profiles for select
+  to authenticated
+  using (true);
+
 create index if not exists idx_profiles_username
   on public.profiles (username);
