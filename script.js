@@ -200,6 +200,7 @@ async function syncFromCloud() {
     }
 
     saveState();
+    await syncToCloud();
     renderAll();
   } catch (e) {
     console.error('Sync:', e);
@@ -266,6 +267,13 @@ async function flushPending() {
     if (s) await pushSession(s); else { pendingSync.delete(id); persistPending(); }
   }
   updateSyncUI();
+}
+
+async function syncToCloud() {
+  if (!sb.client || !sb.user) return;
+  for (const s of state.sessions) await pushSession(s);
+  await pushSubjects(Object.keys(state.subjects));
+  await pushRewards([...rewardedDays]);
 }
 
 /* ================= Utils ================= */

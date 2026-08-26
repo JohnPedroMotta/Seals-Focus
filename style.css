@@ -1172,14 +1172,15 @@ body.light ::selection { color: #fff; }
   inset: 0;
   display: grid;
   place-items: center;
-  background: rgba(0, 0, 0, 0.45);
+  background: rgba(0, 0, 0, 0.35);
   color: #fff;
   font-size: 1.1rem;
-  opacity: 0;
+  opacity: 1;
   transition: opacity 0.18s;
   pointer-events: none;
+  border-radius: 50%;
 }
-.profile-avatar:hover .profile-avatar-overlay { opacity: 1; }
+.profile-avatar:hover .profile-avatar-overlay { background: rgba(0, 0, 0, 0.55); }
 
 .profile-name { flex: 1; }
 .profile-edit-fields .form-group { width: 100%; }
