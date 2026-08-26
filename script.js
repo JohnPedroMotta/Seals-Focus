@@ -1590,6 +1590,16 @@ $('changePassBtn').addEventListener('click', async () => {
 $('logoutBtn').addEventListener('click', async () => {
   try {
     await sb.client.auth.signOut();
+    localStorage.removeItem(storeKey);
+    localStorage.removeItem(profileStoreKey());
+    localStorage.removeItem(PROFILE_KEY);
+    localStorage.removeItem(THEME_KEY);
+    localStorage.removeItem(ACCENT_KEY);
+    localStorage.removeItem(GOAL_KEY);
+    localStorage.removeItem(REWARDS_KEY);
+    localStorage.removeItem(PENDING_KEY);
+    profile = { displayName: '', username: '', avatarUrl: '' };
+    dailyGoalSecs = 30 * 60;
     toast('Conta desconectada.', 'success');
     goToLogin();
   } catch {
@@ -1650,6 +1660,14 @@ $('deleteAccountBtn').addEventListener('click', async () => {
 
     localStorage.removeItem(storeKey);
     localStorage.removeItem(profileStoreKey());
+    localStorage.removeItem(PROFILE_KEY);
+    localStorage.removeItem(THEME_KEY);
+    localStorage.removeItem(ACCENT_KEY);
+    localStorage.removeItem(GOAL_KEY);
+    localStorage.removeItem(REWARDS_KEY);
+    localStorage.removeItem(PENDING_KEY);
+    profile = { displayName: '', username: '', avatarUrl: '' };
+    dailyGoalSecs = 30 * 60;
     sb.user = null;
     goToLogin();
   } catch (e) {
