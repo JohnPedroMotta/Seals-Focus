@@ -380,6 +380,8 @@ async function syncToCloud() {
   for (const s of state.sessions) await pushSession(s);
   await pushSubjects(Object.keys(state.subjects));
   await pushRewards([...rewardedDays]);
+  await pushProfile();
+  await setUserPoints(userPoints);
   console.log('[sync] syncToCloud: done');
 }
 
@@ -1424,6 +1426,21 @@ async function pullProfile() {
         username: data.username || '',
         avatarUrl: data.avatar_url || ''
       };
+      localStorage.setItem(profileStoreKey(), JSON.stringify(profile));
+      resetProfileForm();
+    } else {
+      const handle = (sb.user.email || '').split('@')[0].split(/[._-]/)[0];
+      const display = sb.user.user_metadata?.full_name || sb.user.user_metadata?.name || handle || '';
+      await sb.client.from('profiles').upsert({
+        user_id: sb.user.id,
+        username: null,
+        display_name: display,
+        avatar_url: '',
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'user_id' });
+      profile.displayName = display;
+      profile.username = '';
+      profile.avatarUrl = '';
       localStorage.setItem(profileStoreKey(), JSON.stringify(profile));
       resetProfileForm();
     }
