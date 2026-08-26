@@ -105,6 +105,28 @@ function initCloud() {
 }
 
 function setCloudUser(user) {
+  // migra dados anônimos se existirem
+  if (user) {
+    try {
+      const anonRaw = localStorage.getItem(DATA_KEY);
+      if (anonRaw) {
+        const anon = JSON.parse(anonRaw);
+        if (Array.isArray(anon.sessions) && anon.sessions.length > 0) {
+          const userKey = `${DATA_KEY}.u.${user.id}`;
+          const userRaw = localStorage.getItem(userKey);
+          const userState = userRaw ? JSON.parse(userRaw) : { sessions: [], subjects: {}, deletedIds: [] };
+          const existingIds = new Set((userState.sessions || []).map(s => s.id));
+          const merged = (anon.sessions || []).filter(s => !existingIds.has(s.id));
+          userState.sessions = [...merged, ...(userState.sessions || [])]
+            .sort((a, b) => new Date(b.dateISO) - new Date(a.dateISO));
+          userState.subjects = { ...(userState.subjects || {}), ...(anon.subjects || {}) };
+          localStorage.setItem(userKey, JSON.stringify(userState));
+          localStorage.removeItem(DATA_KEY);
+        }
+      }
+    } catch { /* ignora */ }
+  }
+
   // troca o cache local para o namespace do usuário logado
   storeKey = user ? `${DATA_KEY}.u.${user.id}` : DATA_KEY;
   state = defaultState();
