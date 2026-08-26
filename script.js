@@ -1266,8 +1266,8 @@ function syncProfilePreview() {
   if (hasPhoto) previewImg.src = profile.avatarUrl;
   previewImg.hidden = !hasPhoto;
   previewEmpty.hidden = hasPhoto;
-  const label = profile.username ? `@${profile.username}` : profile.displayName || 'Seu nome';
-  nameEl.textContent = label;
+  const label = profile.displayName || profile.username ? `@${profile.username}` : 'Seu nome';
+  nameEl.textContent = profile.displayName || (profile.username ? `@${profile.username}` : 'Seu nome');
 }
 
 function resetProfileForm() {
@@ -1292,7 +1292,7 @@ function syncProfileUI() {
 
   const nameEl = $('footName');
   if (logged) {
-    const label = profile.username ? `@${profile.username}` : profile.displayName || '';
+    const label = profile.displayName || (profile.username ? `@${profile.username}` : '');
     nameEl.textContent = label;
     nameEl.hidden = !label;
   } else {
