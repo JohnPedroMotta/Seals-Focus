@@ -42,3 +42,19 @@ create policy "dono das materias"
   on public.subjects for all
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
+
+-- Dias recompensados (pontos) ----------------------------------
+create table if not exists public.rewards (
+  user_id  uuid not null references auth.users (id) on delete cascade,
+  day_key  text not null,
+  points   integer not null default 100,
+  created_at timestamptz not null default now(),
+  primary key (user_id, day_key)
+);
+
+alter table public.rewards enable row level security;
+
+create policy "dono das recompensas"
+  on public.rewards for all
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);

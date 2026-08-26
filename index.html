@@ -8,10 +8,35 @@
   <link rel="icon" type="image/svg+xml" href="seal.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=7" />
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net" />
+  <!-- CSS externo não-bloqueante: a página pinta antes de fontes/ícones chegarem -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons@2/tabler-icons.min.css" media="print" onload="this.media='all'" />
+  <noscript>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons@2/tabler-icons.min.css" />
+  </noscript>
+  <link rel="stylesheet" href="style.css?v=8" />
+  <!-- Anti-bfcache + popup auto-close -->
+  <script>
+    window.addEventListener('pageshow', function(e) {
+      if (e.persisted) location.reload();
+    });
+    window.addEventListener('unload', function() {});
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script defer src="config.js?v=3"></script>
+  <script defer src="script.js?v=10"></script>
 </head>
 <body>
+
+  <!-- Loading Screen -->
+  <div class="loader-overlay" id="loader">
+    <div class="loader-ring"></div>
+  </div>
+
+  <!-- Debug indicator -->
+  <div id="debugBar" style="position:fixed;top:0;left:0;right:0;z-index:99999;background:#000;color:#0f0;font:12px monospace;padding:4px 8px;display:none;"></div>
 
   <!-- Navegação lateral -->
   <div class="shell">
@@ -32,7 +57,11 @@
         </button>
         <button class="nav-btn" data-view="feed">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h10"/></svg>
-          Feed
+          Histórico
+        </button>
+        <button class="nav-btn" data-view="settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Ajustes
         </button>
       </nav>
 
@@ -42,11 +71,12 @@
         </button>
         <div class="avatar-wrap">
           <button class="avatar avatar-btn" id="avatarBtn" aria-haspopup="true" aria-expanded="false" title="Conectar conta">
+            <img id="avatarPhoto" alt="" hidden />
             <span id="avatarInitials">?</span>
           </button>
+          <button class="foot-name" id="footName" hidden type="button"></button>
           <div class="user-menu" id="userMenu" role="menu" hidden>
             <p class="menu-email" id="userEmail"></p>
-            <button class="menu-item danger" id="logoutBtn">Sair da conta</button>
           </div>
         </div>
       </div>
@@ -62,13 +92,13 @@
         <div class="timer-display" id="timer" role="timer" aria-live="off">00:00:00</div>
         <div class="timer-controls">
           <button class="btn btn-primary btn-lg" id="startBtn">
-            <span class="btn-icon">▶</span>Iniciar
+            <span class="btn-icon"><i class="ti ti-player-play-filled"></i></span>Iniciar
           </button>
           <button class="btn btn-lg" id="pauseBtn" hidden>
-            <span class="btn-icon">⏸</span>Pausar
+            <span class="btn-icon"><i class="ti ti-player-pause-filled"></i></span>Pausar
           </button>
           <button class="btn btn-success btn-lg" id="saveBtn" hidden>
-            <span class="btn-icon">✓</span>Salvar
+            <span class="btn-icon"><i class="ti ti-check"></i></span>Salvar
           </button>
           <button class="btn btn-danger" id="resetBtn" hidden>Descartar</button>
         </div>
@@ -91,10 +121,20 @@
           <span class="metric-value" id="totalQuestions">0</span>
           <span class="metric-sub" id="accuracySub">— acertos</span>
         </div>
-        <div class="metric-card">
+<div class="metric-card">
           <span class="metric-label">Ofensiva</span>
-          <span class="metric-value highlight" id="streakDays">⚡ 0 dias</span>
+          <span class="metric-value highlight" id="streakDays"><i class="ti ti-lightning"></i> 0 dias</span>
           <span class="metric-sub">Dias consecutivos</span>
+        </div>
+        <div class="metric-card">
+          <span class="metric-label">Pontos</span>
+          <span class="metric-value highlight" id="totalPoints">0</span>
+          <span class="metric-sub" id="pointsSub">100 pts por meta cumprida</span>
+        </div>
+        <div class="metric-card">
+          <span class="metric-label">Hoje</span>
+          <span class="metric-value" id="todayTime">0min</span>
+          <span class="metric-sub" id="todaySessions">0 sessões · meta 30min</span>
         </div>
       </section>
 
@@ -148,7 +188,167 @@
           <span class="chip" id="sessionCount">0 sessões</span>
         </div>
         <input type="search" id="feedSearch" class="search-input" placeholder="Buscar por matéria, assunto ou observação..." aria-label="Buscar sessões" />
+        <div class="filter-row">
+          <select id="filterSubject" aria-label="Filtrar por matéria">
+            <option value="">Todas as matérias</option>
+          </select>
+          <input type="date" id="filterFrom" title="Data inicial" aria-label="Data inicial" />
+          <input type="date" id="filterTo" title="Data final" aria-label="Data final" />
+          <label class="checkbox-container slim">
+            <input type="checkbox" id="filterQuestions" />
+            <span>Só com questões</span>
+          </label>
+          <button class="link-btn" id="clearFilters" type="button">Limpar filtros</button>
+        </div>
         <div class="history-list" id="feedList"></div>
+      </section>
+    </section>
+
+    <!-- ===================== VISÃO: AJUSTES ===================== -->
+    <section class="view" id="view-settings" hidden>
+
+      <section class="card">
+        <div class="card-head">
+          <h3 class="panel-title">Perfil</h3>
+        </div>
+
+        <button class="profile-summary-row" id="profileEditToggle" type="button">
+          <div class="profile-summary-left">
+            <div class="profile-summary-avatar">
+              <img id="profilePhotoPreview" alt="" hidden />
+              <span class="profile-avatar-empty" id="profileAvatarPreview"><i class="ti ti-user"></i></span>
+            </div>
+            <div class="profile-summary-info">
+              <span class="profile-summary-name" id="profileSummaryName">Seu nome</span>
+              <span class="profile-summary-sub">Editar perfil</span>
+            </div>
+          </div>
+          <i class="ti ti-chevron-right profile-chevron"></i>
+        </button>
+
+        <div class="profile-edit-section" id="profileEditSection" hidden>
+          <div class="profile-edit-fields">
+            <label class="profile-avatar" title="Escolher foto">
+              <img id="profilePhoto" alt="" hidden />
+              <span class="profile-avatar-empty" id="profileAvatarEmpty"><i class="ti ti-camera"></i></span>
+              <input type="file" id="profilePhotoInput" accept="image/*" hidden />
+            </label>
+            <div class="form-group profile-name">
+              <label for="profileNameInput">Seu nome</label>
+              <input type="text" id="profileNameInput" maxlength="60" />
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button class="btn btn-sm" id="profileUndoBtn" disabled><i class="ti ti-arrow-back-up"></i> Desfazer</button>
+            <button class="btn btn-primary btn-sm" id="profileSaveBtn" disabled><i class="ti ti-device-floppy"></i> Salvar</button>
+          </div>
+        </div>
+
+        <!-- Conta (só aparece logado) -->
+        <div class="profile-account-section" id="accountSection" hidden>
+          <div class="profile-section-divider"></div>
+
+          <button class="profile-account-row" id="accountEmailRow" type="button">
+            <div class="profile-account-left">
+              <i class="ti ti-mail"></i>
+              <div class="profile-account-info">
+                <span class="profile-account-label">E-mail</span>
+                <span class="profile-account-value" id="accountEmail">—</span>
+              </div>
+            </div>
+          </button>
+
+          <button class="profile-account-row" id="passwordToggle" type="button">
+            <div class="profile-account-left">
+              <i class="ti ti-lock"></i>
+              <span class="profile-account-label">Alterar senha</span>
+            </div>
+            <i class="ti ti-chevron-right profile-chevron"></i>
+          </button>
+          <div class="profile-account-sub" id="passwordSection" hidden>
+            <div class="form-group">
+              <label for="currentPassInput">Senha atual</label>
+              <input type="password" id="currentPassInput" autocomplete="current-password" minlength="6" placeholder="mínimo 6 caracteres" />
+            </div>
+            <div class="form-group">
+              <label for="newPassInput">Nova senha</label>
+              <input type="password" id="newPassInput" autocomplete="new-password" minlength="6" placeholder="mínimo 6 caracteres" />
+            </div>
+            <p class="field-error" id="passError" hidden></p>
+            <div class="modal-actions">
+              <button class="btn btn-primary btn-sm" id="changePassBtn">Atualizar senha</button>
+            </div>
+          </div>
+
+          <div class="profile-section-divider"></div>
+
+          <button class="profile-account-row" id="logoutBtn" type="button">
+            <div class="profile-account-left">
+              <i class="ti ti-logout"></i>
+              <span class="profile-account-label">Sair da conta</span>
+            </div>
+          </button>
+
+          <button class="profile-account-row profile-account-danger" id="deleteAccountToggle" type="button">
+            <div class="profile-account-left">
+              <i class="ti ti-trash"></i>
+              <span class="profile-account-label">Excluir conta</span>
+            </div>
+            <i class="ti ti-chevron-right profile-chevron"></i>
+          </button>
+          <div class="profile-account-sub" id="deleteAccountSection" hidden>
+            <p class="field-hint">Essa ação é irreversível. Todos os seus dados serão apagados.</p>
+            <div class="form-group">
+              <label for="deletePassConfirm">Digite sua senha para confirmar</label>
+              <input type="password" id="deletePassConfirm" autocomplete="current-password" minlength="6" placeholder="Confirme com sua senha" />
+            </div>
+            <p class="field-error" id="deleteError" hidden></p>
+            <div class="modal-actions">
+              <button class="btn btn-danger btn-sm" id="deleteAccountBtn"><i class="ti ti-trash"></i> Excluir permanentemente</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <h3 class="panel-title">Aparência</h3>
+        </div>
+        <div class="form-group">
+          <label>Tema</label>
+          <div class="seg-row" id="themeSeg">
+            <button type="button" class="btn btn-sm seg-btn active" data-theme="dark">Escuro</button>
+            <button type="button" class="btn btn-sm seg-btn" data-theme="light">Claro</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Cor de destaque</label>
+          <div class="swatch-row" id="swatchRow"></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <h3 class="panel-title">Metas</h3>
+        </div>
+        <div class="form-group">
+          <label for="goalInput">Meta diária (minutos)</label>
+          <input type="number" id="goalInput" min="5" max="720" step="5" inputmode="numeric" placeholder="30" />
+          <p class="field-hint">Usada na tira semanal e no card "Hoje".</p>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-primary btn-sm" id="saveGoalBtn">Salvar meta</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <h3 class="panel-title">Dados</h3>
+        </div>
+        <p class="muted-p">Exporte seu histórico completo em CSV.</p>
+        <div class="row-btns">
+          <button class="btn btn-sm" id="exportCsvBtn"><i class="ti ti-file-export"></i> Exportar histórico (CSV)</button>
+        </div>
       </section>
     </section>
   </main>
@@ -164,9 +364,13 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-6"/></svg>
       <span>Stats</span>
     </button>
-    <button class="tab-btn" data-view="feed">
+<button class="tab-btn" data-view="feed">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h10"/></svg>
-      <span>Feed</span>
+      <span>Histórico</span>
+    </button>
+    <button class="tab-btn" data-view="settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <span>Ajustes</span>
     </button>
   </nav>
 
@@ -237,36 +441,64 @@
     </div>
   </div>
 
-  <!-- Modal Entrar / Criar conta -->
-  <div class="modal-overlay" id="authModal" role="dialog" aria-modal="true" aria-labelledby="authTitle">
-    <div class="modal card">
-      <h2 id="authTitle">Entrar</h2>
-      <p class="modal-sub">Sincronize seus estudos entre dispositivos.</p>
+  <!-- Tela de Login / Cadastro -->
+  <div class="login-screen" id="loginScreen">
+    <div class="login-card">
+      <img src="seal.svg" alt="Seals Focus" class="login-logo" />
+      <h1 class="login-brand">Seals Focus</h1>
+      <p class="login-sub">Plataforma de estudos</p>
 
-      <div class="form-group">
-        <label for="authEmail">E-mail</label>
-        <input type="email" id="authEmail" autocomplete="email" placeholder="voce@email.com" />
-      </div>
-      <div class="form-group">
-        <label for="authPass">Senha</label>
-        <input type="password" id="authPass" autocomplete="current-password" minlength="6" placeholder="mínimo 6 caracteres" />
+      <button class="btn-google" id="googleLoginBtn" type="button">
+        <svg viewBox="0 0 24 24" width="20" height="20"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+        Entrar com Google
+      </button>
+
+      <div class="login-divider"><span>ou</span></div>
+
+      <div class="login-form" id="loginEmailForm">
+        <div class="form-group">
+          <label for="authEmail">E-mail</label>
+          <input type="email" id="authEmail" autocomplete="email" placeholder="voce@email.com" />
+        </div>
+        <div class="form-group">
+          <label for="authPass">Senha</label>
+          <input type="password" id="authPass" autocomplete="current-password" minlength="6" placeholder="mínimo 6 caracteres" />
+        </div>
+        <p class="field-error" id="authError" hidden></p>
+        <button class="btn btn-primary btn-block" id="authSubmitBtn" type="button">Entrar</button>
       </div>
 
-      <p class="field-error" id="authError" hidden></p>
-
-      <div class="modal-actions">
-        <button class="btn" id="authCancelBtn">Cancelar</button>
-        <button class="btn btn-primary" id="authSubmitBtn">Entrar</button>
-      </div>
-      <button class="link-btn auth-switch" id="authSwitchBtn">Não tem conta? Criar uma</button>
+      <button class="link-btn auth-switch" id="authSwitchBtn" type="button">Não tem conta? Criar uma</button>
+      <button class="link-btn login-skip" id="loginSkipBtn" type="button">Continuar sem conta</button>
     </div>
   </div>
 
-  <!-- Toasts -->
-  <div class="toast-stack" id="toastStack" aria-live="polite"></div>
+    <!-- Toasts -->
+    <div class="toast-stack" id="toastStack" aria-live="polite"></div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-  <script src="config.js?v=2"></script>
-  <script src="script.js?v=6"></script>
-</body>
+  <!-- Mini timer flutuante -->
+  <button class="mini-timer" id="miniTimer" hidden aria-label="Pausar ou retomar o cronômetro">
+    <span class="mini-dot"></span><span id="miniTime">00:00</span>
+  </button>
+
+  <script>
+    (function () {
+      var loader = document.getElementById('loader');
+      var start = Date.now();
+      function hideLoader() {
+        var elapsed = Date.now() - start;
+        var delay = Math.max(0, 700 - elapsed);
+        setTimeout(function () { loader.classList.add('hide'); }, delay);
+      }
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', hideLoader);
+      } else {
+        hideLoader();
+      }
+      window.addEventListener('load', function () {
+        if (!loader.classList.contains('hide')) hideLoader();
+      });
+    })();
+  </script>
+  </body>
 </html>
