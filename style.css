@@ -1466,15 +1466,23 @@ body.light ::selection { color: #fff; }
 .btn-block { width: 100%; }
 
 .remember-check {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 0;
   font-size: 0.85rem;
   color: var(--text-muted);
   cursor: pointer;
   margin-top: -8px;
+  -webkit-user-select: none;
+  user-select: none;
 }
-.remember-check input { cursor: pointer; margin: 0; }
+.remember-check input[type="checkbox"] {
+  cursor: pointer;
+  margin: 0 6px 0 0;
+  accent-color: var(--accent, #6c5ce7);
+  width: 15px;
+  height: 15px;
+}
 
 .auth-switch {
   margin-top: 14px;
