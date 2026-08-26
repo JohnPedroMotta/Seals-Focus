@@ -258,14 +258,20 @@ async function syncFromCloud() {
   if (!sb.client || !sb.user || syncingNow) return;
   syncingNow = true;
   updateSyncUI();
+  console.log('[sync] syncFromCloud: user_id=', sb.user.id);
   try {
-    const [{ data: rs }, { data: rj }, { data: rw }, { data: rp }] = await Promise.all([
+    const [{ data: rs, error: eS }, { data: rj, error: eJ }, { data: rw, error: eR }, { data: rp, error: eP }] = await Promise.all([
       sb.client.from('sessions').select('*').order('date_iso', { ascending: false }),
       sb.client.from('subjects').select('*'),
       sb.client.from('rewards').select('*'),
       sb.client.from('profiles').select('*').maybeSingle()
     ]);
-    if (rs.error || rj.error) throw rs.error || rj.error;
+    console.log('[sync] sessions:', (rs || []).length, 'subjects:', (rj || []).length, 'rewards:', (rw || []).length);
+    if (eS) console.error('[sync] sessions error:', eS.message);
+    if (eJ) console.error('[sync] subjects error:', eJ.message);
+    if (eR) console.error('[sync] rewards error:', eR.message);
+    if (eP) console.error('[sync] profiles error:', eP.message);
+    if (eS || eJ) throw eS || eJ;
 
     // união por id; respeita exclusões locais recentes (tombstones)
     const byId = new Map(state.sessions.map(s => [s.id, s]));
@@ -370,9 +376,11 @@ async function flushPending() {
 
 async function syncToCloud() {
   if (!sb.client || !sb.user) return;
+  console.log('[sync] syncToCloud: pushing', state.sessions.length, 'sessions');
   for (const s of state.sessions) await pushSession(s);
   await pushSubjects(Object.keys(state.subjects));
   await pushRewards([...rewardedDays]);
+  console.log('[sync] syncToCloud: done');
 }
 
 /* ================= Utils ================= */
