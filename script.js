@@ -1192,6 +1192,7 @@ $('authSwitchBtn').addEventListener('click', () => setAuthMode(authMode === 'log
 
 $('loginSkipBtn').addEventListener('click', closeLoginScreen);
 
+/* Google login desativado (pendente verificação)
 $('googleLoginBtn').addEventListener('click', async () => {
   if (!sb.client) return;
   const { error } = await sb.client.auth.signInWithOAuth({
@@ -1200,6 +1201,7 @@ $('googleLoginBtn').addEventListener('click', async () => {
   });
   if (error) toast('Erro ao conectar com Google: ' + error.message, 'error');
 });
+*/
 
 $('authSubmitBtn').addEventListener('click', async () => {
   const email = $('authEmail').value.trim();
