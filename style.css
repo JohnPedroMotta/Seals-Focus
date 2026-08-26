@@ -1472,7 +1472,7 @@ body.light ::selection { color: #fff; }
   font-size: 0.85rem;
   color: var(--text-muted);
   cursor: pointer;
-  margin-top: -4px;
+  margin-top: -8px;
 }
 .remember-check input { cursor: pointer; }
 
