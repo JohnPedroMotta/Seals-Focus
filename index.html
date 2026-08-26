@@ -490,7 +490,12 @@
         </div>
         <div class="form-group">
           <label for="authPass">Senha</label>
-          <input type="password" id="authPass" autocomplete="current-password" minlength="6" placeholder="mínimo 6 caracteres" />
+          <div class="pass-wrap">
+            <input type="password" id="authPass" autocomplete="current-password" minlength="6" placeholder="mínimo 6 caracteres" />
+            <button type="button" class="pass-eye" id="authPassEye" aria-label="Mostrar senha">
+              <i class="ti ti-eye"></i>
+            </button>
+          </div>
         </div>
         <label class="remember-check">
           <input type="checkbox" id="rememberLogin" checked /> Lembrar login

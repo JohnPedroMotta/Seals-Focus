@@ -1465,6 +1465,28 @@ body.light ::selection { color: #fff; }
 
 .btn-block { width: 100%; }
 
+.pass-wrap {
+  position: relative;
+}
+.pass-wrap input {
+  width: 100%;
+  padding-right: 40px;
+}
+.pass-eye {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 1.1rem;
+  padding: 4px;
+  line-height: 1;
+}
+.pass-eye:hover { color: var(--text-main); }
+
 .remember-check {
   display: inline-flex;
   align-items: center;

@@ -1193,6 +1193,14 @@ $('authSwitchBtn').addEventListener('click', () => setAuthMode(authMode === 'log
 
 $('loginSkipBtn').addEventListener('click', closeLoginScreen);
 
+$('authPassEye').addEventListener('click', () => {
+  const inp = $('authPass');
+  const icon = $('authPassEye').querySelector('i');
+  const isPass = inp.type === 'password';
+  inp.type = isPass ? 'text' : 'password';
+  icon.className = isPass ? 'ti ti-eye-off' : 'ti ti-eye';
+});
+
 $('authSubmitBtn').addEventListener('click', async () => {
   const email = $('authEmail').value.trim();
   const pass = $('authPass').value;
@@ -1224,10 +1232,16 @@ $('authSubmitBtn').addEventListener('click', async () => {
     }
   } catch (e) {
     const msg = (e.message || '').toLowerCase();
-    if (msg.includes('already registered')) showAuthError('Este e-mail já tem conta. Faça login.');
-    else if (msg.includes('invalid login')) showAuthError('E-mail ou senha incorretos.');
-    else if (msg.includes('rate limit')) showAuthError('Muitas tentativas. Aguarde um momento.');
-    else showAuthError(e.message || 'Falha na autenticação.');
+    if (authMode === 'login') {
+      if (msg.includes('invalid login')) showAuthError('E-mail ou senha incorretos.');
+      else if (msg.includes('not found')) showAuthError('Conta não encontrada. Crie uma conta primeiro.');
+      else if (msg.includes('rate limit')) showAuthError('Muitas tentativas. Aguarde um momento.');
+      else showAuthError(e.message || 'Falha no login.');
+    } else {
+      if (msg.includes('already registered')) showAuthError('Este e-mail já tem conta. Faça login.');
+      else if (msg.includes('rate limit')) showAuthError('Muitas tentativas. Aguarde um momento.');
+      else showAuthError(e.message || 'Falha ao criar conta.');
+    }
   } finally {
     btn.disabled = false;
     setAuthMode(authMode, true);
