@@ -754,12 +754,19 @@ button.foot-name:hover { text-decoration: underline; }
   letter-spacing: -0.01em;
 }
 
+.modal-header {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
 .modal-duration {
   font-size: 0.85rem;
   color: var(--accent-color);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  margin-top: -8px;
+  margin-left: auto;
+  white-space: nowrap;
 }
 
 .modal-sub {

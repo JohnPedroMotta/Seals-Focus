@@ -995,7 +995,7 @@ function openModal() {
   pauseTimer(); // congela o tempo acumulado (sem drift)
   timerWasRunning = timer.accumulated > 0;
 
-  $('modalDuration').textContent = `${fmtHMS(timer.accumulated)} registrados`;
+  $('modalDuration').textContent = fmtHMS(timer.accumulated);
   populateSubjects();
   modal.classList.add('active');
   setTimeout(() => $('newSubjectInput').focus(), 50);
