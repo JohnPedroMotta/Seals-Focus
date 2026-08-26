@@ -1429,15 +1429,18 @@ async function pullProfile() {
       localStorage.setItem(profileStoreKey(), JSON.stringify(profile));
       resetProfileForm();
     } else {
+      console.log('[profile] No profile found, creating for', sb.user.id);
       const handle = (sb.user.email || '').split('@')[0].split(/[._-]/)[0];
       const display = sb.user.user_metadata?.full_name || sb.user.user_metadata?.name || handle || '';
-      await sb.client.from('profiles').upsert({
+      const { error: upErr } = await sb.client.from('profiles').upsert({
         user_id: sb.user.id,
         username: null,
         display_name: display,
         avatar_url: '',
         updated_at: new Date().toISOString()
       }, { onConflict: 'user_id' });
+      if (upErr) console.error('[profile] upsert error:', upErr);
+      else console.log('[profile] Created profile for', sb.user.email);
       profile.displayName = display;
       profile.username = '';
       profile.avatarUrl = '';
