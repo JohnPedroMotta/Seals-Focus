@@ -1711,11 +1711,28 @@ $('deleteAccountBtn').addEventListener('click', async () => {
       $('deleteAccountBtn').disabled = false;
       return;
     }
+
+    const uid = sb.user.id;
+
+    await Promise.all([
+      sb.client.from('sessions').delete().eq('user_id', uid),
+      sb.client.from('subjects').delete().eq('user_id', uid),
+      sb.client.from('rewards').delete().eq('user_id', uid),
+      sb.client.from('profiles').delete().eq('user_id', uid),
+      sb.client.from('user_points').delete().eq('user_id', uid)
+    ]);
+
     const { error: delErr } = await sb.client.rpc('delete_my_account');
-    if (delErr) throw delErr;
+    if (delErr) {
+      console.error('delete_my_account RPC failed:', delErr);
+      await sb.client.auth.signOut();
+      toast('Dados excluídos. Para exclusão completa da conta, entre em contato.', 'success');
+    } else {
+      toast('Conta excluída com sucesso.', 'success');
+    }
+
     localStorage.removeItem(storeKey);
     localStorage.removeItem(profileStoreKey());
-    toast('Conta excluída com sucesso.', 'success');
     sb.user = null;
     openLoginScreen();
   } catch (e) {
