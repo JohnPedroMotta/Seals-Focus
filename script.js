@@ -127,7 +127,7 @@ function setCloudUser(user) {
     avatar.textContent = '?';
     avatar.title = 'Conectar conta';
     $('accountSection').hidden = true;
-    profile = { name: '', photo: '' };
+    profile = { displayName: '', username: '', avatarUrl: '' };
     syncProfileUI();
   }
 }
@@ -190,7 +190,11 @@ async function syncFromCloud() {
 
     // perfil: usa o do servidor se existir
     if (rp && !rp.error) {
-      profile = { name: rp.name || '', photo: rp.photo || '' };
+      profile = {
+        displayName: rp.display_name || '',
+        username: rp.username || '',
+        avatarUrl: rp.avatar_url || ''
+      };
       localStorage.setItem(profileStoreKey(), JSON.stringify(profile));
       resetProfileForm();
     }
@@ -1167,15 +1171,15 @@ function loadAppearance() {
 }
 
 /* ================= Perfil ================= */
-let profile = { name: '', photo: '' };
-let pendingPhoto = null;
+let profile = { displayName: '', username: '', avatarUrl: '' };
+let pendingPhotoBlob = null;
 
 function profileStoreKey() {
   return sb.user ? `${PROFILE_KEY}.u.${sb.user.id}` : PROFILE_KEY;
 }
 
 function loadProfile() {
-  profile = { name: '', photo: '' };
+  profile = { displayName: '', username: '', avatarUrl: '' };
   try {
     const raw = localStorage.getItem(profileStoreKey());
     if (raw) profile = { ...profile, ...JSON.parse(raw) };
@@ -1195,17 +1199,19 @@ function syncProfilePreview() {
   const previewImg = $('profilePhotoPreview');
   const previewEmpty = $('profileAvatarPreview');
   const nameEl = $('profileSummaryName');
-  const hasPhoto = !!profile.photo;
-  if (hasPhoto) previewImg.src = profile.photo;
+  const hasPhoto = !!profile.avatarUrl;
+  if (hasPhoto) previewImg.src = profile.avatarUrl;
   previewImg.hidden = !hasPhoto;
   previewEmpty.hidden = hasPhoto;
-  nameEl.textContent = profile.name || 'Seu nome';
+  nameEl.textContent = profile.displayName || profile.username || 'Seu nome';
 }
 
 function resetProfileForm() {
-  $('profileNameInput').value = profile.name || '';
-  pendingPhoto = null;
-  applyProfilePhoto(profile.photo);
+  $('profileNameInput').value = profile.displayName || '';
+  $('profileUsernameInput').value = profile.username || '';
+  $('usernameError').hidden = true;
+  pendingPhotoBlob = null;
+  applyProfilePhoto(profile.avatarUrl);
   updateProfileButtons();
   syncProfileUI();
   syncProfilePreview();
@@ -1215,15 +1221,15 @@ function syncProfileUI() {
   const img = $('avatarPhoto');
   const initials = $('avatarInitials');
   const logged = !!sb.user;
-  const hasPhoto = logged && !!profile.photo;
-  if (hasPhoto) img.src = profile.photo;
+  const hasPhoto = logged && !!profile.avatarUrl;
+  if (hasPhoto) img.src = profile.avatarUrl;
   img.hidden = !hasPhoto;
   initials.hidden = hasPhoto;
 
   const nameEl = $('footName');
   if (logged) {
-    nameEl.textContent = profile.name || '';
-    nameEl.hidden = !profile.name;
+    nameEl.textContent = profile.displayName || profile.username || '';
+    nameEl.hidden = !(profile.displayName || profile.username);
   } else {
     nameEl.textContent = 'Fazer login';
     nameEl.hidden = false;
@@ -1232,7 +1238,46 @@ function syncProfileUI() {
 
 function saveProfile() {
   localStorage.setItem(profileStoreKey(), JSON.stringify(profile));
-  pushProfile();
+}
+
+function uploadAvatar(file) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const size = 256;
+        const canvas = document.createElement('canvas');
+        canvas.width = canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        const scale = Math.max(size / img.width, size / img.height);
+        ctx.drawImage(img, (size - img.width * scale) / 2, (size - img.height * scale) / 2,
+          img.width * scale, img.height * scale);
+        canvas.toBlob(blob => resolve(blob), 'image/jpeg', 0.85);
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+async function pushAvatarToStorage(blob) {
+  if (!sb.client || !sb.user || !blob) return profile.avatarUrl;
+  const ext = 'jpg';
+  const path = `${sb.user.id}/avatar.${ext}`;
+  try {
+    const { error: delErr } = await sb.client.storage.from('avatars').remove([path]);
+    if (delErr) console.warn('Avatar remove old:', delErr);
+    const { error: upErr } = await sb.client.storage.from('avatars').upload(path, blob, {
+      contentType: 'image/jpeg', upsert: true
+    });
+    if (upErr) throw upErr;
+    const { data } = sb.client.storage.from('avatars').getPublicUrl(path);
+    return data.publicUrl + '?t=' + Date.now();
+  } catch (e) {
+    console.error('pushAvatar:', e);
+    return profile.avatarUrl;
+  }
 }
 
 async function pushProfile() {
@@ -1240,8 +1285,9 @@ async function pushProfile() {
   try {
     await sb.client.from('profiles').upsert({
       user_id: sb.user.id,
-      name: profile.name || '',
-      photo: profile.photo || '',
+      username: profile.username || null,
+      display_name: profile.displayName || '',
+      avatar_url: profile.avatarUrl || '',
       updated_at: new Date().toISOString()
     });
   } catch (e) { console.error('pushProfile:', e); }
@@ -1253,27 +1299,72 @@ async function pullProfile() {
     const { data, error } = await sb.client.from('profiles').select('*').eq('user_id', sb.user.id).maybeSingle();
     if (error) throw error;
     if (data) {
-      profile = { name: data.name || '', photo: data.photo || '' };
+      profile = {
+        displayName: data.display_name || '',
+        username: data.username || '',
+        avatarUrl: data.avatar_url || ''
+      };
       localStorage.setItem(profileStoreKey(), JSON.stringify(profile));
       resetProfileForm();
     }
   } catch (e) { console.error('pullProfile:', e); }
 }
 
+async function checkUsernameAvailable(username) {
+  if (!sb.client || !username) return true;
+  try {
+    const { data, error } = await sb.client.from('profiles')
+      .select('user_id').eq('username', username).maybeSingle();
+    if (error) throw error;
+    return !data || data.user_id === sb.user?.id;
+  } catch { return true; }
+}
+
 function updateProfileButtons() {
-  const dirty = pendingPhoto !== null
-    || ($('profileNameInput').value.trim() || '') !== (profile.name || '');
+  const nameDirty = ($('profileNameInput').value.trim() || '') !== (profile.displayName || '');
+  const userDirty = ($('profileUsernameInput').value.trim() || '') !== (profile.username || '');
+  const dirty = pendingPhotoBlob !== null || nameDirty || userDirty;
   $('profileUndoBtn').disabled = !dirty;
   $('profileSaveBtn').disabled = !dirty;
 }
 
 $('profileNameInput').addEventListener('input', updateProfileButtons);
+$('profileUsernameInput').addEventListener('input', updateProfileButtons);
 
-$('profileSaveBtn').addEventListener('click', () => {
-  profile.name = $('profileNameInput').value.trim();
-  if (pendingPhoto !== null) profile.photo = pendingPhoto;
+$('profileSaveBtn').addEventListener('click', async () => {
+  const newName = $('profileNameInput').value.trim();
+  const newUsername = $('profileUsernameInput').value.trim().toLowerCase();
+
+  if (newUsername && !/^[a-zA-Z0-9_.-]+$/.test(newUsername)) {
+    $('usernameError').textContent = 'Apenas letras, números, _ . -';
+    $('usernameError').hidden = false;
+    return;
+  }
+  if (newUsername) {
+    const avail = await checkUsernameAvailable(newUsername);
+    if (!avail) {
+      $('usernameError').textContent = 'Esse nome de usuário já está em uso.';
+      $('usernameError').hidden = false;
+      return;
+    }
+  }
+
+  const btn = $('profileSaveBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="ti ti-loader"></i> Salvando...';
+
+  if (pendingPhotoBlob) {
+    profile.avatarUrl = await pushAvatarToStorage(pendingPhotoBlob);
+  }
+
+  profile.displayName = newName;
+  profile.username = newUsername;
   saveProfile();
-  pendingPhoto = null;
+  await pushProfile();
+
+  pendingPhotoBlob = null;
+  $('usernameError').hidden = true;
+  btn.innerHTML = '<i class="ti ti-device-floppy"></i> Salvar';
   updateProfileButtons();
   syncProfileUI();
   syncProfilePreview();
@@ -1292,30 +1383,15 @@ $('profileEditToggle').addEventListener('click', () => {
   toggle.classList.toggle('open', !isOpen);
 });
 
-$('profilePhotoInput').addEventListener('change', e => {
+$('profilePhotoInput').addEventListener('change', async e => {
   const file = e.target.files && e.target.files[0];
   e.target.value = '';
   if (!file || !file.type.startsWith('image/')) return;
 
-  const reader = new FileReader();
-  reader.onload = () => {
-    const img = new Image();
-    img.onload = () => {
-      // recorta em círculo centralizado e reduz para 256px (economiza localStorage)
-      const size = 256;
-      const canvas = document.createElement('canvas');
-      canvas.width = canvas.height = size;
-      const ctx = canvas.getContext('2d');
-      const scale = Math.max(size / img.width, size / img.height);
-      ctx.drawImage(img, (size - img.width * scale) / 2, (size - img.height * scale) / 2,
-        img.width * scale, img.height * scale);
-      pendingPhoto = canvas.toDataURL('image/jpeg', 0.85);
-      applyProfilePhoto(pendingPhoto); // pré-visualização; só grava ao Salvar
-      updateProfileButtons();
-    };
-    img.src = reader.result;
-  };
-  reader.readAsDataURL(file);
+  pendingPhotoBlob = file;
+  const url = URL.createObjectURL(file);
+  applyProfilePhoto(url);
+  updateProfileButtons();
 });
 
 /* ================= Conta: logout / senha / excluir ================= */
