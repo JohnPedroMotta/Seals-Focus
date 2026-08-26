@@ -1338,21 +1338,26 @@ $('profileSaveBtn').addEventListener('click', async () => {
   let newUsername = $('profileUsernameInput').value.trim().toLowerCase();
   if (newUsername.startsWith('@')) newUsername = newUsername.slice(1);
 
+  function showUsernameError(msg) {
+    const el = $('usernameError');
+    el.textContent = msg;
+    el.hidden = false;
+    clearTimeout(el._hideTimer);
+    el._hideTimer = setTimeout(() => { el.hidden = true; }, 10000);
+  }
+
   if (newUsername && !/^[a-zA-Z0-9_.-]+$/.test(newUsername)) {
-    $('usernameError').textContent = 'Apenas letras, números, _ . - (sem @)';
-    $('usernameError').hidden = false;
+    showUsernameError('Apenas letras, números, _ . - (sem @)');
     return;
   }
   if (newUsername && newUsername.length < 2) {
-    $('usernameError').textContent = 'Mínimo de 2 caracteres.';
-    $('usernameError').hidden = false;
+    showUsernameError('Mínimo de 2 caracteres.');
     return;
   }
   if (newUsername) {
     const avail = await checkUsernameAvailable(newUsername);
     if (!avail) {
-      $('usernameError').textContent = 'Esse @username já está em uso.';
-      $('usernameError').hidden = false;
+      showUsernameError('Esse @username já está em uso.');
       return;
     }
   }
