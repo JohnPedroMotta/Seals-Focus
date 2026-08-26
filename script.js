@@ -162,7 +162,11 @@ function initCloud() {
   sb.client.auth.getSession().then(({ data, error }) => {
     console.log('[auth] getSession:', data?.session?.user?.email ?? 'null', error?.message ?? 'ok');
     setCloudUser(data.session?.user ?? null);
-    if (sb.user) syncFromCloud().then(flushPending);
+    if (sb.user) {
+      syncFromCloud().then(flushPending);
+    } else {
+      goToLogin();
+    }
   });
   sb.client.auth.onAuthStateChange((evt, session) => {
     console.log('[auth] onAuthStateChange:', evt, session?.user?.email ?? 'null');
@@ -1929,8 +1933,6 @@ initCloud();
 initSettingsUI();
 initMiniTimer();
 renderAll();
-
-if (isCloudConfigured() && !sb.user) goToLogin();
 
 window.addEventListener('pageshow', e => {
   if (e.persisted) location.reload();
