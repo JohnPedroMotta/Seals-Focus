@@ -57,8 +57,6 @@ function initAuth() {
 
 $('authSwitchBtn').addEventListener('click', () => setAuthMode(authMode === 'login' ? 'signup' : 'login'));
 
-$('loginSkipBtn').addEventListener('click', () => { window.location.href = 'index.html'; });
-
 $('authPassEye').addEventListener('click', () => {
   const inp = $('authPass');
   const icon = $('authPassEye').querySelector('i');

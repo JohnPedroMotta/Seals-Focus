@@ -1930,6 +1930,8 @@ initSettingsUI();
 initMiniTimer();
 renderAll();
 
+if (isCloudConfigured() && !sb.user) goToLogin();
+
 window.addEventListener('pageshow', e => {
   if (e.persisted) location.reload();
 });
