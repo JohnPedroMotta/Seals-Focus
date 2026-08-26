@@ -1468,13 +1468,13 @@ body.light ::selection { color: #fff; }
 .remember-check {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   font-size: 0.85rem;
   color: var(--text-muted);
   cursor: pointer;
   margin-top: -8px;
 }
-.remember-check input { cursor: pointer; }
+.remember-check input { cursor: pointer; margin: 0; }
 
 .auth-switch {
   margin-top: 14px;
