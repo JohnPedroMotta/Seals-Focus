@@ -1456,47 +1456,6 @@ body.light ::selection { color: #fff; }
   margin-bottom: 20px;
 }
 
-.btn-google {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  width: 100%;
-  padding: 12px;
-  border-radius: 10px;
-  border: 1px solid var(--border-color);
-  background: var(--card-bg);
-  color: var(--text-main);
-  font-family: inherit;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
-}
-
-.btn-google:hover {
-  background: var(--card-hover);
-  border-color: var(--text-muted);
-}
-
-.login-divider {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  gap: 14px;
-  margin: 18px 0 14px;
-  color: var(--text-muted);
-  font-size: 0.8rem;
-}
-
-.login-divider::before,
-.login-divider::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: var(--border-color);
-}
-
 .login-form {
   width: 100%;
   display: flex;
