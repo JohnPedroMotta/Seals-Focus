@@ -120,13 +120,15 @@ function setCloudUser(user) {
     $('userMenu').hidden = true;
     $('accountSection').hidden = false;
     $('accountEmail').textContent = user.email;
+    loadProfile();
+    pullProfile().then(() => syncProfileUI());
     closeLoginScreen();
   } else {
     avatar.textContent = '?';
     avatar.title = 'Conectar conta';
-    $('footName').textContent = 'Fazer login';
-    $('footName').hidden = false;
     $('accountSection').hidden = true;
+    profile = { name: '', photo: '' };
+    syncProfileUI();
   }
 }
 
@@ -161,10 +163,11 @@ async function syncFromCloud() {
   syncingNow = true;
   updateSyncUI();
   try {
-    const [{ data: rs }, { data: rj }, { data: rw }] = await Promise.all([
+    const [{ data: rs }, { data: rj }, { data: rw }, { data: rp }] = await Promise.all([
       sb.client.from('sessions').select('*').order('date_iso', { ascending: false }),
       sb.client.from('subjects').select('*'),
-      sb.client.from('rewards').select('*')
+      sb.client.from('rewards').select('*'),
+      sb.client.from('profiles').select('*').maybeSingle()
     ]);
     if (rs.error || rj.error) throw rs.error || rj.error;
 
@@ -184,6 +187,13 @@ async function syncFromCloud() {
     // recompensas: união de dias
     (rw.data || []).forEach(r => { rewardedDays.add(r.day_key); });
     saveRewards();
+
+    // perfil: usa o do servidor se existir
+    if (rp && !rp.error) {
+      profile = { name: rp.name || '', photo: rp.photo || '' };
+      localStorage.setItem(profileStoreKey(), JSON.stringify(profile));
+      resetProfileForm();
+    }
 
     saveState();
     renderAll();
@@ -1160,9 +1170,14 @@ function loadAppearance() {
 let profile = { name: '', photo: '' };
 let pendingPhoto = null;
 
+function profileStoreKey() {
+  return sb.user ? `${PROFILE_KEY}.u.${sb.user.id}` : PROFILE_KEY;
+}
+
 function loadProfile() {
+  profile = { name: '', photo: '' };
   try {
-    const raw = localStorage.getItem(PROFILE_KEY);
+    const raw = localStorage.getItem(profileStoreKey());
     if (raw) profile = { ...profile, ...JSON.parse(raw) };
   } catch { /* ignora */ }
   resetProfileForm();
@@ -1216,7 +1231,33 @@ function syncProfileUI() {
 }
 
 function saveProfile() {
-  localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+  localStorage.setItem(profileStoreKey(), JSON.stringify(profile));
+  pushProfile();
+}
+
+async function pushProfile() {
+  if (!sb.client || !sb.user) return;
+  try {
+    await sb.client.from('profiles').upsert({
+      user_id: sb.user.id,
+      name: profile.name || '',
+      photo: profile.photo || '',
+      updated_at: new Date().toISOString()
+    });
+  } catch (e) { console.error('pushProfile:', e); }
+}
+
+async function pullProfile() {
+  if (!sb.client || !sb.user) return;
+  try {
+    const { data, error } = await sb.client.from('profiles').select('*').eq('user_id', sb.user.id).maybeSingle();
+    if (error) throw error;
+    if (data) {
+      profile = { name: data.name || '', photo: data.photo || '' };
+      localStorage.setItem(profileStoreKey(), JSON.stringify(profile));
+      resetProfileForm();
+    }
+  } catch (e) { console.error('pullProfile:', e); }
 }
 
 function updateProfileButtons() {

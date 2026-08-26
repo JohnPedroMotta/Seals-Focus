@@ -58,3 +58,18 @@ create policy "dono das recompensas"
   on public.rewards for all
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
+
+-- Perfil do usuário (nome + foto) --------------------------------
+create table if not exists public.profiles (
+  user_id   uuid primary key references auth.users (id) on delete cascade,
+  name      text not null default '',
+  photo     text not null default '',
+  updated_at timestamptz not null default now()
+);
+
+alter table public.profiles enable row level security;
+
+create policy "dono do perfil"
+  on public.profiles for all
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
