@@ -57,7 +57,7 @@ async function awardSignupBonus() {
         updated_at: new Date().toISOString()
       });
       userPoints = SIGNUP_BONUS;
-      toast(`+${SIGNUP_BONUS} pontos de boas-vindas! 🎉`, 'success');
+      $('welcomeOverlay').hidden = false;
     }
   } catch (e) { console.error('awardSignupBonus:', e); }
 }
@@ -1571,6 +1571,9 @@ $('adminSetPtsBtn').addEventListener('click', async () => {
   toast(`Pontos de @${adminSelectedUser.username} definidos para ${set}.`, 'success');
   $('adminPtsInput').value = '';
 });
+
+/* ================= Welcome overlay ================= */
+$('welcomeCloseBtn').addEventListener('click', () => { $('welcomeOverlay').hidden = true; });
 
 /* ================= Conta: logout / senha / excluir ================= */
 
