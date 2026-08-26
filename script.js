@@ -1156,7 +1156,8 @@ function setAuthMode(mode, keepError = false) {
 
 function openLoginScreen() {
   setAuthMode('login');
-  $('authEmail').value = '';
+  const savedEmail = localStorage.getItem('foco.remember.email') || '';
+  $('authEmail').value = savedEmail;
   $('authPass').value = '';
   $('loginScreen').classList.remove('hidden');
 }
@@ -1209,6 +1210,12 @@ $('authSubmitBtn').addEventListener('click', async () => {
       : await sb.client.auth.signUp({ email, password: pass });
 
     if (result.error) throw result.error;
+
+    if ($('rememberLogin').checked) {
+      localStorage.setItem('foco.remember.email', email);
+    } else {
+      localStorage.removeItem('foco.remember.email');
+    }
 
     if (authMode === 'signup' && !result.data.session) {
       toast('Conta criada! Confirme no e-mail que enviamos antes de entrar.', 'success');

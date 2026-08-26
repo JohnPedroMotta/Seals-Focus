@@ -1465,6 +1465,17 @@ body.light ::selection { color: #fff; }
 
 .btn-block { width: 100%; }
 
+.remember-check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  margin-top: -4px;
+}
+.remember-check input { cursor: pointer; }
+
 .auth-switch {
   margin-top: 14px;
   font-size: 0.85rem;
