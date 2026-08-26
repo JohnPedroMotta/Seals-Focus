@@ -216,12 +216,22 @@ function setCloudUser(user) {
     $('userMenu').hidden = true;
     $('accountSection').hidden = false;
     $('accountEmail').textContent = user.email;
+    $('settingsProfileCard').hidden = false;
+    $('settingsAppearanceCard').hidden = false;
+    $('settingsGoalCard').hidden = false;
+    $('settingsAdminCard').hidden = false;
+    $('settingsDataCard').hidden = false;
     loadProfile();
     pullProfile().then(() => syncProfileUI());
   } else {
     avatar.textContent = '?';
     avatar.title = 'Conectar conta';
     $('accountSection').hidden = true;
+    $('settingsProfileCard').hidden = true;
+    $('settingsAppearanceCard').hidden = true;
+    $('settingsGoalCard').hidden = true;
+    $('settingsAdminCard').hidden = true;
+    $('settingsDataCard').hidden = true;
     profile = { displayName: '', username: '', avatarUrl: '' };
     syncProfileUI();
   }
