@@ -1338,14 +1338,18 @@ function uploadAvatar(file) {
     reader.onload = () => {
       const img = new Image();
       img.onload = () => {
-        const size = 256;
+        const size = 400;
         const canvas = document.createElement('canvas');
         canvas.width = canvas.height = size;
         const ctx = canvas.getContext('2d');
         const scale = Math.max(size / img.width, size / img.height);
         ctx.drawImage(img, (size - img.width * scale) / 2, (size - img.height * scale) / 2,
           img.width * scale, img.height * scale);
-        canvas.toBlob(blob => resolve(blob), 'image/jpeg', 0.85);
+        // WebP comprime melhor o storage; cai pra JPEG se o navegador não suportar
+        const exportAs = document.createElement('canvas').toDataURL('image/webp').startsWith('data:image/webp')
+          ? 'image/webp'
+          : 'image/jpeg';
+        canvas.toBlob(blob => resolve(blob), exportAs, 0.85);
       };
       img.src = reader.result;
     };
@@ -1355,13 +1359,14 @@ function uploadAvatar(file) {
 
 async function pushAvatarToStorage(blob) {
   if (!sb.client || !sb.user || !blob) return profile.avatarUrl;
-  const ext = 'jpg';
+  const isWebp = blob.type === 'image/webp';
+  const ext = isWebp ? 'webp' : 'jpg';
   const path = `${sb.user.id}/avatar.${ext}`;
   try {
     const { error: delErr } = await sb.client.storage.from('avatars').remove([path]);
     if (delErr) console.warn('Avatar remove old:', delErr);
     const { error: upErr } = await sb.client.storage.from('avatars').upload(path, blob, {
-      contentType: 'image/jpeg', upsert: true
+      contentType: isWebp ? 'image/webp' : 'image/jpeg', upsert: true
     });
     if (upErr) throw upErr;
     const { data } = sb.client.storage.from('avatars').getPublicUrl(path);

@@ -71,7 +71,8 @@ create table if not exists public.profiles (
   display_name text not null default '',
   avatar_url  text not null default '',
   bio         text not null default '',
-  updated_at  timestamptz not null default now()
+  updated_at  timestamptz not null default now(),
+  constraint profiles_bio_maxlen check (char_length(bio) <= 150)
 );
 
 -- Coluna de Bio (texto livre, até 150 caracteres) — roda sem erro se já existir
@@ -81,6 +82,18 @@ begin
                  where table_schema = 'public' and table_name = 'profiles'
                    and column_name = 'bio') then
     alter table public.profiles add column bio text not null default '';
+  end if;
+end $$;
+
+-- Garante a restrição de tamanho da bio mesmo se a tabela já existir
+-- sem ela (idempotente).
+do $$
+begin
+  if not exists (select 1 from pg_constraint
+                 where conname = 'profiles_bio_maxlen'
+                   and conrelid = 'public.profiles'::regclass) then
+    alter table public.profiles
+      add constraint profiles_bio_maxlen check (char_length(bio) <= 150);
   end if;
 end $$;
 
@@ -241,6 +254,67 @@ drop trigger if exists trg_guard_friendship_insert on public.friendships;
 create trigger trg_guard_friendship_insert
   before insert on public.friendships
   for each row execute function public.guard_friendship_insert();
+
+-- Estatísticas agregadas de um amigo (só para quem é amigo).
+-- Retorna pontos, sessões, tempo da semana, tempo de hoje e sequência.
+-- NOTA: calcula os dias pelo servidor (UTC); pode haver pequena
+-- defasagem de 1 dia perto da virada do fuso do usuário.
+create or replace function public.get_friend_stats(friend_id uuid)
+returns table (
+  total_points bigint,
+  total_sessions bigint,
+  week_seconds bigint,
+  today_seconds bigint,
+  streak integer
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  _is_friend boolean;
+  _cursor date;
+  _d date;
+  _streak integer := 0;
+begin
+  select exists(
+    select 1 from public.friendships
+    where (user_a = auth.uid() and user_b = friend_id)
+       or (user_a = friend_id and user_b = auth.uid())
+  ) into _is_friend;
+  if not _is_friend then
+    raise exception 'sem permissão para ver estas estatísticas';
+  end if;
+
+  if exists (select 1 from public.sessions where user_id = friend_id and (date_iso)::date = current_date) then
+    _cursor := current_date;
+  elsif exists (select 1 from public.sessions where user_id = friend_id and (date_iso)::date = current_date - 1) then
+    _cursor := current_date - 1;
+  else
+    _cursor := null;
+  end if;
+
+  if _cursor is not null then
+    loop
+      select distinct (date_iso)::date into _d
+      from public.sessions
+      where user_id = friend_id and (date_iso)::date = _cursor;
+      if _d is null then exit; end if;
+      _streak := _streak + 1;
+      _cursor := _cursor - 1;
+    end loop;
+  end if;
+
+  total_points := coalesce((select total_points from public.user_points where user_id = friend_id), 0);
+  total_sessions := coalesce((select count(*)::bigint from public.sessions where user_id = friend_id), 0);
+  week_seconds := coalesce((select sum(duration)::bigint from public.sessions
+                            where user_id = friend_id and date_iso >= now() - interval '7 days'), 0);
+  today_seconds := coalesce((select sum(duration)::bigint from public.sessions
+                             where user_id = friend_id and date_iso >= date_trunc('day', now())), 0);
+  streak := _streak;
+  return next;
+end;
+$$;
 
 -- Função para excluir conta e todos os dados do usuário -----------
 create or replace function delete_my_account()
