@@ -7,9 +7,9 @@ const PENDING_KEY = 'foco.pending.v1';
 const GOAL_KEY = 'foco.goal.v1';
 const THEME_KEY = 'foco.theme.v1';
 const ACCENT_KEY = 'foco.accent.v1';
-const NOTIF_KEY = 'foco.notifday.v1';
 const PROFILE_KEY = 'foco.profile.v1';
 const REWARDS_KEY = 'foco.rewards.v1';
+const UPOINTS_KEY = 'foco.points.v1';
 
 const defaultState = () => ({ sessions: [], subjects: {}, deletedIds: [] });
 let state = defaultState();
@@ -26,17 +26,21 @@ let userPoints = 0;
 function getTotalPoints() { return userPoints + (rewardedDays.size * POINTS_PER_DAY); }
 
 async function loadUserPoints() {
-  if (!sb.client || !sb.user) { userPoints = 0; return; }
+  const raw = localStorage.getItem(UPOINTS_KEY);
+  const cached = Number.isFinite(Number(raw)) ? Number(raw) : 0;
+  if (!sb.client || !sb.user) { userPoints = cached; return; }
   try {
     const { data, error } = await sb.client.from('user_points').select('total_points').eq('user_id', sb.user.id).maybeSingle();
     if (error) throw error;
     userPoints = data?.total_points ?? 0;
-  } catch { userPoints = 0; }
+    localStorage.setItem(UPOINTS_KEY, userPoints);
+  } catch { userPoints = cached; }
 }
 
 async function setUserPoints(pts) {
-  if (!sb.client || !sb.user) return;
   userPoints = Math.max(0, pts);
+  localStorage.setItem(UPOINTS_KEY, userPoints);
+  if (!sb.client || !sb.user) return;
   try {
     await sb.client.from('user_points').upsert({
       user_id: sb.user.id,
@@ -57,6 +61,7 @@ async function awardSignupBonus() {
         updated_at: new Date().toISOString()
       });
       userPoints = SIGNUP_BONUS;
+      localStorage.setItem(UPOINTS_KEY, userPoints);
       $('welcomeOverlay').hidden = false;
     }
   } catch (e) { console.error('awardSignupBonus:', e); }
@@ -376,12 +381,6 @@ async function syncToCloud() {
 
 /* ================= Utils ================= */
 const $ = id => document.getElementById(id);
-
-function esc(s) {
-  return String(s).replace(/[&<>"']/g, c => (
-    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
-  ));
-}
 
 function fmtHMS(sec) {
   const h = String(Math.floor(sec / 3600)).padStart(2, '0');
@@ -1013,9 +1012,8 @@ const modal = $('saveModal');
 let timerWasRunning = false;
 
 function openModal() {
+  timerWasRunning = timer.running; // guarda ANTES de pausar
   pauseTimer(); // congela o tempo acumulado (sem drift)
-  timerWasRunning = timer.accumulated > 0;
-
   $('modalDuration').textContent = fmtHMS(timer.accumulated);
   populateSubjects();
   modal.classList.add('active');
@@ -1598,7 +1596,10 @@ async function loadFriends() {
     friendsCache = [];
   }
   renderFriends();
+  await loadPendingRequests();
+}
 
+async function fetchPendingRequests() {
   try {
     const { data: reqs, error: rErr } = await sb.client
       .from('friend_requests')
@@ -1606,9 +1607,7 @@ async function loadFriends() {
       .eq('to_user', sb.user.id)
       .eq('status', 'pending');
     if (rErr) throw rErr;
-    friendsRequests = reqs || [];
-    // busca perfis dos remetentes
-    const fromIds = friendsRequests.map(r => r.from_user);
+    const fromIds = (reqs || []).map(r => r.from_user);
     let fromProfs = {};
     if (fromIds.length > 0) {
       const { data } = await sb.client.from('profiles')
@@ -1616,12 +1615,11 @@ async function loadFriends() {
         .in('user_id', fromIds);
       (data || []).forEach(p => { fromProfs[p.user_id] = p; });
     }
-    friendsRequests = friendsRequests.map(r => ({ ...r, profile: fromProfs[r.from_user] }));
+    friendsRequests = (reqs || []).map(r => ({ ...r, profile: fromProfs[r.from_user] }));
   } catch (e) {
-    console.error('loadRequests:', e);
+    console.error('fetchPendingRequests:', e);
     friendsRequests = [];
   }
-  renderRequests();
 }
 
 function renderFriends() {
@@ -1669,18 +1667,9 @@ function updateFriendsBadges() {
 
 async function loadPendingRequests() {
   if (!sb.client || !sb.user) return;
-  try {
-    const { data: reqs, error } = await sb.client
-      .from('friend_requests')
-      .select('*')
-      .eq('to_user', sb.user.id)
-      .eq('status', 'pending');
-    if (error) throw error;
-    friendsRequests = reqs || [];
-    updateFriendsBadges();
-  } catch (e) {
-    console.error('loadPendingRequests:', e);
-  }
+  await fetchPendingRequests();
+  updateFriendsBadges();
+  renderRequests();
 }
 
 function renderRequests() {
@@ -2183,31 +2172,6 @@ function importJson(e) {
   reader.readAsText(file);
 }
 
-/* ================= Notificações de meta ================= */
-function updateNotifUI() {
-  const chip = $('notifChip');
-  const btn = $('notifPermBtn');
-  if (!chip || !btn) return;
-  if (!('Notification' in window)) {
-    chip.textContent = 'Não suportado';
-    btn.disabled = true;
-    return;
-  }
-  btn.disabled = Notification.permission === 'granted';
-  chip.textContent = Notification.permission === 'granted' ? 'Ativadas'
-    : Notification.permission === 'denied' ? 'Bloqueadas' : 'Permissão pendente';
-}
-
-function notifyGoalReached(totalSecs) {
-  try {
-    if (!('Notification' in window) || Notification.permission !== 'granted') return;
-    const today = dateKey(new Date());
-    if (localStorage.getItem(NOTIF_KEY) === today) return; // já avisou hoje
-    localStorage.setItem(NOTIF_KEY, today);
-    new Notification('Seals Focus', { body: `Meta do dia alcançada: ${fmtHM(totalSecs)}!` });
-  } catch { /* ignora */ }
-}
-
 /* ================= Mini timer flutuante ================= */
 let timerCardVisible = true;
 
@@ -2248,7 +2212,7 @@ function populateFilterSubject() {
   state.sessions.forEach(s => names.add(s.subject));
   sel.innerHTML = '<option value="">Todas as matérias</option>' +
     [...names].sort((a, b) => a.localeCompare(b, 'pt-BR'))
-      .map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('');
+      .map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('');
   if ([...sel.options].some(o => o.value === prev)) sel.value = prev;
 }
 
