@@ -1234,6 +1234,100 @@ body.light ::selection { color: #fff; }
   transition: transform 0.2s ease;
 }
 
+/* ---------- Amigos ---------- */
+.friends-list, .friends-requests-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.friend-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--bg-secondary);
+  transition: background 0.15s;
+}
+
+.friend-row:hover { background: var(--card-hover); }
+
+.friend-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--accent-glow);
+  color: var(--text-main);
+  font-weight: 700;
+  flex-shrink: 0;
+  border: 1px solid var(--border-color);
+}
+
+.friend-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.friend-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.friend-user {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.friend-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.friend-result-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: var(--bg-secondary);
+  border-radius: 10px;
+  margin-top: 8px;
+}
+
+.friend-result-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.friend-result-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.friend-result-user {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.friend-result-status {
+  font-size: 0.8rem;
+  color: var(--success-color);
+  font-weight: 600;
+}
+
 /* ---------- Mini timer flutuante ---------- */
 .mini-timer {
   position: fixed;

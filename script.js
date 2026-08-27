@@ -506,7 +506,7 @@ function syncTimerUI() {
 }
 
 /* ================= Views ================= */
-const views = ['study', 'stats', 'feed', 'settings'];
+const views = ['study', 'stats', 'feed', 'friends', 'settings'];
 
 function switchView(name) {
   views.forEach(v => {
@@ -523,6 +523,7 @@ function switchView(name) {
   );
   window.scrollTo({ top: 0 });
   if (name === 'settings') syncSettingsUI();
+  else if (name === 'friends') loadFriends();
   else if (name !== 'study') renderStatsAndFeed();
 }
 
@@ -1486,7 +1487,250 @@ $('profilePhotoInput').addEventListener('change', async e => {
   updateProfileButtons();
 });
 
-/* ================= Admin: Gerenciar Pontos ================= */
+/* ================= Amigos ================= */
+let friendsCache = [];
+let friendsRequests = [];
+
+function fmtFriendDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+function friendLabel(p) {
+  return p.display_name || (p.username ? `@${p.username}` : 'Usuário');
+}
+
+function friendSub(p) {
+  return p.username ? `@${p.username}` : '';
+}
+
+async function loadFriends() {
+  if (!sb.client || !sb.user) return;
+  try {
+    const { data: linkRows, error } = await sb.client
+      .from('friendships')
+      .select('user_a, user_b')
+      .or(`user_a.eq.${sb.user.id},user_b.eq.${sb.user.id}`);
+    if (error) throw error;
+
+    const friendIds = (linkRows || []).map(r =>
+      r.user_a === sb.user.id ? r.user_b : r.user_a);
+
+    friendsCache = [];
+    if (friendIds.length > 0) {
+      const { data: profs, error: pErr } = await sb.client
+        .from('profiles')
+        .select('user_id, username, display_name, avatar_url')
+        .in('user_id', friendIds);
+      if (pErr) throw pErr;
+      friendsCache = (profs || []).map(p => ({ ...p, user_id: p.user_id }));
+    }
+  } catch (e) {
+    console.error('loadFriends:', e);
+    friendsCache = [];
+  }
+  renderFriends();
+
+  try {
+    const { data: reqs, error: rErr } = await sb.client
+      .from('friend_requests')
+      .select('*')
+      .eq('to_user', sb.user.id)
+      .eq('status', 'pending');
+    if (rErr) throw rErr;
+    friendsRequests = reqs || [];
+    // busca perfis dos remetentes
+    const fromIds = friendsRequests.map(r => r.from_user);
+    let fromProfs = {};
+    if (fromIds.length > 0) {
+      const { data } = await sb.client.from('profiles')
+        .select('user_id, username, display_name, avatar_url')
+        .in('user_id', fromIds);
+      (data || []).forEach(p => { fromProfs[p.user_id] = p; });
+    }
+    friendsRequests = friendsRequests.map(r => ({ ...r, profile: fromProfs[r.from_user] }));
+  } catch (e) {
+    console.error('loadRequests:', e);
+    friendsRequests = [];
+  }
+  renderRequests();
+}
+
+function renderFriends() {
+  const list = $('friendsList');
+  const empty = $('friendsEmpty');
+  const count = $('friendsCountChip');
+  list.innerHTML = '';
+  empty.hidden = friendsCache.length > 0;
+  count.textContent = String(friendsCache.length);
+  friendsCache.forEach(f => {
+    const el = document.createElement('div');
+    el.className = 'friend-row';
+    el.innerHTML = `
+      <div class="friend-avatar">${f.display_name ? f.display_name.slice(0,1).toUpperCase() : '?'}</div>
+      <div class="friend-info">
+        <span class="friend-name">${escapeHtml(friendLabel(f))}</span>
+        <span class="friend-user">${escapeHtml(friendSub(f)) || 'sem @username'}</span>
+      </div>
+      <button class="btn btn-sm btn-danger friend-remove" data-id="${f.user_id}" title="Remover amigo">
+        <i class="ti ti-user-minus"></i>
+      </button>
+    `;
+    list.appendChild(el);
+  });
+  list.querySelectorAll('.friend-remove').forEach(btn =>
+    btn.addEventListener('click', () => removeFriend(btn.dataset.id))
+  );
+}
+
+function renderRequests() {
+  const list = $('requestsList');
+  const empty = $('requestsEmpty');
+  const count = $('requestsCountChip');
+  list.innerHTML = '';
+  empty.hidden = friendsRequests.length > 0;
+  count.hidden = friendsRequests.length === 0;
+  count.textContent = String(friendsRequests.length);
+  friendsRequests.forEach(r => {
+    const p = r.profile || {};
+    const el = document.createElement('div');
+    el.className = 'friend-row';
+    el.innerHTML = `
+      <div class="friend-avatar">${p.display_name ? p.display_name.slice(0,1).toUpperCase() : '?'}</div>
+      <div class="friend-info">
+        <span class="friend-name">${escapeHtml(friendLabel(p))}</span>
+        <span class="friend-user">${escapeHtml(friendSub(p)) || 'sem @username'}</span>
+      </div>
+      <div class="friend-actions">
+        <button class="btn btn-sm btn-success request-accept" data-id="${r.id}"><i class="ti ti-check"></i></button>
+        <button class="btn btn-sm btn-danger request-reject" data-id="${r.id}"><i class="ti ti-x"></i></button>
+      </div>
+    `;
+    list.appendChild(el);
+  });
+  list.querySelectorAll('.request-accept').forEach(btn =>
+    btn.addEventListener('click', () => acceptRequest(btn.dataset.id))
+  );
+  list.querySelectorAll('.request-reject').forEach(btn =>
+    btn.addEventListener('click', () => rejectRequest(btn.dataset.id))
+  );
+}
+
+async function acceptRequest(id) {
+  if (!sb.client) return;
+  try {
+    const { error } = await sb.client.rpc('accept_friend', { request_id: id });
+    if (error) throw error;
+    toast('Amizade aceita!', 'success');
+    loadFriends();
+  } catch (e) {
+    toast(e.message || 'Erro ao aceitar.', 'error');
+  }
+}
+
+async function rejectRequest(id) {
+  if (!sb.client) return;
+  try {
+    const { error } = await sb.client.from('friend_requests')
+      .update({ status: 'rejected' }).eq('id', id);
+    if (error) throw error;
+    loadFriends();
+  } catch (e) {
+    toast(e.message || 'Erro ao recusar.', 'error');
+  }
+}
+
+async function removeFriend(friendId) {
+  try {
+    const my = sb.user.id;
+    const a = my < friendId ? my : friendId;
+    const b = my < friendId ? friendId : my;
+    const { error } = await sb.client.from('friendships').delete()
+      .eq('user_a', a).eq('user_b', b);
+    if (error) throw error;
+    toast('Amigo removido.', 'success');
+    loadFriends();
+  } catch (e) {
+    toast(e.message || 'Erro ao remover.', 'error');
+  }
+}
+
+$('friendSearchBtn').addEventListener('click', async () => {
+  const q = $('friendSearchInput').value.trim();
+  const err = $('friendSearchError');
+  err.hidden = true;
+  if (!q) return;
+  if (!sb.client) { err.textContent = 'Você precisa estar logado.'; err.hidden = false; return; }
+  const username = q.replace('@', '').toLowerCase();
+  try {
+    const { data, error } = await sb.client.from('profiles')
+      .select('user_id, username, display_name')
+      .ilike('username', username + '%')
+      .limit(5);
+    if (error) throw error;
+    const hit = (data || []).find(p => p.username && p.username === username) || (data || [])[0];
+    if (!hit) {
+      err.textContent = 'Nenhum usuário encontrado com esse @username.';
+      err.hidden = false;
+      $('friendSearchResults').hidden = true;
+      return;
+    }
+    $('friendResultName').textContent = hit.display_name || '@' + hit.username;
+    $('friendResultUser').textContent = '@' + hit.username;
+    $('friendSendBtn').dataset.uid = hit.user_id;
+    $('friendResultStatus').hidden = true;
+    $('friendSearchResults').hidden = false;
+  } catch (e) {
+    err.textContent = e.message || 'Erro na busca.';
+    err.hidden = false;
+  }
+});
+
+$('friendSendBtn').addEventListener('click', async () => {
+  const uid = $('friendSendBtn').dataset.uid;
+  if (!uid || !sb.client) return;
+  const btn = $('friendSendBtn');
+  btn.disabled = true;
+  try {
+    const { data: me } = await sb.client.from('profiles').select('user_id').eq('user_id', sb.user.id).maybeSingle();
+    if (me && me.user_id === uid) {
+      toast('Você não pode se adicionar.', 'error');
+      return;
+    }
+    const { data: existing } = await sb.client.from('friendships').select('user_a,user_b')
+      .or(`and(user_a.eq.${uid},user_b.eq.${sb.user.id}),and(user_a.eq.${sb.user.id},user_b.eq.${uid})`)
+      .maybeSingle();
+    if (existing) {
+      toast('Vocês já são amigos.', 'success');
+      return;
+    }
+    const { error } = await sb.client.from('friend_requests').insert({
+      from_user: sb.user.id, to_user: uid
+    });
+    if (error) {
+      if (error.message && error.message.toLowerCase().includes('already exists')) {
+        toast('Pedido já enviado.', 'success');
+      } else throw error;
+    } else {
+      toast('Pedido de amizade enviado!', 'success');
+    }
+    const st = $('friendResultStatus');
+    st.textContent = 'Convite enviado';
+    st.hidden = false;
+  } catch (e) {
+    toast(e.message || 'Erro ao enviar pedido.', 'error');
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+function escapeHtml(str) {
+  return String(str || '').replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}
+
 /* ================= Welcome overlay ================= */
 $('welcomeCloseBtn').addEventListener('click', () => { $('welcomeOverlay').hidden = true; });
 

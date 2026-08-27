@@ -113,6 +113,77 @@ create policy "pontos legiveis por qualquer um"
   to authenticated
   using (true);
 
+-- Amizades -------------------------------------------------------
+-- Guarda os pares por user_id (NÃO por username), então trocar o
+-- @username não quebra a amizade. user_a < user_b evita duplicados.
+create table if not exists public.friendships (
+  user_a     uuid not null references auth.users (id) on delete cascade,
+  user_b     uuid not null references auth.users (id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (user_a, user_b),
+  check (user_a <> user_b)
+);
+
+-- Pedidos de amizade pendentes
+create table if not exists public.friend_requests (
+  id          uuid primary key default gen_random_uuid(),
+  from_user   uuid not null references auth.users (id) on delete cascade,
+  to_user     uuid not null references auth.users (id) on delete cascade,
+  status      text not null default 'pending' check (status in ('pending','accepted','rejected')),
+  created_at  timestamptz not null default now(),
+  unique (from_user, to_user)
+);
+
+alter table public.friendships enable row level security;
+alter table public.friend_requests enable row level security;
+
+create policy "user e amigo do outro"
+  on public.friendships for select
+  to authenticated
+  using (auth.uid() = user_a or auth.uid() = user_b);
+
+create policy "pode ler pedidos recebidos/enviados"
+  on public.friend_requests for select
+  to authenticated
+  using (auth.uid() = from_user or auth.uid() = to_user);
+
+create policy "pode criar pedidos"
+  on public.friend_requests for insert
+  to authenticated
+  with check (auth.uid() = from_user);
+
+create policy "destinatario pode responder"
+  on public.friend_requests for update
+  to authenticated
+  using (auth.uid() = to_user)
+  with check (auth.uid() = to_user);
+
+-- RPC: aceitar um pedido de amizade e criar a amizade mútua -------
+create or replace function accept_friend(request_id uuid)
+returns void
+language plpgsql
+security definer
+as $$
+declare
+  r record;
+  a uuid; b uuid;
+begin
+  select * into r from public.friend_requests where id = request_id
+    and to_user = auth.uid() and status = 'pending' for update;
+  if not found then
+    raise exception 'pedido não encontrado';
+  end if;
+  a := r.from_user; b := r.to_user;
+  if a > b then
+    select a, b into b, a; -- normaliza para user_a < user_b
+  end if;
+  insert into public.friendships (user_a, user_b) values (a, b)
+    on conflict (user_a, user_b) do nothing;
+  update public.friend_requests set status = 'accepted'
+    where id = request_id;
+end;
+$$;
+
 -- Função para excluir conta e todos os dados do usuário -----------
 create or replace function delete_my_account()
 returns void
@@ -125,6 +196,8 @@ begin
   delete from public.rewards where user_id = auth.uid();
   delete from public.subjects where user_id = auth.uid();
   delete from public.sessions where user_id = auth.uid();
+  delete from public.friendships where user_a = auth.uid() or user_b = auth.uid();
+  delete from public.friend_requests where from_user = auth.uid() or to_user = auth.uid();
   delete from auth.users where id = auth.uid();
 end;
 $$;

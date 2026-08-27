@@ -16,7 +16,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons@2/tabler-icons.min.css" />
   </noscript>
-  <link rel="stylesheet" href="style.css?v=13" />
+  <link rel="stylesheet" href="style.css?v=14" />
   <!-- Anti-bfcache + popup auto-close -->
   <script>
     window.addEventListener('pageshow', function(e) {
@@ -26,7 +26,7 @@
   </script>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script defer src="config.js?v=3"></script>
-  <script defer src="script.js?v=22"></script>
+  <script defer src="script.js?v=23"></script>
 </head>
 <body>
 
@@ -58,6 +58,10 @@
         <button class="nav-btn" data-view="feed">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h10"/></svg>
           Histórico
+        </button>
+        <button class="nav-btn" data-view="friends">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Amigos
         </button>
         <button class="nav-btn" data-view="settings">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -201,6 +205,52 @@
           <button class="link-btn" id="clearFilters" type="button">Limpar filtros</button>
         </div>
         <div class="history-list" id="feedList"></div>
+      </section>
+    </section>
+
+    <!-- ===================== VISÃO: AMIGOS ===================== -->
+    <section class="view" id="view-friends" hidden>
+
+      <section class="card" id="friendsRequestsCard">
+        <div class="card-head">
+          <h3 class="panel-title">Pedidos de amizade</h3>
+          <span class="chip" id="requestsCountChip" hidden>0</span>
+        </div>
+        <div class="friends-requests-list" id="requestsList"></div>
+        <p class="muted-p" id="requestsEmpty">Nenhum pedido pendente.</p>
+      </section>
+
+      <section class="card" id="friendsMyCard">
+        <div class="card-head">
+          <h3 class="panel-title">Meus amigos</h3>
+          <span class="chip" id="friendsCountChip">0</span>
+        </div>
+        <div class="friends-list" id="friendsList"></div>
+        <p class="muted-p" id="friendsEmpty">Adicione seus primeiros amigos abaixo.</p>
+      </section>
+
+      <section class="card" id="friendsAddCard">
+        <div class="card-head">
+          <h3 class="panel-title">Adicionar amigo</h3>
+        </div>
+        <div class="form-group">
+          <label for="friendSearchInput">Buscar por @username</label>
+          <div style="display:flex;gap:8px;">
+            <input type="text" id="friendSearchInput" placeholder="@seu_amigo" style="flex:1;" />
+            <button class="btn btn-sm" id="friendSearchBtn"><i class="ti ti-search"></i></button>
+          </div>
+          <p class="field-error" id="friendSearchError" hidden></p>
+        </div>
+        <div id="friendSearchResults" hidden>
+          <div class="friend-result-card" id="friendResultCard">
+            <div class="friend-result-info">
+              <span class="friend-result-name" id="friendResultName">—</span>
+              <span class="friend-result-user" id="friendResultUser">@user</span>
+            </div>
+            <button class="btn btn-primary btn-sm" id="friendSendBtn"><i class="ti ti-user-plus"></i> Convidar</button>
+            <span class="friend-result-status" id="friendResultStatus" hidden></span>
+          </div>
+        </div>
       </section>
     </section>
 
@@ -371,6 +421,10 @@
 <button class="tab-btn" data-view="feed">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h10"/></svg>
       <span>Histórico</span>
+    </button>
+    <button class="tab-btn" data-view="friends">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span>Amigos</span>
     </button>
     <button class="tab-btn" data-view="settings">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
