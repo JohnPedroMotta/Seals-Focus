@@ -416,6 +416,36 @@ function toast(msg, type = '') {
   }, 3200);
 }
 
+function confirmDialog({ title = 'Confirmar', text = 'Tem certeza?', okText = 'Confirmar', okClass = 'btn-danger' } = {}) {
+  return new Promise(resolve => {
+    const m = $('confirmModal');
+    $('confirmTitle').textContent = title;
+    $('confirmText').textContent = text;
+    const ok = $('confirmOkBtn');
+    ok.textContent = okText;
+    ok.className = `btn ${okClass}`;
+    m.classList.add('active');
+    const done = val => {
+      m.classList.remove('active');
+      ok.removeEventListener('click', onOk);
+      $('confirmCancelBtn').removeEventListener('click', onCancel);
+      m.removeEventListener('click', onBack);
+      document.removeEventListener('keydown', onEsc);
+      resolve(val);
+    };
+    const onOk = () => done(true);
+    const onCancel = () => done(false);
+    const onBack = e => { if (e.target === m) done(false); };
+    ok.addEventListener('click', onOk);
+    $('confirmCancelBtn').addEventListener('click', onCancel);
+    m.addEventListener('click', onBack);
+    document.addEventListener('keydown', onEsc);
+    function onEsc(e) {
+      if (e.key === 'Escape') { document.removeEventListener('keydown', onEsc); done(false); }
+    }
+  });
+}
+
 /* ================= Timer ================= */
 let timer = { running: false, accumulated: 0, startedAt: null };
 let rafId = null;
@@ -1655,7 +1685,12 @@ async function rejectRequest(id) {
 async function removeFriend(friendId) {
   const name = (friendsCache.find(f => f.user_id === friendId) || {}).display_name
     || 'esse amigo';
-  if (!confirm(`Desfazer amizade com ${name}?`)) return;
+  const ok = await confirmDialog({
+    title: 'Desfazer amizade',
+    text: `Desfazer amizade com ${name}?`,
+    okText: 'Desfazer',
+  });
+  if (!ok) return;
   try {
     const my = sb.user.id;
     const a = my < friendId ? my : friendId;
@@ -1664,6 +1699,8 @@ async function removeFriend(friendId) {
       .eq('user_a', a).eq('user_b', b);
     if (error) throw error;
     toast('Amizade desfeita.', 'success');
+    friendsCache = friendsCache.filter(f => f.user_id !== friendId);
+    renderFriends();
     loadFriends();
   } catch (e) {
     toast(e.message || 'Erro ao remover.', 'error');

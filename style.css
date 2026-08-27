@@ -901,6 +901,21 @@ select option { background-color: var(--modal-bg); }
   margin-top: 4px;
 }
 
+.confirm-modal {
+  width: 100%;
+  max-width: 380px;
+}
+
+.confirm-modal .modal-header {
+  justify-content: flex-start;
+}
+
+.confirm-text {
+  color: var(--text-muted);
+  margin: 4px 0 18px;
+  line-height: 1.45;
+}
+
 /* ---------- Toasts ---------- */
 .toast-stack {
   position: fixed;

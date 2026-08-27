@@ -151,6 +151,12 @@ create policy "user e amigo do outro"
   to authenticated
   using (auth.uid() = user_a or auth.uid() = user_b);
 
+drop policy if exists "qualquer membro desfaz" on public.friendships;
+create policy "qualquer membro desfaz"
+  on public.friendships for delete
+  to authenticated
+  using (auth.uid() = user_a or auth.uid() = user_b);
+
 drop policy if exists "pode ler pedidos recebidos/enviados" on public.friend_requests;
 create policy "pode ler pedidos recebidos/enviados"
   on public.friend_requests for select
