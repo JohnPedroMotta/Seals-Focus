@@ -981,6 +981,12 @@ select option { background-color: var(--modal-bg); }
   overflow-y: auto;
 }
 
+.profile-view-divider {
+  height: 1px;
+  background: var(--border-color);
+  margin: 0 0 16px;
+}
+
 .friend-view {
   flex-shrink: 0;
 }

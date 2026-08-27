@@ -1775,6 +1775,8 @@ async function openProfileModal(friendId) {
 
   const statsEl = $('profileViewStats');
   statsEl.hidden = true;
+  const divEl = $('profileViewDivider');
+  divEl.hidden = true;
   $('profileModal').classList.add('active');
 
   const s = await loadFriendStats(friendId);
@@ -1784,6 +1786,7 @@ async function openProfileModal(friendId) {
     $('pvWeek').textContent = fmtHM(s.week_seconds ?? 0);
     $('pvSessions').textContent = String(s.total_sessions ?? 0);
     statsEl.hidden = false;
+    divEl.hidden = false;
   }
 }
 
