@@ -63,6 +63,7 @@ create policy "dono das recompensas"
 create table if not exists public.profiles (
   user_id     uuid primary key references auth.users (id) on delete cascade,
   username    text unique,
+  username_updated_at timestamptz,
   display_name text not null default '',
   avatar_url  text not null default '',
   updated_at  timestamptz not null default now()
@@ -82,6 +83,16 @@ create policy "perfil legivel por qualquer um"
 
 create index if not exists idx_profiles_username
   on public.profiles (username);
+
+-- Coluna para cooldown de troca de @username (14 dias)
+do $$
+begin
+  if not exists (select 1 from information_schema.columns
+                 where table_schema = 'public' and table_name = 'profiles'
+                   and column_name = 'username_updated_at') then
+    alter table public.profiles add column username_updated_at timestamptz;
+  end if;
+end $$;
 
 -- Pontos do usuário (total editável) -----------------------------
 create table if not exists public.user_points (

@@ -377,12 +377,15 @@ button.foot-name:hover { text-decoration: underline; }
   align-items: center;
   justify-content: center;
   gap: 8px;
+  min-height: 42px;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .btn:hover { background-color: var(--card-hover); }
 .btn:focus-visible { outline: 2px solid var(--accent-color); outline-offset: 2px; }
 
-.btn-lg { padding: 13px 30px; font-size: 1rem; }
+.btn-lg { padding: 13px 30px; font-size: 1rem; min-height: 50px; }
 .btn-icon { font-size: 0.8em; opacity: 0.9; }
 
 .btn-primary { background-color: var(--accent-color); border-color: var(--accent-color); color: #fff; }
@@ -394,7 +397,7 @@ button.foot-name:hover { text-decoration: underline; }
 .btn-danger { background: transparent; border-color: var(--danger-color); color: var(--danger-color); }
 .btn-danger:hover { background-color: var(--danger-color); color: #fff; }
 
-.btn-sm { padding: 6px 12px; font-size: 0.8rem; border-radius: 8px; }
+.btn-sm { padding: 6px 14px; font-size: 0.8rem; border-radius: 8px; min-height: 34px; }
 
 /* ---------- Métricas ---------- */
 .dashboard {
@@ -1057,12 +1060,51 @@ body.light ::selection { color: #fff; }
 
 /* ---------- Perfil ---------- */
 /* ---------- Perfil ---------- */
-.profile-header {
+.profile-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.profile-card-meta {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 0 4px;
+  min-width: 0;
+}
+
+.profile-card-name {
+  font-weight: 600;
+  font-size: 1.05rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.profile-card-sub {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.profile-card-actions {
+  display: flex;
+  flex-shrink: 0;
+}
+
+.profile-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-color);
+  animation: fadeUp 0.2s ease;
+}
+
+.profile-edit-avatar-row {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 4px;
 }
 
 .profile-avatar {
@@ -1101,26 +1143,10 @@ body.light ::selection { color: #fff; }
 }
 .profile-avatar:hover .profile-avatar-overlay { background: rgba(0, 0, 0, 0.55); }
 
-.profile-header-name {
-  font-weight: 600;
-  font-size: 1rem;
-}
-
-.profile-header-sub {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-}
-
 .profile-section-divider {
   height: 1px;
   background: var(--border-color);
   margin: 14px 0;
-}
-
-.profile-fields {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
 }
 
 .profile-actions {
@@ -1207,22 +1233,6 @@ body.light ::selection { color: #fff; }
   flex-shrink: 0;
   transition: transform 0.2s ease;
 }
-
-/* ---------- Admin: Gerenciar Pontos ---------- */
-.admin-user-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 12px;
-  background: var(--bg-secondary);
-  border-radius: 10px;
-  margin-top: 8px;
-}
-.admin-user-info { display: flex; flex-direction: column; gap: 2px; }
-.admin-user-name { font-weight: 600; font-size: 0.95rem; }
-.admin-user-pts { font-size: 0.8rem; color: var(--text-muted); }
-.admin-actions { display: flex; align-items: center; gap: 6px; }
 
 /* ---------- Mini timer flutuante ---------- */
 .mini-timer {

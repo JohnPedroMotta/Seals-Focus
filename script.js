@@ -62,37 +62,6 @@ async function awardSignupBonus() {
   } catch (e) { console.error('awardSignupBonus:', e); }
 }
 
-async function adminSearchUser(query) {
-  if (!sb.client || !query) return [];
-  try {
-    const { data, error } = await sb.client.from('profiles')
-      .select('user_id, username, display_name, avatar_url')
-      .ilike('username', query.replace('@', '') + '%')
-      .limit(10);
-    if (error) throw error;
-    return data || [];
-  } catch { return []; }
-}
-
-async function adminSetUserPoints(userId, pts) {
-  if (!sb.client) return;
-  try {
-    await sb.client.from('user_points').upsert({
-      user_id: userId,
-      total_points: Math.max(0, pts),
-      updated_at: new Date().toISOString()
-    });
-  } catch (e) { console.error('adminSetUserPoints:', e); }
-}
-
-async function adminGetUserPoints(userId) {
-  if (!sb.client) return 0;
-  try {
-    const { data } = await sb.client.from('user_points').select('total_points').eq('user_id', userId).maybeSingle();
-    return data?.total_points ?? 0;
-  } catch { return 0; }
-}
-
 function loadRewards() {
   try {
     const raw = localStorage.getItem(REWARDS_KEY);
@@ -223,7 +192,6 @@ function setCloudUser(user) {
     $('settingsProfileCard').hidden = false;
     $('settingsAppearanceCard').hidden = false;
     $('settingsGoalCard').hidden = false;
-    $('settingsAdminCard').hidden = false;
     $('settingsDataCard').hidden = false;
     loadProfile();
     pullProfile().then(() => syncProfileUI());
@@ -234,9 +202,8 @@ function setCloudUser(user) {
     $('settingsProfileCard').hidden = true;
     $('settingsAppearanceCard').hidden = true;
     $('settingsGoalCard').hidden = true;
-    $('settingsAdminCard').hidden = true;
     $('settingsDataCard').hidden = true;
-    profile = { displayName: '', username: '', avatarUrl: '' };
+    profile = { displayName: '', username: '', avatarUrl: '', usernameUpdatedAt: null };
     syncProfileUI();
   }
 }
@@ -308,7 +275,8 @@ async function syncFromCloud() {
       profile = {
         displayName: rp.display_name || '',
         username: rp.username || '',
-        avatarUrl: rp.avatar_url || ''
+        avatarUrl: rp.avatar_url || '',
+        usernameUpdatedAt: rp.username_updated_at || null
       };
       localStorage.setItem(profileStoreKey(), JSON.stringify(profile));
       resetProfileForm();
@@ -1234,7 +1202,7 @@ function loadAppearance() {
 }
 
 /* ================= Perfil ================= */
-let profile = { displayName: '', username: '', avatarUrl: '' };
+let profile = { displayName: '', username: '', avatarUrl: '', usernameUpdatedAt: null };
 let pendingPhotoBlob = null;
 
 function profileStoreKey() {
@@ -1242,7 +1210,7 @@ function profileStoreKey() {
 }
 
 function loadProfile() {
-  profile = { displayName: '', username: '', avatarUrl: '' };
+  profile = { displayName: '', username: '', avatarUrl: '', usernameUpdatedAt: null };
   try {
     const raw = localStorage.getItem(profileStoreKey());
     if (raw) profile = { ...profile, ...JSON.parse(raw) };
@@ -1274,6 +1242,18 @@ function resetProfileForm() {
   updateProfileButtons();
   syncProfileUI();
   syncProfilePreview();
+  const hintEl = $('usernameCooldownHint');
+  if (hintEl && profile.username && profile.usernameUpdatedAt) {
+    const cooldownMs = 14 * 24 * 60 * 60 * 1000;
+    const remaining = new Date(profile.usernameUpdatedAt).getTime() + cooldownMs - Date.now();
+    if (remaining > 0) {
+      const days = Math.ceil(remaining / (24 * 60 * 60 * 1000));
+      hintEl.textContent = `O @username poderá ser alterado novamente em ${days} dia(s).`;
+      hintEl.hidden = false;
+    } else {
+      hintEl.hidden = true;
+    }
+  }
 }
 
 function syncProfileUI() {
@@ -1346,6 +1326,7 @@ async function pushProfile() {
     await sb.client.from('profiles').upsert({
       user_id: sb.user.id,
       username: profile.username || null,
+      username_updated_at: profile.usernameUpdatedAt || null,
       display_name: profile.displayName || '',
       avatar_url: profile.avatarUrl || '',
       updated_at: new Date().toISOString()
@@ -1362,7 +1343,8 @@ async function pullProfile() {
       profile = {
         displayName: data.display_name || '',
         username: data.username || '',
-        avatarUrl: data.avatar_url || ''
+        avatarUrl: data.avatar_url || '',
+        usernameUpdatedAt: data.username_updated_at || null
       };
       localStorage.setItem(profileStoreKey(), JSON.stringify(profile));
       resetProfileForm();
@@ -1438,6 +1420,18 @@ $('profileSaveBtn').addEventListener('click', async () => {
     }
   }
 
+  const usernameChanged = newUsername !== (profile.username || '');
+  if (usernameChanged && profile.username) {
+    const cooldownMs = 14 * 24 * 60 * 60 * 1000;
+    const lastChange = profile.usernameUpdatedAt ? new Date(profile.usernameUpdatedAt).getTime() : 0;
+    const remaining = lastChange + cooldownMs - Date.now();
+    if (remaining > 0) {
+      const days = Math.ceil(remaining / (24 * 60 * 60 * 1000));
+      showUsernameError(`Você pode trocar o @username novamente em ${days} dia(s).`);
+      return;
+    }
+  }
+
   const btn = $('profileSaveBtn');
   btn.disabled = true;
   btn.innerHTML = '<i class="ti ti-loader"></i> Salvando...';
@@ -1447,7 +1441,10 @@ $('profileSaveBtn').addEventListener('click', async () => {
   }
 
   profile.displayName = newName;
-  profile.username = newUsername;
+  if (usernameChanged) {
+    profile.username = newUsername;
+    profile.usernameUpdatedAt = new Date().toISOString();
+  }
   saveProfile();
   await pushProfile();
 
@@ -1457,10 +1454,26 @@ $('profileSaveBtn').addEventListener('click', async () => {
   updateProfileButtons();
   syncProfileUI();
   syncProfilePreview();
+  $('profileEditSection').hidden = true;
+  $('profileEditToggle').classList.remove('open');
+  $('profileEditToggle').innerHTML = '<i class="ti ti-pencil"></i> Editar perfil';
   toast('Perfil salvo.', 'success');
 });
 
 $('profileUndoBtn').addEventListener('click', resetProfileForm);
+
+$('profileEditToggle').addEventListener('click', () => {
+  const section = $('profileEditSection');
+  const isOpen = !section.hidden;
+  section.hidden = isOpen;
+  $('profileEditToggle').classList.toggle('open', !isOpen);
+  if (isOpen) {
+    $('profileEditToggle').innerHTML = '<i class="ti ti-pencil"></i> Editar perfil';
+  } else {
+    $('profileEditToggle').innerHTML = '<i class="ti ti-x"></i> Cancelar';
+    resetProfileForm();
+  }
+});
 
 $('profilePhotoInput').addEventListener('change', async e => {
   const file = e.target.files && e.target.files[0];
@@ -1474,60 +1487,6 @@ $('profilePhotoInput').addEventListener('change', async e => {
 });
 
 /* ================= Admin: Gerenciar Pontos ================= */
-let adminSelectedUser = null;
-
-$('adminSearchBtn').addEventListener('click', async () => {
-  const q = $('adminUserSearch').value.trim();
-  if (!q) return;
-  $('adminError').hidden = true;
-  $('adminResults').hidden = true;
-  const results = await adminSearchUser(q);
-  if (results.length === 0) {
-    $('adminError').textContent = 'Nenhum usuário encontrado.';
-    $('adminError').hidden = false;
-    return;
-  }
-  const u = results[0];
-  adminSelectedUser = u;
-  const pts = await adminGetUserPoints(u.user_id);
-  $('adminUserName').textContent = `@${u.username || 'sem_id'} — ${u.display_name || ''}`;
-  $('adminUserPts').textContent = `${pts} pontos`;
-  $('adminPtsInput').value = '';
-  $('adminResults').hidden = false;
-});
-
-$('adminAddPts').addEventListener('click', async () => {
-  if (!adminSelectedUser) return;
-  const add = parseInt($('adminPtsInput').value, 10);
-  if (!Number.isFinite(add) || add <= 0) return;
-  const current = await adminGetUserPoints(adminSelectedUser.user_id);
-  await adminSetUserPoints(adminSelectedUser.user_id, current + add);
-  $('adminUserPts').textContent = `${current + add} pontos`;
-  toast(`+${add} pontos para @${adminSelectedUser.username}.`, 'success');
-  $('adminPtsInput').value = '';
-});
-
-$('adminRemovePts').addEventListener('click', async () => {
-  if (!adminSelectedUser) return;
-  const rem = parseInt($('adminPtsInput').value, 10);
-  if (!Number.isFinite(rem) || rem <= 0) return;
-  const current = await adminGetUserPoints(adminSelectedUser.user_id);
-  await adminSetUserPoints(adminSelectedUser.user_id, Math.max(0, current - rem));
-  $('adminUserPts').textContent = `${Math.max(0, current - rem)} pontos`;
-  toast(`-${rem} pontos de @${adminSelectedUser.username}.`, 'success');
-  $('adminPtsInput').value = '';
-});
-
-$('adminSetPtsBtn').addEventListener('click', async () => {
-  if (!adminSelectedUser) return;
-  const set = parseInt($('adminPtsInput').value, 10);
-  if (!Number.isFinite(set) || set < 0) return;
-  await adminSetUserPoints(adminSelectedUser.user_id, set);
-  $('adminUserPts').textContent = `${set} pontos`;
-  toast(`Pontos de @${adminSelectedUser.username} definidos para ${set}.`, 'success');
-  $('adminPtsInput').value = '';
-});
-
 /* ================= Welcome overlay ================= */
 $('welcomeCloseBtn').addEventListener('click', () => { $('welcomeOverlay').hidden = true; });
 
@@ -1597,7 +1556,7 @@ $('logoutBtn').addEventListener('click', async () => {
     localStorage.removeItem(GOAL_KEY);
     localStorage.removeItem(REWARDS_KEY);
     localStorage.removeItem(PENDING_KEY);
-    profile = { displayName: '', username: '', avatarUrl: '' };
+    profile = { displayName: '', username: '', avatarUrl: '', usernameUpdatedAt: null };
     dailyGoalSecs = 30 * 60;
     toast('Conta desconectada.', 'success');
     goToLogin();
@@ -1665,7 +1624,7 @@ $('deleteAccountBtn').addEventListener('click', async () => {
     localStorage.removeItem(GOAL_KEY);
     localStorage.removeItem(REWARDS_KEY);
     localStorage.removeItem(PENDING_KEY);
-    profile = { displayName: '', username: '', avatarUrl: '' };
+    profile = { displayName: '', username: '', avatarUrl: '', usernameUpdatedAt: null };
     dailyGoalSecs = 30 * 60;
     sb.user = null;
     goToLogin();
@@ -1922,3 +1881,4 @@ renderAll();
 window.addEventListener('pageshow', e => {
   if (e.persisted) location.reload();
 });
+

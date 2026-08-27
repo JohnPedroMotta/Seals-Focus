@@ -16,7 +16,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons@2/tabler-icons.min.css" />
   </noscript>
-  <link rel="stylesheet" href="style.css?v=12" />
+  <link rel="stylesheet" href="style.css?v=13" />
   <!-- Anti-bfcache + popup auto-close -->
   <script>
     window.addEventListener('pageshow', function(e) {
@@ -26,7 +26,7 @@
   </script>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script defer src="config.js?v=3"></script>
-  <script defer src="script.js?v=21"></script>
+  <script defer src="script.js?v=22"></script>
 </head>
 <body>
 
@@ -208,20 +208,25 @@
     <section class="view" id="view-settings" hidden>
 
       <section class="card" id="settingsProfileCard" hidden>
-        <div class="profile-header">
-          <label class="profile-avatar" title="Escolher foto" id="profileAvatarLabel">
-            <img id="profilePhoto" alt="" hidden />
-            <span class="profile-avatar-empty" id="profileAvatarEmpty"><i class="ti ti-camera"></i></span>
-            <span class="profile-avatar-overlay"><i class="ti ti-pencil"></i></span>
-            <input type="file" id="profilePhotoInput" accept="image/*" hidden />
-          </label>
-          <span class="profile-header-name" id="profileSummaryName">Seu nome</span>
-          <span class="profile-header-sub" id="profileSummarySub"></span>
+        <div class="profile-card-top">
+          <div class="profile-card-meta">
+            <span class="profile-card-name" id="profileSummaryName">Seu nome</span>
+            <span class="profile-card-sub" id="profileSummarySub"></span>
+          </div>
+          <div class="profile-card-actions">
+            <button class="btn btn-sm" id="profileEditToggle" type="button"><i class="ti ti-pencil"></i> Editar perfil</button>
+          </div>
         </div>
 
-        <div class="profile-section-divider"></div>
-
-        <div class="profile-fields">
+        <div class="profile-fields" id="profileEditSection" hidden>
+          <div class="profile-edit-avatar-row">
+            <label class="profile-avatar" title="Escolher foto" id="profileAvatarLabel">
+              <img id="profilePhoto" alt="" hidden />
+              <span class="profile-avatar-empty" id="profileAvatarEmpty"><i class="ti ti-camera"></i></span>
+              <span class="profile-avatar-overlay"><i class="ti ti-pencil"></i></span>
+              <input type="file" id="profilePhotoInput" accept="image/*" hidden />
+            </label>
+          </div>
           <div class="form-group">
             <label for="profileNameInput">Nome de exibição</label>
             <input type="text" id="profileNameInput" maxlength="60" placeholder="Como você quer ser chamado?" />
@@ -237,6 +242,7 @@
             <button class="btn btn-primary btn-sm" id="profileSaveBtn" disabled><i class="ti ti-device-floppy"></i> Salvar</button>
           </div>
         </div>
+        <p class="field-hint" id="usernameCooldownHint" hidden></p>
 
         <!-- Conta -->
         <div class="profile-account-section" id="accountSection" hidden>
@@ -337,34 +343,6 @@
         <div class="modal-actions">
           <button class="btn btn-primary btn-sm" id="saveGoalBtn">Salvar meta</button>
         </div>
-      </section>
-
-      <section class="card" id="settingsAdminCard">
-        <div class="card-head">
-          <h3 class="panel-title">Gerenciar Pontos</h3>
-        </div>
-        <div class="form-group">
-          <label for="adminUserSearch">Buscar por @username</label>
-          <div style="display:flex;gap:8px;">
-            <input type="text" id="adminUserSearch" placeholder="@usuario" style="flex:1;" />
-            <button class="btn btn-sm" id="adminSearchBtn"><i class="ti ti-search"></i></button>
-          </div>
-        </div>
-        <div id="adminResults" hidden>
-          <div class="admin-user-card" id="adminUserCard">
-            <div class="admin-user-info">
-              <span class="admin-user-name" id="adminUserName">—</span>
-              <span class="admin-user-pts" id="adminUserPts">0 pontos</span>
-            </div>
-            <div class="admin-actions">
-              <input type="number" id="adminPtsInput" placeholder="Qtd" min="0" style="width:80px;" />
-              <button class="btn btn-sm btn-success" id="adminAddPts"><i class="ti ti-plus"></i></button>
-              <button class="btn btn-sm btn-danger" id="adminRemovePts"><i class="ti ti-minus"></i></button>
-              <button class="btn btn-sm" id="adminSetPtsBtn"><i class="ti ti-device-floppy"></i> Definir</button>
-            </div>
-          </div>
-        </div>
-        <p class="field-error" id="adminError" hidden></p>
       </section>
 
       <section class="card" id="settingsDataCard">
