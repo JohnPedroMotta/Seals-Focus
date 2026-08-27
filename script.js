@@ -1742,7 +1742,19 @@ function closeProfileModal() {
   $('profileModal').classList.remove('active');
 }
 
-function openProfileModal(friendId) {
+async function loadFriendStats(friendId) {
+  if (!sb.client || !sb.user) return null;
+  try {
+    const { data, error } = await sb.client.rpc('get_friend_stats', { friend_id: friendId });
+    if (error) throw error;
+    return (data && data[0]) || null;
+  } catch (e) {
+    console.error('loadFriendStats:', e);
+    return null;
+  }
+}
+
+async function openProfileModal(friendId) {
   const f = friendsCache.find(x => x.user_id === friendId) || {};
   const name = f.display_name || ('@' + (f.username || ''));
   const user = f.username ? '@' + f.username : '';
@@ -1755,7 +1767,19 @@ function openProfileModal(friendId) {
   const bioEl = $('profileViewBio');
   bioEl.textContent = f.bio || '';
   bioEl.hidden = !f.bio;
+
+  const statsEl = $('profileViewStats');
+  statsEl.hidden = true;
   $('profileModal').classList.add('active');
+
+  const s = await loadFriendStats(friendId);
+  if (s) {
+    $('pvPoints').textContent = String(s.total_points ?? 0);
+    $('pvStreak').textContent = String(s.streak ?? 0);
+    $('pvWeek').textContent = fmtHM(s.week_seconds ?? 0);
+    $('pvSessions').textContent = String(s.total_sessions ?? 0);
+    statsEl.hidden = false;
+  }
 }
 
 $('profileViewCloseBtn').addEventListener('click', closeProfileModal);
@@ -2251,6 +2275,7 @@ function renderAll() {
 loadState();
 loadGoal();
 loadTimer();
+if (timer.running) startTick(); // retoma o loop de atualização após recarregar
 loadAppearance();
 loadProfile();
 loadRewards();

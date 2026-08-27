@@ -26,7 +26,7 @@
   </script>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script defer src="config.js?v=3"></script>
-  <script defer src="script.js?v=32"></script>
+  <script defer src="script.js?v=33"></script>
 </head>
 <body>
 
@@ -534,6 +534,24 @@
         </div>
       </div>
       <p class="profile-view-bio" id="profileViewBio"></p>
+      <div class="profile-view-stats" id="profileViewStats" hidden>
+        <div class="profile-view-stat">
+          <span class="profile-view-stat-value" id="pvPoints">0</span>
+          <span class="profile-view-stat-label">pontos</span>
+        </div>
+        <div class="profile-view-stat">
+          <span class="profile-view-stat-value" id="pvStreak">0</span>
+          <span class="profile-view-stat-label">sequência</span>
+        </div>
+        <div class="profile-view-stat">
+          <span class="profile-view-stat-value" id="pvWeek">00:00</span>
+          <span class="profile-view-stat-label">na semana</span>
+        </div>
+        <div class="profile-view-stat">
+          <span class="profile-view-stat-value" id="pvSessions">0</span>
+          <span class="profile-view-stat-label">sessões</span>
+        </div>
+      </div>
       <div class="modal-actions">
         <button class="btn" id="profileViewCloseBtn">Fechar</button>
       </div>
