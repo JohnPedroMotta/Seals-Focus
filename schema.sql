@@ -70,8 +70,19 @@ create table if not exists public.profiles (
   username_updated_at timestamptz,
   display_name text not null default '',
   avatar_url  text not null default '',
+  bio         text not null default '',
   updated_at  timestamptz not null default now()
 );
+
+-- Coluna de Bio (texto livre, até 150 caracteres) — roda sem erro se já existir
+do $$
+begin
+  if not exists (select 1 from information_schema.columns
+                 where table_schema = 'public' and table_name = 'profiles'
+                   and column_name = 'bio') then
+    alter table public.profiles add column bio text not null default '';
+  end if;
+end $$;
 
 alter table public.profiles enable row level security;
 

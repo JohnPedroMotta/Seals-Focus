@@ -970,6 +970,17 @@ select option { background-color: var(--modal-bg); }
   font-size: 0.9rem;
 }
 
+.profile-view-bio {
+  margin: 0 0 18px;
+  color: var(--text-main);
+  font-size: 0.92rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
 .friend-view {
   flex-shrink: 0;
 }
@@ -1135,6 +1146,17 @@ body.light ::selection { color: #fff; }
 .field-hint {
   font-size: 0.75rem;
   color: var(--text-muted);
+}
+
+.field-counter {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-align: right;
+  margin-top: 4px;
+}
+
+.field-counter:empty {
+  display: none;
 }
 
 .muted-p {

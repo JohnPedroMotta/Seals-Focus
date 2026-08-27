@@ -210,7 +210,7 @@ function setCloudUser(user) {
     $('settingsAppearanceCard').hidden = true;
     $('settingsGoalCard').hidden = true;
     $('settingsDataCard').hidden = true;
-    profile = { displayName: '', username: '', avatarUrl: '', usernameUpdatedAt: null };
+    profile = { displayName: '', username: '', avatarUrl: '', usernameUpdatedAt: null, bio: '' };
     syncProfileUI();
   }
 }
@@ -283,7 +283,8 @@ async function syncFromCloud() {
         displayName: rp.display_name || '',
         username: rp.username || '',
         avatarUrl: rp.avatar_url || '',
-        usernameUpdatedAt: rp.username_updated_at || null
+        usernameUpdatedAt: rp.username_updated_at || null,
+        bio: rp.bio || ''
       };
       localStorage.setItem(profileStoreKey(), JSON.stringify(profile));
       resetProfileForm();
@@ -1240,7 +1241,7 @@ function loadAppearance() {
 }
 
 /* ================= Perfil ================= */
-let profile = { displayName: '', username: '', avatarUrl: '', usernameUpdatedAt: null };
+let profile = { displayName: '', username: '', avatarUrl: '', usernameUpdatedAt: null, bio: '' };
 let pendingPhotoBlob = null;
 
 function profileStoreKey() {
@@ -1248,7 +1249,7 @@ function profileStoreKey() {
 }
 
 function loadProfile() {
-  profile = { displayName: '', username: '', avatarUrl: '', usernameUpdatedAt: null };
+  profile = { displayName: '', username: '', avatarUrl: '', usernameUpdatedAt: null, bio: '' };
   try {
     const raw = localStorage.getItem(profileStoreKey());
     if (raw) profile = { ...profile, ...JSON.parse(raw) };
@@ -1274,6 +1275,9 @@ function syncProfilePreview() {
 function resetProfileForm() {
   $('profileNameInput').value = profile.displayName || '';
   $('profileUsernameInput').value = profile.username || '';
+  $('profileBioInput').value = profile.bio || '';
+  const bc = $('bioCount');
+  if (bc) bc.textContent = String((profile.bio || '').length);
   $('usernameError').hidden = true;
   pendingPhotoBlob = null;
   applyProfilePhoto(profile.avatarUrl);
@@ -1367,6 +1371,7 @@ async function pushProfile() {
       username_updated_at: profile.usernameUpdatedAt || null,
       display_name: profile.displayName || '',
       avatar_url: profile.avatarUrl || '',
+      bio: profile.bio || '',
       updated_at: new Date().toISOString()
     });
   } catch (e) { console.error('pushProfile:', e); }
@@ -1382,7 +1387,8 @@ async function pullProfile() {
         displayName: data.display_name || '',
         username: data.username || '',
         avatarUrl: data.avatar_url || '',
-        usernameUpdatedAt: data.username_updated_at || null
+        usernameUpdatedAt: data.username_updated_at || null,
+        bio: data.bio || ''
       };
       localStorage.setItem(profileStoreKey(), JSON.stringify(profile));
       resetProfileForm();
@@ -1421,13 +1427,21 @@ async function checkUsernameAvailable(username) {
 function updateProfileButtons() {
   const nameDirty = ($('profileNameInput').value.trim() || '') !== (profile.displayName || '');
   const userDirty = ($('profileUsernameInput').value.trim() || '') !== (profile.username || '');
-  const dirty = pendingPhotoBlob !== null || nameDirty || userDirty;
+  const bioDirty = ($('profileBioInput').value || '') !== (profile.bio || '');
+  const dirty = pendingPhotoBlob !== null || nameDirty || userDirty || bioDirty;
   $('profileUndoBtn').disabled = !dirty;
   $('profileSaveBtn').disabled = !dirty;
 }
 
 $('profileNameInput').addEventListener('input', updateProfileButtons);
 $('profileUsernameInput').addEventListener('input', updateProfileButtons);
+$('profileBioInput').addEventListener('input', () => {
+  const v = $('profileBioInput').value;
+  if (v.length > 150) $('profileBioInput').value = v.slice(0, 150);
+  const bc = $('bioCount');
+  if (bc) bc.textContent = String($('profileBioInput').value.length);
+  updateProfileButtons();
+});
 
 $('profileSaveBtn').addEventListener('click', async () => {
   const newName = $('profileNameInput').value.trim();
@@ -1479,6 +1493,7 @@ $('profileSaveBtn').addEventListener('click', async () => {
   }
 
   profile.displayName = newName;
+  profile.bio = $('profileBioInput').value || '';
   if (usernameChanged) {
     profile.username = newUsername;
     profile.usernameUpdatedAt = new Date().toISOString();
@@ -1558,7 +1573,7 @@ async function loadFriends() {
     if (friendIds.length > 0) {
       const { data: profs, error: pErr } = await sb.client
         .from('profiles')
-        .select('user_id, username, display_name, avatar_url')
+        .select('user_id, username, display_name, avatar_url, bio')
         .in('user_id', friendIds);
       if (pErr) throw pErr;
       friendsCache = (profs || []).map(p => ({ ...p, user_id: p.user_id }));
@@ -1582,7 +1597,7 @@ async function loadFriends() {
     let fromProfs = {};
     if (fromIds.length > 0) {
       const { data } = await sb.client.from('profiles')
-        .select('user_id, username, display_name, avatar_url')
+        .select('user_id, username, display_name, avatar_url, bio')
         .in('user_id', fromIds);
       (data || []).forEach(p => { fromProfs[p.user_id] = p; });
     }
@@ -1727,6 +1742,9 @@ function openProfileModal(friendId) {
   av.innerHTML = f.avatar_url
     ? `<img src="${escapeHtml(f.avatar_url)}" alt="" onerror="this.remove()">`
     : ((f.display_name || '?').slice(0, 1).toUpperCase());
+  const bioEl = $('profileViewBio');
+  bioEl.textContent = f.bio || '';
+  bioEl.hidden = !f.bio;
   $('profileModal').classList.add('active');
 }
 
@@ -1909,7 +1927,7 @@ $('logoutBtn').addEventListener('click', async () => {
     localStorage.removeItem(GOAL_KEY);
     localStorage.removeItem(REWARDS_KEY);
     localStorage.removeItem(PENDING_KEY);
-    profile = { displayName: '', username: '', avatarUrl: '', usernameUpdatedAt: null };
+    profile = { displayName: '', username: '', avatarUrl: '', usernameUpdatedAt: null, bio: '' };
     dailyGoalSecs = 30 * 60;
     toast('Conta desconectada.', 'success');
     goToLogin();
@@ -1977,7 +1995,7 @@ $('deleteAccountBtn').addEventListener('click', async () => {
     localStorage.removeItem(GOAL_KEY);
     localStorage.removeItem(REWARDS_KEY);
     localStorage.removeItem(PENDING_KEY);
-    profile = { displayName: '', username: '', avatarUrl: '', usernameUpdatedAt: null };
+    profile = { displayName: '', username: '', avatarUrl: '', usernameUpdatedAt: null, bio: '' };
     dailyGoalSecs = 30 * 60;
     sb.user = null;
     goToLogin();
