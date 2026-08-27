@@ -1612,12 +1612,18 @@ function renderFriends() {
         <span class="friend-name">${escapeHtml(friendLabel(f))}</span>
         <span class="friend-user">${escapeHtml(friendSub(f)) || 'sem @username'}</span>
       </div>
+      <button class="btn btn-sm friend-view" data-id="${f.user_id}" title="Ver perfil">
+        <i class="ti ti-search"></i>
+      </button>
       <button class="btn btn-sm btn-danger friend-remove" data-id="${f.user_id}" title="Desfazer amizade">
         <i class="ti ti-user-x"></i>
       </button>
     `;
     list.appendChild(el);
   });
+  list.querySelectorAll('.friend-view').forEach(btn =>
+    btn.addEventListener('click', () => openProfileModal(btn.dataset.id))
+  );
   list.querySelectorAll('.friend-remove').forEach(btn =>
     btn.addEventListener('click', () => removeFriend(btn.dataset.id))
   );
@@ -1706,6 +1712,31 @@ async function rejectRequest(id) {
     toast(e.message || 'Erro ao recusar.', 'error');
   }
 }
+
+function closeProfileModal() {
+  $('profileModal').classList.remove('active');
+}
+
+function openProfileModal(friendId) {
+  const f = friendsCache.find(x => x.user_id === friendId) || {};
+  const name = f.display_name || ('@' + (f.username || ''));
+  const user = f.username ? '@' + f.username : '';
+  $('profileViewName').textContent = name || 'Usuário';
+  $('profileViewUser').textContent = user;
+  const av = $('profileViewAvatar');
+  av.innerHTML = f.avatar_url
+    ? `<img src="${escapeHtml(f.avatar_url)}" alt="" onerror="this.remove()">`
+    : ((f.display_name || '?').slice(0, 1).toUpperCase());
+  $('profileModal').classList.add('active');
+}
+
+$('profileViewCloseBtn').addEventListener('click', closeProfileModal);
+$('profileModal').addEventListener('click', e => {
+  if (e.target === $('profileModal')) closeProfileModal();
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeProfileModal();
+});
 
 async function removeFriend(friendId) {
   const name = (friendsCache.find(f => f.user_id === friendId) || {}).display_name

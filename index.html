@@ -16,7 +16,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3/dist/tabler-icons.min.css" />
   </noscript>
-  <link rel="stylesheet" href="style.css?v=16" />
+  <link rel="stylesheet" href="style.css?v=17" />
   <!-- Anti-bfcache + popup auto-close -->
   <script>
     window.addEventListener('pageshow', function(e) {
@@ -26,7 +26,7 @@
   </script>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script defer src="config.js?v=3"></script>
-  <script defer src="script.js?v=29"></script>
+  <script defer src="script.js?v=30"></script>
 </head>
 <body>
 
@@ -512,6 +512,24 @@
       <div class="modal-actions">
         <button class="btn" id="confirmCancelBtn">Cancelar</button>
         <button class="btn btn-danger" id="confirmOkBtn">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="profileModal" role="dialog" aria-modal="true" aria-labelledby="profileViewName">
+    <div class="modal card profile-view-modal">
+      <div class="modal-header">
+        <h2>Perfil</h2>
+      </div>
+      <div class="profile-view-hero" id="profileViewHero">
+        <div class="profile-view-avatar" id="profileViewAvatar">?</div>
+        <div class="profile-view-names">
+          <h2 id="profileViewName">—</h2>
+          <span class="profile-view-user" id="profileViewUser">@user</span>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn" id="profileViewCloseBtn">Fechar</button>
       </div>
     </div>
   </div>

@@ -916,6 +916,64 @@ select option { background-color: var(--modal-bg); }
   line-height: 1.45;
 }
 
+.profile-view-modal {
+  width: 100%;
+  max-width: 340px;
+}
+
+.profile-view-hero {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 6px 0 20px;
+}
+
+.profile-view-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background: var(--accent-glow);
+  color: var(--text-main);
+  font-size: 1.6rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  border: 1px solid var(--border-color);
+}
+
+.profile-view-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.profile-view-names {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.profile-view-names h2 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-main);
+  word-break: break-word;
+}
+
+.profile-view-user {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.friend-view {
+  flex-shrink: 0;
+}
+
 /* ---------- Toasts ---------- */
 .toast-stack {
   position: fixed;
