@@ -1199,11 +1199,21 @@ document.addEventListener('keydown', e => {
 
 /* ================= Aparência: tema claro/escuro + paleta ================= */
 const PALETTES = {
-  amber: { label: 'Âmbar', accent: '#f0a63c', hover: '#db8f22', glow: 'rgba(240, 166, 60, 0.22)' },
-  verde: { label: 'Verde', accent: '#34d399', hover: '#10b981', glow: 'rgba(52, 211, 153, 0.22)' },
-  azul:  { label: 'Azul',  accent: '#60a5fa', hover: '#3b82f6', glow: 'rgba(96, 165, 250, 0.22)' },
-  roxo:  { label: 'Roxo',  accent: '#a78bfa', hover: '#8b5cf6', glow: 'rgba(167, 139, 250, 0.22)' },
-  rosa:  { label: 'Rosa',  accent: '#fb7185', hover: '#f43f5e', glow: 'rgba(251, 113, 133, 0.22)' }
+  amber:  { label: 'Âmbar', accent: '#f0a63c', hover: '#db8f22', glow: 'rgba(240, 166, 60, 0.22)' },
+  laranja:{ label: 'Laranja', accent: '#fb923c', hover: '#f97316', glow: 'rgba(251, 146, 60, 0.22)' },
+  amarelo:{ label: 'Amarelo', accent: '#facc15', hover: '#eab308', glow: 'rgba(250, 204, 21, 0.22)' },
+  limao:  { label: 'Limão', accent: '#a3e635', hover: '#84cc16', glow: 'rgba(163, 230, 53, 0.22)' },
+  verde:  { label: 'Verde', accent: '#34d399', hover: '#10b981', glow: 'rgba(52, 211, 153, 0.22)' },
+  teal:   { label: 'Verde-azulado', accent: '#2dd4bf', hover: '#14b8a6', glow: 'rgba(45, 212, 191, 0.22)' },
+  ciano:  { label: 'Ciano', accent: '#22d3ee', hover: '#06b6d4', glow: 'rgba(34, 211, 238, 0.22)' },
+  azul:   { label: 'Azul', accent: '#60a5fa', hover: '#3b82f6', glow: 'rgba(96, 165, 250, 0.22)' },
+  indigo: { label: 'Índigo', accent: '#818cf8', hover: '#6366f1', glow: 'rgba(129, 140, 248, 0.22)' },
+  roxo:   { label: 'Roxo', accent: '#a78bfa', hover: '#8b5cf6', glow: 'rgba(167, 139, 250, 0.22)' },
+  magenta:{ label: 'Magenta', accent: '#e879f9', hover: '#d946ef', glow: 'rgba(232, 121, 249, 0.22)' },
+  rosa:   { label: 'Rosa', accent: '#fb7185', hover: '#f43f5e', glow: 'rgba(251, 113, 133, 0.22)' },
+  vermelho:{ label: 'Vermelho', accent: '#f87171', hover: '#ef4444', glow: 'rgba(248, 113, 113, 0.22)' },
+  marrom: { label: 'Marrom', accent: '#d6a15c', hover: '#b4833f', glow: 'rgba(214, 161, 92, 0.22)' },
+  grafite:{ label: 'Grafite', accent: '#94a3b8', hover: '#64748b', glow: 'rgba(148, 163, 184, 0.22)' }
 };
 
 function applyTheme(theme, persist = true) {
