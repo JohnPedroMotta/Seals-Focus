@@ -177,6 +177,9 @@ create policy "destinatario pode responder"
   with check (auth.uid() = to_user);
 
 -- RPC: aceitar um pedido de amizade e criar a amizade mútua -------
+-- 1) marca o convite como "accepted"
+-- 2) insere a amizade (user_a < user_b)
+-- Tudo na MESMA transação: se o insert falhar, o update é desfeito também.
 create or replace function accept_friend(request_id uuid)
 returns void
 language plpgsql
@@ -195,12 +198,38 @@ begin
   if a > b then
     select a, b into b, a; -- normaliza para user_a < user_b
   end if;
-  insert into public.friendships (user_a, user_b) values (a, b)
-    on conflict (user_a, user_b) do nothing;
   update public.friend_requests set status = 'accepted'
     where id = request_id;
+  insert into public.friendships (user_a, user_b) values (a, b)
+    on conflict (user_a, user_b) do nothing;
 end;
 $$;
+
+-- Guarda de integridade: NINGUÉM cria amizade sem um convite aceito.
+-- Mesmo que amanhã alguém adicione uma policy de INSERT em friendships,
+-- este trigger continua vetando ligações sem convite aceito.
+create or replace function public.guard_friendship_insert()
+returns trigger
+language plpgsql
+security definer
+as $$
+begin
+  if not exists (
+    select 1 from public.friend_requests
+    where status = 'accepted'
+      and ((from_user = new.user_a and to_user = new.user_b)
+        or (from_user = new.user_b and to_user = new.user_a))
+  ) then
+    raise exception 'amizade só pode ser criada a partir de um convite aceito';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_guard_friendship_insert on public.friendships;
+create trigger trg_guard_friendship_insert
+  before insert on public.friendships
+  for each row execute function public.guard_friendship_insert();
 
 -- Função para excluir conta e todos os dados do usuário -----------
 create or replace function delete_my_account()
