@@ -1575,8 +1575,8 @@ function renderFriends() {
         <span class="friend-name">${escapeHtml(friendLabel(f))}</span>
         <span class="friend-user">${escapeHtml(friendSub(f)) || 'sem @username'}</span>
       </div>
-      <button class="btn btn-sm btn-danger friend-remove" data-id="${f.user_id}" title="Remover amigo">
-        <i class="ti ti-user-minus"></i>
+      <button class="btn btn-sm btn-danger friend-remove" data-id="${f.user_id}" title="Desfazer amizade">
+        <i class="ti ti-user-x"></i>
       </button>
     `;
     list.appendChild(el);
@@ -1653,6 +1653,9 @@ async function rejectRequest(id) {
 }
 
 async function removeFriend(friendId) {
+  const name = (friendsCache.find(f => f.user_id === friendId) || {}).display_name
+    || 'esse amigo';
+  if (!confirm(`Desfazer amizade com ${name}?`)) return;
   try {
     const my = sb.user.id;
     const a = my < friendId ? my : friendId;
@@ -1660,7 +1663,7 @@ async function removeFriend(friendId) {
     const { error } = await sb.client.from('friendships').delete()
       .eq('user_a', a).eq('user_b', b);
     if (error) throw error;
-    toast('Amigo removido.', 'success');
+    toast('Amizade desfeita.', 'success');
     loadFriends();
   } catch (e) {
     toast(e.message || 'Erro ao remover.', 'error');
