@@ -1594,6 +1594,13 @@ function renderRequests() {
   empty.hidden = friendsRequests.length > 0;
   count.hidden = friendsRequests.length === 0;
   count.textContent = String(friendsRequests.length);
+  const navBadge = $('friendsNavBadge');
+  const tabBadge = $('friendsTabBadge');
+  const n = friendsRequests.length;
+  navBadge.hidden = n === 0;
+  navBadge.textContent = n > 99 ? '99+' : String(n);
+  tabBadge.hidden = n === 0;
+  tabBadge.textContent = n > 99 ? '99+' : String(n);
   friendsRequests.forEach(r => {
     const p = r.profile || {};
     const el = document.createElement('div');
@@ -1688,7 +1695,6 @@ $('friendSearchBtn').addEventListener('click', async () => {
       : (hit.display_name ? hit.display_name.slice(0,1).toUpperCase() : '?');
     avEl.classList.toggle('has-photo', !!hit.avatar_url);
     $('friendSendBtn').dataset.uid = hit.user_id;
-    $('friendResultStatus').hidden = true;
     $('friendSearchResults').hidden = false;
   } catch (e) {
     err.textContent = e.message || 'Erro na busca.';
@@ -1724,9 +1730,6 @@ $('friendSendBtn').addEventListener('click', async () => {
     } else {
       toast('Pedido de amizade enviado!', 'success');
     }
-    const st = $('friendResultStatus');
-    st.textContent = 'Convite enviado';
-    st.hidden = false;
   } catch (e) {
     toast(e.message || 'Erro ao enviar pedido.', 'error');
   } finally {
