@@ -2,6 +2,7 @@
 --  Foco · Setup do banco de dados (Supabase / PostgreSQL)
 --  Como usar: no painel do seu projeto Supabase, abra
 --  "SQL Editor" → "New query" → cole tudo isto → Run.
+--  Idempotente: pode rodar de novo sem dar erro.
 -- ============================================================
 
 -- Sessões de estudo -------------------------------------------
@@ -33,11 +34,13 @@ create table if not exists public.subjects (
 alter table public.sessions enable row level security;
 alter table public.subjects enable row level security;
 
+drop policy if exists "dono das sessoes" on public.sessions;
 create policy "dono das sessoes"
   on public.sessions for all
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
 
+drop policy if exists "dono das materias" on public.subjects;
 create policy "dono das materias"
   on public.subjects for all
   using (auth.uid() = user_id)
@@ -54,6 +57,7 @@ create table if not exists public.rewards (
 
 alter table public.rewards enable row level security;
 
+drop policy if exists "dono das recompensas" on public.rewards;
 create policy "dono das recompensas"
   on public.rewards for all
   using (auth.uid() = user_id)
@@ -71,11 +75,13 @@ create table if not exists public.profiles (
 
 alter table public.profiles enable row level security;
 
+drop policy if exists "dono do perfil" on public.profiles;
 create policy "dono do perfil"
   on public.profiles for all
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
 
+drop policy if exists "perfil legivel por qualquer um" on public.profiles;
 create policy "perfil legivel por qualquer um"
   on public.profiles for select
   to authenticated
@@ -103,11 +109,13 @@ create table if not exists public.user_points (
 
 alter table public.user_points enable row level security;
 
+drop policy if exists "dono dos pontos" on public.user_points;
 create policy "dono dos pontos"
   on public.user_points for all
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
 
+drop policy if exists "pontos legiveis por qualquer um" on public.user_points;
 create policy "pontos legiveis por qualquer um"
   on public.user_points for select
   to authenticated
@@ -137,21 +145,25 @@ create table if not exists public.friend_requests (
 alter table public.friendships enable row level security;
 alter table public.friend_requests enable row level security;
 
+drop policy if exists "user e amigo do outro" on public.friendships;
 create policy "user e amigo do outro"
   on public.friendships for select
   to authenticated
   using (auth.uid() = user_a or auth.uid() = user_b);
 
+drop policy if exists "pode ler pedidos recebidos/enviados" on public.friend_requests;
 create policy "pode ler pedidos recebidos/enviados"
   on public.friend_requests for select
   to authenticated
   using (auth.uid() = from_user or auth.uid() = to_user);
 
+drop policy if exists "pode criar pedidos" on public.friend_requests;
 create policy "pode criar pedidos"
   on public.friend_requests for insert
   to authenticated
   with check (auth.uid() = from_user);
 
+drop policy if exists "destinatario pode responder" on public.friend_requests;
 create policy "destinatario pode responder"
   on public.friend_requests for update
   to authenticated
