@@ -1568,7 +1568,9 @@ function renderFriends() {
     const el = document.createElement('div');
     el.className = 'friend-row';
     el.innerHTML = `
-      <div class="friend-avatar">${f.display_name ? f.display_name.slice(0,1).toUpperCase() : '?'}</div>
+      <div class="friend-avatar">${f.avatar_url
+        ? `<img src="${escapeHtml(f.avatar_url)}" alt="" onerror="this.remove()">`
+        : (f.display_name ? f.display_name.slice(0,1).toUpperCase() : '?')}</div>
       <div class="friend-info">
         <span class="friend-name">${escapeHtml(friendLabel(f))}</span>
         <span class="friend-user">${escapeHtml(friendSub(f)) || 'sem @username'}</span>
@@ -1597,7 +1599,9 @@ function renderRequests() {
     const el = document.createElement('div');
     el.className = 'friend-row';
     el.innerHTML = `
-      <div class="friend-avatar">${p.display_name ? p.display_name.slice(0,1).toUpperCase() : '?'}</div>
+      <div class="friend-avatar">${p.avatar_url
+        ? `<img src="${escapeHtml(p.avatar_url)}" alt="" onerror="this.remove()">`
+        : (p.display_name ? p.display_name.slice(0,1).toUpperCase() : '?')}</div>
       <div class="friend-info">
         <span class="friend-name">${escapeHtml(friendLabel(p))}</span>
         <span class="friend-user">${escapeHtml(friendSub(p)) || 'sem @username'}</span>
@@ -1665,7 +1669,7 @@ $('friendSearchBtn').addEventListener('click', async () => {
   const username = q.replace('@', '').toLowerCase();
   try {
     const { data, error } = await sb.client.from('profiles')
-      .select('user_id, username, display_name')
+      .select('user_id, username, display_name, avatar_url')
       .ilike('username', username + '%')
       .limit(5);
     if (error) throw error;
@@ -1678,6 +1682,11 @@ $('friendSearchBtn').addEventListener('click', async () => {
     }
     $('friendResultName').textContent = hit.display_name || '@' + hit.username;
     $('friendResultUser').textContent = '@' + hit.username;
+    const avEl = $('friendResultAvatar');
+    avEl.innerHTML = hit.avatar_url
+      ? `<img src="${escapeHtml(hit.avatar_url)}" alt="" onerror="this.remove()">`
+      : (hit.display_name ? hit.display_name.slice(0,1).toUpperCase() : '?');
+    avEl.classList.toggle('has-photo', !!hit.avatar_url);
     $('friendSendBtn').dataset.uid = hit.user_id;
     $('friendResultStatus').hidden = true;
     $('friendSearchResults').hidden = false;
