@@ -1724,7 +1724,8 @@ $('friendSendBtn').addEventListener('click', async () => {
       from_user: sb.user.id, to_user: uid
     });
     if (error) {
-      if (error.message && error.message.toLowerCase().includes('already exists')) {
+      const msg = (error.message || '').toLowerCase();
+      if (msg.includes('already exists') || msg.includes('duplicate key')) {
         toast('Pedido já enviado.', 'success');
       } else throw error;
     } else {
