@@ -149,6 +149,12 @@ function initCloud() {
   });
 
   window.addEventListener('online', () => { if (sb.user) flushPending(); });
+
+  setInterval(() => {
+    if (sb.user && sb.client) {
+      loadPendingRequests();
+    }
+  }, 30000);
 }
 
 function setCloudUser(user) {
@@ -180,6 +186,7 @@ function setCloudUser(user) {
   loadState();
 
   sb.user = user;
+  if (user) loadPendingRequests();
   const avatar = $('avatarInitials');
   if (user) {
     const handle = (user.email || '?').split('@')[0].split(/[._-]/)[0];
@@ -1616,6 +1623,30 @@ function renderFriends() {
   );
 }
 
+function updateFriendsBadges() {
+  const n = friendsRequests.length;
+  const navBadge = $('friendsNavBadge');
+  const tabBadge = $('friendsTabBadge');
+  if (navBadge) { navBadge.hidden = n === 0; navBadge.textContent = n > 99 ? '99+' : String(n); }
+  if (tabBadge) { tabBadge.hidden = n === 0; tabBadge.textContent = n > 99 ? '99+' : String(n); }
+}
+
+async function loadPendingRequests() {
+  if (!sb.client || !sb.user) return;
+  try {
+    const { data: reqs, error } = await sb.client
+      .from('friend_requests')
+      .select('*')
+      .eq('to_user', sb.user.id)
+      .eq('status', 'pending');
+    if (error) throw error;
+    friendsRequests = reqs || [];
+    updateFriendsBadges();
+  } catch (e) {
+    console.error('loadPendingRequests:', e);
+  }
+}
+
 function renderRequests() {
   const list = $('requestsList');
   const empty = $('requestsEmpty');
@@ -1624,13 +1655,7 @@ function renderRequests() {
   empty.hidden = friendsRequests.length > 0;
   count.hidden = friendsRequests.length === 0;
   count.textContent = String(friendsRequests.length);
-  const navBadge = $('friendsNavBadge');
-  const tabBadge = $('friendsTabBadge');
-  const n = friendsRequests.length;
-  navBadge.hidden = n === 0;
-  navBadge.textContent = n > 99 ? '99+' : String(n);
-  tabBadge.hidden = n === 0;
-  tabBadge.textContent = n > 99 ? '99+' : String(n);
+  updateFriendsBadges();
   friendsRequests.forEach(r => {
     const p = r.profile || {};
     const el = document.createElement('div');
