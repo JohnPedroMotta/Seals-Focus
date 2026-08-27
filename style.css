@@ -987,8 +987,48 @@ select option { background-color: var(--modal-bg); }
   margin: 0 0 16px;
 }
 
+.profile-view-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.profile-view-stat {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 12px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  text-align: center;
+}
+
+.profile-view-stat-value {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--accent-color);
+  line-height: 1.2;
+  word-break: break-word;
+  max-width: 100%;
+}
+
+.profile-view-stat-label {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+
 .friend-view {
   flex-shrink: 0;
+}
+
+.profile-view-modal .modal-actions {
+  justify-content: center;
 }
 
 /* ---------- Toasts ---------- */

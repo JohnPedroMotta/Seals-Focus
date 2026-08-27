@@ -299,13 +299,13 @@ begin
       select distinct (date_iso)::date into _d
       from public.sessions
       where user_id = friend_id and (date_iso)::date = _cursor;
-      if _d is null then exit; end if;
+      if not found then exit; end if;
       _streak := _streak + 1;
       _cursor := _cursor - 1;
     end loop;
   end if;
 
-  total_points := coalesce((select total_points from public.user_points where user_id = friend_id), 0);
+  total_points := coalesce((select public.user_points.total_points from public.user_points where user_id = friend_id), 0);
   total_sessions := coalesce((select count(*)::bigint from public.sessions where user_id = friend_id), 0);
   week_seconds := coalesce((select sum(duration)::bigint from public.sessions
                             where user_id = friend_id and date_iso >= now() - interval '7 days'), 0);
