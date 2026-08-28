@@ -1844,3 +1844,19 @@ body.light ::selection { color: #fff; }
   margin-top: 0;
 }
 
+.shop-subcard {
+  margin-top: 14px;
+  padding: 16px;
+}
+
+.shop-subcard-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0 0 2px;
+}
+
+.shop-subcard-hint {
+  margin: 0 0 4px;
+}
+
