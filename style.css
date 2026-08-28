@@ -263,7 +263,6 @@ main {
   place-items: center;
   background: var(--card-bg);
   border-radius: 50%;
-  border: 2px solid var(--accent-color);
   font-weight: 700;
   font-size: 0.85rem;
   color: var(--accent-color);
