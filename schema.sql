@@ -330,12 +330,24 @@ create table if not exists public.user_crystals (
 -- Catálogo de itens da loja (bordas)
 create table if not exists public.shop_items (
   id         serial primary key,
-  name       text not null,
+  name       text not null unique,
   category   text not null default 'border' check (category in ('border')),
   cost       integer not null default 0 check (cost >= 0),
   color      text not null default '',
   sort_order integer not null default 0
 );
+
+-- Garante UNIQUE em name mesmo se a tabela já existir (idempotente)
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'shop_items_name_key'
+      and conrelid = 'public.shop_items'::regclass
+  ) then
+    alter table public.shop_items add constraint shop_items_name_key unique (name);
+  end if;
+end $$;
 
 -- Itens que cada usuário comprou
 create table if not exists public.user_items (
@@ -404,6 +416,54 @@ begin
   insert into public.user_crystals (user_id, total_crystals)
   values (auth.uid(), 300)
   on conflict (user_id) do nothing;
+end;
+$$;
+
+-- Estado completo da loja em UMA chamada (elimina vários round-trips).
+-- Garante os cristais iniciais (300) e devolve catálogo + saldo +
+-- inventário + borda equipada num único JSON.
+create or replace function public.get_shop_state()
+returns json
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_uid   uuid := auth.uid();
+  v_cat   json;
+  v_bal   int;
+  v_owned json;
+  v_border int;
+begin
+  insert into public.user_crystals (user_id, total_crystals)
+  values (v_uid, 300) on conflict (user_id) do nothing;
+
+  select coalesce(cat.j, '[]'::json)
+    into v_cat
+    from (
+      select json_agg(json_build_object(
+        'id', id, 'name', name, 'category', category, 'cost', cost, 'color', color
+      ) order by sort_order) j
+      from public.shop_items
+    ) cat;
+
+  select coalesce(total_crystals, 0) into v_bal
+    from public.user_crystals where user_id = v_uid;
+
+  select coalesce(ui.j, '[]'::json) into v_owned
+    from (
+      select json_agg(item_id) j
+      from public.user_items where user_id = v_uid
+    ) ui;
+
+  select border_id into v_border from public.profiles where user_id = v_uid;
+
+  return json_build_object(
+    'catalog', v_cat,
+    'crystals', v_bal,
+    'owned', v_owned,
+    'border', v_border
+  );
 end;
 $$;
 
