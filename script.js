@@ -1672,36 +1672,16 @@ async function fetchPendingRequests() {
 }
 
 /* ================= LOJA ================= */
-async function grantCrystalsOnce() {
-  if (!sb.client || !sb.user) return;
-  try { await sb.client.rpc('grant_starting_crystals'); } catch (e) { console.error('grantCrystalsOnce:', e); }
-}
-
-async function loadShopCatalog() {
-  if (!sb.client || !sb.user) return;
-  try {
-    const { data: items, error } = await sb.client
-      .from('shop_items')
-      .select('id, name, category, cost, color')
-      .order('sort_order');
-    if (error) throw error;
-    shopItems = (items || []).filter(i => i.category === 'border');
-    shopItems.forEach(i => { BORDER_COLORS[i.id] = i.color; });
-  } catch (e) { console.error('loadShopCatalog:', e); }
-}
-
 async function loadShop() {
   if (!sb.client || !sb.user) return;
-  await loadShopCatalog();
   try {
-    const [{ data: bal }, { data: owned }, { data: me }] = await Promise.all([
-      sb.client.from('user_crystals').select('total_crystals').eq('user_id', sb.user.id).maybeSingle(),
-      sb.client.from('user_items').select('item_id').eq('user_id', sb.user.id),
-      sb.client.from('profiles').select('border_id').eq('user_id', sb.user.id).maybeSingle()
-    ]);
-    crystals = bal?.total_crystals ?? 0;
-    ownedItems = new Set((owned || []).map(o => o.item_id));
-    equippedBorder = me?.border_id ?? null;
+    const { data, error } = await sb.client.rpc('get_shop_state');
+    if (error) throw error;
+    shopItems = (data.catalog || []).filter(i => i.category === 'border');
+    shopItems.forEach(i => { BORDER_COLORS[i.id] = i.color; });
+    crystals = data.crystals ?? 0;
+    ownedItems = new Set(data.owned || []);
+    equippedBorder = data.border ?? null;
   } catch (e) { console.error('loadShop:', e); }
 }
 
@@ -1769,9 +1749,11 @@ function renderShopGrid(gridId, items, defaultAction) {
 
 async function openShop() {
   if (!sb.client || !sb.user) { switchView('study'); return; }
-  await grantCrystalsOnce();
+  const loading = $('shopLoading');
+  if (loading) loading.hidden = false;
   await loadShop();
   renderShop();
+  if (loading) loading.hidden = true;
   applyBorderTo($('avatarBtn'), equippedBorder);
 }
 
