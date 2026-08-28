@@ -1725,6 +1725,13 @@ async function loadShop() {
   } catch (e2) { console.error('loadShop fallback:', e2); }
 }
 
+function shopPreviewAvatar() {
+  if (profile.avatarUrl) {
+    return `<img class="shop-preview-photo" src="${escapeHtml(profile.avatarUrl)}" alt="">`;
+  }
+  return `<span>${escapeHtml((profile.displayName || '?').slice(0, 1).toUpperCase())}</span>`;
+}
+
 function renderShop() {
   $('shopCrystalsChip').textContent = `💎 ${crystals}`;
   const available = shopItems.filter(i => !ownedItems.has(i.id));
@@ -1766,7 +1773,7 @@ function renderShopGrid(gridId, items, defaultAction) {
       }
     }
     el.innerHTML = `
-      <div class="shop-avatar" style="${borderCss(item.id)}"><i class="ti ti-user"></i></div>
+      <div class="shop-avatar" style="${borderCss(item.id)}">${shopPreviewAvatar()}</div>
       <div class="shop-item-info">
         <span class="shop-item-name">${escapeHtml(item.name)}</span>
         <span class="shop-item-cost">${meta}</span>
