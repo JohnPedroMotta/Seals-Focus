@@ -16,7 +16,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3/dist/tabler-icons.min.css" />
   </noscript>
-  <link rel="stylesheet" href="style.css?v=26" />
+  <link rel="stylesheet" href="style.css?v=27" />
   <!-- Anti-bfcache + popup auto-close -->
   <script>
     window.addEventListener('pageshow', function(e) {
@@ -26,7 +26,7 @@
   </script>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script defer src="config.js?v=3"></script>
-  <script defer src="script.js?v=44"></script>
+  <script defer src="script.js?v=45"></script>
 </head>
 <body>
 
@@ -273,10 +273,7 @@
         <section class="card shop-subcard">
           <h3 class="shop-subcard-title">Bordas</h3>
           <p class="muted-p shop-subcard-hint">Escolha uma borda para destacar o seu perfil.</p>
-          <h4 class="shop-section-title" id="shopAvailTitle" hidden>Disponíveis para comprar</h4>
-          <div class="shop-grid" id="shopAvailableGrid"></div>
-          <h4 class="shop-section-title" id="shopOwnedTitle" hidden>Sua coleção</h4>
-          <div class="shop-grid" id="shopOwnedGrid"></div>
+          <div class="shop-grid" id="shopGrid"></div>
         </section>
       </section>
     </section>

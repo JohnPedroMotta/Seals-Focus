@@ -1732,66 +1732,57 @@ function shopPreviewAvatar() {
   return `<span>${escapeHtml((profile.displayName || '?').slice(0, 1).toUpperCase())}</span>`;
 }
 
-function renderShop() {
-  $('shopCrystalsChip').textContent = `💎 ${crystals}`;
-  const available = shopItems.filter(i => !ownedItems.has(i.id));
-  const owned = shopItems.filter(i => ownedItems.has(i.id));
-
-  $('shopAvailTitle').hidden = available.length === 0;
-  $('shopOwnedTitle').hidden = owned.length === 0;
-  renderShopGrid('shopAvailableGrid', available, 'buy');
-  renderShopGrid('shopOwnedGrid', owned, 'equip');
+function borderName(item) {
+  return (item.name || '').replace(/^Borda\s+/i, '');
 }
 
-function renderShopGrid(gridId, items, defaultAction) {
+function renderShop() {
+  $('shopCrystalsChip').textContent = `💎 ${crystals}`;
+  renderShopGrid('shopGrid', shopItems);
+}
+
+function renderShopGrid(gridId, items) {
   const grid = $(gridId);
   if (!grid) return;
   grid.innerHTML = '';
   items.forEach(item => {
+    const owned = ownedItems.has(item.id);
     const isEquipped = equippedBorder === item.id;
     const el = document.createElement('div');
     el.className = 'shop-item' + (isEquipped ? ' equipped' : '');
-    let btnClass = 'btn-primary';
-    let btnAct = defaultAction;
-    let btnText = defaultAction === 'buy' ? `💎 ${item.cost}` : (isEquipped ? 'Remover' : 'Equipar');
-    let btnDisabled = false;
-    let meta = '';
-    if (defaultAction === 'buy') {
-      meta = 'Ainda não possui';
+    let right;
+    if (!owned) {
+      right = `<button class="btn btn-sm btn-primary" data-act="buy" data-id="${item.id}">💎 ${item.cost}</button>`;
     } else {
-      meta = isEquipped ? 'Em uso' : 'Na coleção';
-    }
-    if (isEquipped) {
-      if (defaultAction === 'buy') {
-        btnClass = 'shop-btn-disabled';
-        btnAct = 'none';
-        btnDisabled = true;
-        btnText = 'Equipada';
-      } else {
-        btnClass = 'btn-danger';
-        btnAct = 'unequip';
-      }
+      el.classList.add('owned');
+      el.style.cursor = 'pointer';
+      el.dataset.id = String(item.id);
+      right = `<button class="shop-check" data-toggle="1" title="${isEquipped ? 'Em uso — clique para remover' : 'Comprada — clique para equipar'}">
+        <i class="ti ti-circle-check-filled"></i></button>`;
     }
     el.innerHTML = `
       <div class="shop-avatar" style="${borderCss(item.id)}">${shopPreviewAvatar()}</div>
       <div class="shop-item-info">
-        <span class="shop-item-name">${escapeHtml(item.name)}</span>
-        <span class="shop-item-cost">${meta}</span>
+        <span class="shop-item-name">${escapeHtml(borderName(item))}</span>
+        <span class="shop-item-cost">${owned ? (isEquipped ? 'Em uso' : 'Comprada') : ''}</span>
       </div>
-      <button class="btn btn-sm ${btnClass}" data-act="${btnAct}" data-id="${item.id}" ${btnDisabled ? 'disabled' : ''}>
-        ${btnText}
-      </button>
+      ${right}
     `;
     grid.appendChild(el);
   });
   grid.querySelectorAll('button[data-act]').forEach(btn =>
-    btn.addEventListener('click', () => {
-      const id = Number(btn.dataset.id);
-      if (btn.dataset.act === 'buy') buyItem(id);
-      else if (btn.dataset.act === 'equip') equipItem(id);
-      else if (btn.dataset.act === 'unequip') unequipItem(id);
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      buyItem(Number(btn.dataset.id));
     })
   );
+  grid.querySelectorAll('.shop-item.owned').forEach(card => {
+    card.addEventListener('click', () => {
+      const id = Number(card.dataset.id);
+      if (equippedBorder === id) unequipItem(id);
+      else equipItem(id);
+    });
+  });
 }
 
 async function openShop() {
@@ -1807,7 +1798,7 @@ async function openShop() {
 async function buyItem(itemId) {
   if (!sb.client || !sb.user) return;
   const it = shopItems.find(s => s.id === itemId);
-  const name = it ? it.name : 'este item';
+  const name = it ? borderName(it) : 'este item';
   const cost = it ? ` por ${it.cost}💎` : '';
   const ok = await confirmDialog({
     title: 'Confirmar compra',

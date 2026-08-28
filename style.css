@@ -1774,11 +1774,35 @@ body.light ::selection { color: #fff; }
   border: 1px solid var(--border-color);
   border-radius: var(--radius);
   padding: 14px;
+  position: relative;
 }
 
 .shop-item.equipped {
   border-color: var(--accent-color);
   box-shadow: 0 0 0 1px var(--accent-color);
+}
+
+.shop-item.owned {
+  cursor: pointer;
+}
+
+.shop-check {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 30px;
+  line-height: 1;
+  color: var(--success-color, #22c55e);
+  padding: 2px;
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  transition: transform 0.12s ease;
+}
+
+.shop-check:hover,
+.shop-check:focus-visible {
+  transform: scale(1.12);
 }
 
 .shop-avatar {
