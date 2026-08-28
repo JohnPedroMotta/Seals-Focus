@@ -1746,7 +1746,7 @@ function renderShopGrid(gridId, items, defaultAction) {
       }
     }
     el.innerHTML = `
-      <div class="shop-avatar" style="${borderCss(item.id)}"></div>
+      <div class="shop-avatar" style="${borderCss(item.id)}"><i class="ti ti-user"></i></div>
       <div class="shop-item-info">
         <span class="shop-item-name">${escapeHtml(item.name)}</span>
         <span class="shop-item-cost">${meta}</span>

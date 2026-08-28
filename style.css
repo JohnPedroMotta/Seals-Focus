@@ -1794,6 +1794,12 @@ body.light ::selection { color: #fff; }
   font-size: 1.1rem;
 }
 
+.shop-avatar i {
+  font-size: 28px;
+  line-height: 1;
+  color: var(--text-muted);
+}
+
 .shop-item-info {
   display: flex;
   flex-direction: column;
