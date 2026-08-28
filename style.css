@@ -1819,3 +1819,15 @@ body.light ::selection { color: #fff; }
   cursor: not-allowed;
 }
 
+.shop-section-title {
+  margin: 1.1rem 0 0.6rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+}
+
+.shop-section-title + .shop-grid {
+  margin-top: 0;
+}
+

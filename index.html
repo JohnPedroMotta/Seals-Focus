@@ -16,7 +16,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3/dist/tabler-icons.min.css" />
   </noscript>
-  <link rel="stylesheet" href="style.css?v=21" />
+  <link rel="stylesheet" href="style.css?v=22" />
   <!-- Anti-bfcache + popup auto-close -->
   <script>
     window.addEventListener('pageshow', function(e) {
@@ -26,7 +26,7 @@
   </script>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script defer src="config.js?v=3"></script>
-  <script defer src="script.js?v=37"></script>
+  <script defer src="script.js?v=38"></script>
 </head>
 <body>
 
@@ -266,8 +266,13 @@
           <h3 class="panel-title">Loja de Cosmético</h3>
           <span class="chip" id="shopCrystalsChip">💎 0</span>
         </div>
-        <p class="muted-p">Gaste seus cristais (💎) para comprar bordas coloridas de perfil.</p>
-        <div class="shop-grid" id="shopGrid"></div>
+        <p class="muted-p">Gaste seus cristais (💎) para comprar bordas coloridas de perfil. Você começa com um bônus de 300💎.</p>
+
+        <h4 class="shop-section-title" id="shopAvailTitle" hidden>Disponíveis para comprar</h4>
+        <div class="shop-grid" id="shopAvailableGrid"></div>
+
+        <h4 class="shop-section-title" id="shopOwnedTitle" hidden>Sua coleção</h4>
+        <div class="shop-grid" id="shopOwnedGrid"></div>
       </section>
     </section>
 

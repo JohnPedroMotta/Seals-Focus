@@ -1706,24 +1706,49 @@ async function loadShop() {
 }
 
 function renderShop() {
-  const grid = $('shopGrid');
-  if (!grid) return;
   $('shopCrystalsChip').textContent = `💎 ${crystals}`;
+  const available = shopItems.filter(i => !ownedItems.has(i.id));
+  const owned = shopItems.filter(i => ownedItems.has(i.id));
+
+  $('shopAvailTitle').hidden = available.length === 0;
+  $('shopOwnedTitle').hidden = owned.length === 0;
+  renderShopGrid('shopAvailableGrid', available, 'buy');
+  renderShopGrid('shopOwnedGrid', owned, 'equip');
+}
+
+function renderShopGrid(gridId, items, defaultAction) {
+  const grid = $(gridId);
+  if (!grid) return;
   grid.innerHTML = '';
-  shopItems.forEach(item => {
-    const owned = ownedItems.has(item.id);
-    const equipped = equippedBorder === item.id;
+  items.forEach(item => {
+    const isEquipped = equippedBorder === item.id;
     const el = document.createElement('div');
-    el.className = 'shop-item' + (equipped ? ' equipped' : '');
+    el.className = 'shop-item' + (isEquipped ? ' equipped' : '');
+    let btnClass = 'btn-primary';
+    let btnAct = defaultAction;
+    let btnText = defaultAction === 'buy' ? 'Comprar' : (isEquipped ? 'Em uso' : 'Equipar');
+    let btnDisabled = false;
+    if (isEquipped) {
+      if (defaultAction === 'buy') {
+        btnClass = 'shop-btn-disabled';
+        btnAct = 'none';
+        btnDisabled = true;
+        btnText = 'Equipada';
+      } else {
+        btnClass = 'btn-danger';
+        btnAct = 'unequip';
+        btnText = 'Remover';
+      }
+    }
+    let meta = defaultAction === 'buy' ? `💎 ${item.cost}` : (isEquipped ? 'Em uso' : 'Na coleção');
     el.innerHTML = `
       <div class="shop-avatar" style="${borderCss(item.id)}">${item.name.split(' ')[1] || 'B'}</div>
       <div class="shop-item-info">
         <span class="shop-item-name">${escapeHtml(item.name)}</span>
-        <span class="shop-item-cost">${owned ? (equipped ? 'Equipada' : 'Na coleção') : `💎 ${item.cost}`}</span>
+        <span class="shop-item-cost">${meta}</span>
       </div>
-      <button class="btn btn-sm ${owned ? (equipped ? 'shop-btn-disabled' : '') : 'btn-primary'}"
-        data-act="${equipped ? 'none' : (owned ? 'equip' : 'buy')}" data-id="${item.id}" ${equipped ? 'disabled' : ''}>
-        ${equipped ? 'Equipada' : (owned ? 'Equipar' : 'Comprar')}
+      <button class="btn btn-sm ${btnClass}" data-act="${btnAct}" data-id="${item.id}" ${btnDisabled ? 'disabled' : ''}>
+        ${btnText}
       </button>
     `;
     grid.appendChild(el);
@@ -1733,6 +1758,7 @@ function renderShop() {
       const id = Number(btn.dataset.id);
       if (btn.dataset.act === 'buy') buyItem(id);
       else if (btn.dataset.act === 'equip') equipItem(id);
+      else if (btn.dataset.act === 'unequip') unequipItem(id);
     })
   );
 }
@@ -1747,6 +1773,16 @@ async function openShop() {
 
 async function buyItem(itemId) {
   if (!sb.client || !sb.user) return;
+  const it = shopItems.find(s => s.id === itemId);
+  const name = it ? it.name : 'este item';
+  const cost = it ? ` por ${it.cost}💎` : '';
+  const ok = await confirmDialog({
+    title: 'Confirmar compra',
+    text: `Você tem certeza de que quer comprar "${name}"${cost}?`,
+    okText: 'Comprar',
+    okClass: 'btn-primary'
+  });
+  if (!ok) return;
   try {
     const { data, error } = await sb.client.rpc('buy_item', { p_item_id: itemId });
     if (error) throw error;
