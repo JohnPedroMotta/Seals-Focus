@@ -1783,13 +1783,10 @@ body.light ::selection { color: #fff; }
 }
 
 .shop-item.owned {
-  cursor: pointer;
+  cursor: default;
 }
 
 .shop-check {
-  background: transparent;
-  border: none;
-  cursor: pointer;
   font-size: 30px;
   line-height: 1;
   color: var(--success-color, #22c55e);
@@ -1797,12 +1794,6 @@ body.light ::selection { color: #fff; }
   display: inline-grid;
   place-items: center;
   flex-shrink: 0;
-  transition: transform 0.12s ease;
-}
-
-.shop-check:hover,
-.shop-check:focus-visible {
-  transform: scale(1.12);
 }
 
 .shop-avatar {

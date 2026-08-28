@@ -1754,11 +1754,7 @@ function renderShopGrid(gridId, items) {
     if (!owned) {
       right = `<button class="btn btn-sm btn-primary" data-act="buy" data-id="${item.id}">💎 ${item.cost}</button>`;
     } else {
-      el.classList.add('owned');
-      el.style.cursor = 'pointer';
-      el.dataset.id = String(item.id);
-      right = `<button class="shop-check" data-toggle="1" title="${isEquipped ? 'Em uso — clique para remover' : 'Comprada — clique para equipar'}">
-        <i class="ti ti-circle-check-filled"></i></button>`;
+      right = `<span class="shop-check" title="Comprada"><i class="ti ti-circle-check-filled"></i></span>`;
     }
     el.innerHTML = `
       <div class="shop-avatar" style="${borderCss(item.id)}">${shopPreviewAvatar()}</div>
@@ -1771,18 +1767,10 @@ function renderShopGrid(gridId, items) {
     grid.appendChild(el);
   });
   grid.querySelectorAll('button[data-act]').forEach(btn =>
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
+    btn.addEventListener('click', () => {
       buyItem(Number(btn.dataset.id));
     })
   );
-  grid.querySelectorAll('.shop-item.owned').forEach(card => {
-    card.addEventListener('click', () => {
-      const id = Number(card.dataset.id);
-      if (equippedBorder === id) unequipItem(id);
-      else equipItem(id);
-    });
-  });
 }
 
 async function openShop() {
