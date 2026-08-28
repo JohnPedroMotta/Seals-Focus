@@ -278,7 +278,7 @@ async function syncFromCloud() {
       sb.client.from('sessions').select('*').order('date_iso', { ascending: false }),
       sb.client.from('subjects').select('*'),
       sb.client.from('rewards').select('*'),
-      sb.client.from('profiles').select('*').maybeSingle()
+      sb.client.from('profiles').select('*').eq('user_id', sb.user.id).maybeSingle()
     ]);
     console.log('[sync] sessions:', (rs || []).length, 'subjects:', (rj || []).length, 'rewards:', (rw || []).length);
     if (eS) console.error('[sync] sessions error:', eS.message);
