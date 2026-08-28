@@ -23,6 +23,22 @@ const SIGNUP_BONUS = 200;
 /* ================= Pontos do usuário (user_points) ================= */
 let userPoints = 0;
 
+/* ================= Loja (cristais + bordas) ================= */
+// Whitelist temporária: só essas contas veem a aba Loja (fase de teste).
+// Use @username sem o @, minúsculo. Pra liberar p/ todo mundo, esvazie o array.
+const SHOP_ALLOWED = ['casper', 'tsuy_ru'];
+let crystals = 0;               // saldo de cristais (moeda da loja)
+let shopItems = [];             // catálogo: [{id, name, category, cost, color}]
+let ownedItems = new Set();     // ids de bordas que o usuário já comprou
+let equippedBorder = null;      // id da borda equipada (do perfil do usuário)
+const BORDER_COLORS = {};       // id -> cor hex (preenchido do catálogo)
+
+function isShopAllowed() {
+  if (SHOP_ALLOWED.length === 0) return true; // lista vazia = liberado p/ todos
+  const uname = (profile.username || '').replace('@', '').toLowerCase().trim();
+  return SHOP_ALLOWED.includes(uname);
+}
+
 function getTotalPoints() { return userPoints + (rewardedDays.size * POINTS_PER_DAY); }
 
 async function loadUserPoints() {
@@ -206,7 +222,10 @@ function setCloudUser(user) {
     $('settingsGoalCard').hidden = false;
     $('settingsDataCard').hidden = false;
     loadProfile();
-    pullProfile().then(() => syncProfileUI());
+    Promise.all([pullProfile(), loadShop()]).then(() => {
+      syncProfileUI();
+      applyBorderTo($('avatarBtn'), equippedBorder);
+    });
   } else {
     avatar.textContent = '?';
     avatar.title = 'Conectar conta';
@@ -543,9 +562,11 @@ function syncTimerUI() {
 }
 
 /* ================= Views ================= */
-const views = ['study', 'stats', 'feed', 'friends', 'settings'];
+const views = ['study', 'stats', 'feed', 'friends', 'shop', 'settings'];
+let currentView = 'study';
 
 function switchView(name) {
+  currentView = name;
   views.forEach(v => {
     const section = $(`view-${v}`);
     const active = v === name;
@@ -561,6 +582,7 @@ function switchView(name) {
   window.scrollTo({ top: 0 });
   if (name === 'settings') syncSettingsUI();
   else if (name === 'friends') loadFriends();
+  else if (name === 'shop') { if (isShopAllowed()) openShop(); else switchView('study'); }
   else if (name !== 'study') renderStatsAndFeed();
 }
 
@@ -1324,6 +1346,33 @@ function syncProfileUI() {
     nameEl.textContent = 'Fazer login';
     nameEl.hidden = false;
   }
+
+  syncShopButtons();
+  applyBorderTo($('avatarBtn'), sb.user ? equippedBorder : null);
+  applyBorderTo($('profileAvatarLabel'), sb.user ? equippedBorder : null);
+}
+
+function syncShopButtons() {
+  const show = isShopAllowed();
+  const nav = $('shopNavBtn');
+  const tab = $('shopTabBtn');
+  if (nav) nav.hidden = !show;
+  if (tab) tab.hidden = !show;
+  if (!show && currentView === 'shop') switchView('study');
+}
+
+function borderCss(itemId) {
+  if (!itemId) return '';
+  const color = BORDER_COLORS[itemId];
+  if (!color) return '';
+  return `box-shadow: 0 0 0 3px var(--bg-color), 0 0 0 6px ${color}, 0 0 14px ${color};`;
+}
+
+function applyBorderTo(el, itemId) {
+  if (!el) return;
+  const inline = borderCss(itemId);
+  if (inline) el.setAttribute('style', inline);
+  else el.removeAttribute('style');
 }
 
 function saveProfile() {
@@ -1586,7 +1635,7 @@ async function loadFriends() {
     if (friendIds.length > 0) {
       const { data: profs, error: pErr } = await sb.client
         .from('profiles')
-        .select('user_id, username, display_name, avatar_url, bio')
+        .select('user_id, username, display_name, avatar_url, bio, border_id')
         .in('user_id', friendIds);
       if (pErr) throw pErr;
       friendsCache = (profs || []).map(p => ({ ...p, user_id: p.user_id }));
@@ -1611,7 +1660,7 @@ async function fetchPendingRequests() {
     let fromProfs = {};
     if (fromIds.length > 0) {
       const { data } = await sb.client.from('profiles')
-        .select('user_id, username, display_name, avatar_url, bio')
+        .select('user_id, username, display_name, avatar_url, bio, border_id')
         .in('user_id', fromIds);
       (data || []).forEach(p => { fromProfs[p.user_id] = p; });
     }
@@ -1620,6 +1669,120 @@ async function fetchPendingRequests() {
     console.error('fetchPendingRequests:', e);
     friendsRequests = [];
   }
+}
+
+/* ================= LOJA ================= */
+async function grantCrystalsOnce() {
+  if (!sb.client || !sb.user) return;
+  try { await sb.client.rpc('grant_starting_crystals'); } catch (e) { console.error('grantCrystalsOnce:', e); }
+}
+
+async function loadShopCatalog() {
+  if (!sb.client || !sb.user) return;
+  try {
+    const { data: items, error } = await sb.client
+      .from('shop_items')
+      .select('id, name, category, cost, color')
+      .order('sort_order');
+    if (error) throw error;
+    shopItems = (items || []).filter(i => i.category === 'border');
+    shopItems.forEach(i => { BORDER_COLORS[i.id] = i.color; });
+  } catch (e) { console.error('loadShopCatalog:', e); }
+}
+
+async function loadShop() {
+  if (!sb.client || !sb.user) return;
+  await loadShopCatalog();
+  try {
+    const [{ data: bal }, { data: owned }, { data: me }] = await Promise.all([
+      sb.client.from('user_crystals').select('total_crystals').eq('user_id', sb.user.id).maybeSingle(),
+      sb.client.from('user_items').select('item_id').eq('user_id', sb.user.id),
+      sb.client.from('profiles').select('border_id').eq('user_id', sb.user.id).maybeSingle()
+    ]);
+    crystals = bal?.total_crystals ?? 0;
+    ownedItems = new Set((owned || []).map(o => o.item_id));
+    equippedBorder = me?.border_id ?? null;
+  } catch (e) { console.error('loadShop:', e); }
+}
+
+function renderShop() {
+  const grid = $('shopGrid');
+  if (!grid) return;
+  $('shopCrystalsChip').textContent = `💎 ${crystals}`;
+  grid.innerHTML = '';
+  shopItems.forEach(item => {
+    const owned = ownedItems.has(item.id);
+    const equipped = equippedBorder === item.id;
+    const el = document.createElement('div');
+    el.className = 'shop-item' + (equipped ? ' equipped' : '');
+    el.innerHTML = `
+      <div class="shop-avatar" style="${borderCss(item.id)}">${item.name.split(' ')[1] || 'B'}</div>
+      <div class="shop-item-info">
+        <span class="shop-item-name">${escapeHtml(item.name)}</span>
+        <span class="shop-item-cost">${owned ? (equipped ? 'Equipada' : 'Na coleção') : `💎 ${item.cost}`}</span>
+      </div>
+      <button class="btn btn-sm ${owned ? (equipped ? 'shop-btn-disabled' : '') : 'btn-primary'}"
+        data-act="${equipped ? 'none' : (owned ? 'equip' : 'buy')}" data-id="${item.id}" ${equipped ? 'disabled' : ''}>
+        ${equipped ? 'Equipada' : (owned ? 'Equipar' : 'Comprar')}
+      </button>
+    `;
+    grid.appendChild(el);
+  });
+  grid.querySelectorAll('button[data-act]').forEach(btn =>
+    btn.addEventListener('click', () => {
+      const id = Number(btn.dataset.id);
+      if (btn.dataset.act === 'buy') buyItem(id);
+      else if (btn.dataset.act === 'equip') equipItem(id);
+    })
+  );
+}
+
+async function openShop() {
+  if (!sb.client || !sb.user) { switchView('study'); return; }
+  await grantCrystalsOnce();
+  await loadShop();
+  renderShop();
+  applyBorderTo($('avatarBtn'), equippedBorder);
+}
+
+async function buyItem(itemId) {
+  if (!sb.client || !sb.user) return;
+  try {
+    const { data, error } = await sb.client.rpc('buy_item', { p_item_id: itemId });
+    if (error) throw error;
+    await loadShop();
+    renderShop();
+    applyBorderTo($('avatarBtn'), equippedBorder);
+    toast('Borda comprada! Agora equipe para usar.', 'success');
+  } catch (e) {
+    console.error('buyItem:', e);
+    toast(e.message === 'cristais insuficientes' ? 'Cristais insuficientes.' : 'Não foi possível comprar.', 'error');
+  }
+}
+
+async function equipItem(itemId) {
+  if (!sb.client || !sb.user) return;
+  try {
+    const { error } = await sb.client.rpc('equip_border', { p_item_id: itemId });
+    if (error) throw error;
+    equippedBorder = itemId;
+    await loadShop();
+    renderShop();
+    applyBorderTo($('avatarBtn'), equippedBorder);
+    toast('Borda equipada!', 'success');
+  } catch (e) { console.error('equipItem:', e); toast('Não foi possível equipar.', 'error'); }
+}
+
+async function unequipItem(itemId) {
+  if (!sb.client || !sb.user) return;
+  try {
+    const { error } = await sb.client.rpc('unequip_border');
+    if (error) throw error;
+    equippedBorder = null;
+    await loadShop();
+    renderShop();
+    applyBorderTo($('avatarBtn'), null);
+  } catch (e) { console.error('unequipItem:', e); }
 }
 
 function renderFriends() {
@@ -1633,7 +1796,7 @@ function renderFriends() {
     const el = document.createElement('div');
     el.className = 'friend-row';
     el.innerHTML = `
-      <div class="friend-avatar">${f.avatar_url
+      <div class="friend-avatar" style="${borderCss(f.border_id)}">${f.avatar_url
         ? `<img src="${escapeHtml(f.avatar_url)}" alt="" onerror="this.remove()">`
         : (f.display_name ? f.display_name.slice(0,1).toUpperCase() : '?')}</div>
       <div class="friend-info">
@@ -1686,7 +1849,7 @@ function renderRequests() {
     const el = document.createElement('div');
     el.className = 'friend-row';
     el.innerHTML = `
-      <div class="friend-avatar">${p.avatar_url
+      <div class="friend-avatar" style="${borderCss(p.border_id)}">${p.avatar_url
         ? `<img src="${escapeHtml(p.avatar_url)}" alt="" onerror="this.remove()">`
         : (p.display_name ? p.display_name.slice(0,1).toUpperCase() : '?')}</div>
       <div class="friend-info">
@@ -1758,6 +1921,7 @@ async function openProfileModal(friendId) {
   av.innerHTML = f.avatar_url
     ? `<img src="${escapeHtml(f.avatar_url)}" alt="" onerror="this.remove()">`
     : ((f.display_name || '?').slice(0, 1).toUpperCase());
+  applyBorderTo(av, f.border_id);
   const bioEl = $('profileViewBio');
   bioEl.textContent = f.bio || '';
   bioEl.hidden = !f.bio;
@@ -1821,7 +1985,7 @@ $('friendSearchBtn').addEventListener('click', async () => {
   const username = q.replace('@', '').toLowerCase();
   try {
     const { data, error } = await sb.client.from('profiles')
-      .select('user_id, username, display_name, avatar_url')
+      .select('user_id, username, display_name, avatar_url, border_id')
       .ilike('username', username + '%')
       .limit(5);
     if (error) throw error;
@@ -1839,6 +2003,7 @@ $('friendSearchBtn').addEventListener('click', async () => {
       ? `<img src="${escapeHtml(hit.avatar_url)}" alt="" onerror="this.remove()">`
       : (hit.display_name ? hit.display_name.slice(0,1).toUpperCase() : '?');
     avEl.classList.toggle('has-photo', !!hit.avatar_url);
+    applyBorderTo(avEl, hit.border_id);
     $('friendSendBtn').dataset.uid = hit.user_id;
     $('friendSearchResults').hidden = false;
   } catch (e) {

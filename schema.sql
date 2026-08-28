@@ -316,6 +316,198 @@ begin
 end;
 $$;
 
+-- ============================================================
+--  LOJA · Cristais + itens cosméticos (bordas de perfil)
+-- ============================================================
+
+-- Moeda da loja (cristais) — separada dos pontos
+create table if not exists public.user_crystals (
+  user_id        uuid primary key references auth.users (id) on delete cascade,
+  total_crystals integer not null default 0,
+  updated_at     timestamptz not null default now()
+);
+
+-- Catálogo de itens da loja (bordas)
+create table if not exists public.shop_items (
+  id         serial primary key,
+  name       text not null,
+  category   text not null default 'border' check (category in ('border')),
+  cost       integer not null default 0 check (cost >= 0),
+  color      text not null default '',
+  sort_order integer not null default 0
+);
+
+-- Itens que cada usuário comprou
+create table if not exists public.user_items (
+  user_id     uuid not null references auth.users (id) on delete cascade,
+  item_id     integer not null references public.shop_items (id) on delete cascade,
+  purchased_at timestamptz not null default now(),
+  primary key (user_id, item_id)
+);
+
+-- Coluna do perfil: borda equipada no momento
+do $$
+begin
+  if not exists (select 1 from information_schema.columns
+                 where table_schema = 'public' and table_name = 'profiles'
+                   and column_name = 'border_id') then
+    alter table public.profiles add column border_id integer
+      references public.shop_items (id) on delete set null;
+  end if;
+end $$;
+
+alter table public.user_crystals enable row level security;
+alter table public.user_items enable row level security;
+
+-- RLS: cristais/inventário só do dono
+drop policy if exists "dono dos cristais" on public.user_crystals;
+create policy "dono dos cristais"
+  on public.user_crystals for all
+  to authenticated
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+drop policy if exists "dono dos itens" on public.user_items;
+create policy "dono dos itens"
+  on public.user_items for all
+  to authenticated
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+-- Catálogo legível por qualquer usuário autenticado (loja pública)
+alter table public.shop_items enable row level security;
+drop policy if exists "loja legivel" on public.shop_items;
+create policy "loja legivel"
+  on public.shop_items for select
+  to authenticated
+  using (true);
+
+-- Itens iniciais (bordas coloridas) — idempotente
+insert into public.shop_items (name, category, cost, color, sort_order) values
+  ('Borda Âmbar',    'border', 100, '#f0a63c', 1),
+  ('Borda Esmeralda','border', 100, '#34d399', 2),
+  ('Borda Safira',   'border', 100, '#38bdf8', 3),
+  ('Borda Rubi',     'border', 150, '#f87171', 4),
+  ('Borda Dourada',  'border', 250, '#facc15', 5),
+  ('Borda Rosa',     'border', 150, '#f472b6', 6)
+on conflict (name) do nothing;
+
+-- Saldo inicial de cristais (bônus único, idempotente)
+-- Só concede quando o usuário NÃO tem linha ainda (primeira visita à loja)
+create or replace function public.grant_starting_crystals()
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.user_crystals (user_id, total_crystals)
+  values (auth.uid(), 300)
+  on conflict (user_id) do nothing;
+end;
+$$;
+
+-- Compra atômica: confere/bônus não aplicado + desconta cristais + registra item
+create or replace function public.buy_item(p_item_id integer)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_cost int;
+  v_bal  int;
+begin
+  select cost into v_cost from public.shop_items where id = p_item_id;
+  if not found then
+    raise exception 'item não existe';
+  end if;
+
+  select total_crystals into v_bal from public.user_crystals where user_id = auth.uid();
+  if not found then
+    v_bal := 0;
+  end if;
+
+  if exists (select 1 from public.user_items where user_id = auth.uid() and item_id = p_item_id) then
+    raise exception 'você já possui este item';
+  end if;
+
+  if v_bal < v_cost then
+    raise exception 'cristais insuficientes';
+  end if;
+
+  update public.user_crystals
+     set total_crystals = total_crystals - v_cost,
+         updated_at = now()
+   where user_id = auth.uid();
+
+  insert into public.user_items (user_id, item_id) values (auth.uid(), p_item_id);
+
+  return true;
+end;
+$$;
+
+-- Equipa uma borda que o usuário possui
+create or replace function public.equip_border(p_item_id integer)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not exists (
+    select 1 from public.user_items where user_id = auth.uid() and item_id = p_item_id
+  ) then
+    raise exception 'você não possui este item';
+  end if;
+  update public.profiles
+     set border_id = p_item_id,
+         updated_at = now()
+   where user_id = auth.uid();
+end;
+$$;
+
+-- Desequipa (remove borda ativa — "nenhuma")
+create or replace function public.unequip_border()
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  update public.profiles
+     set border_id = null,
+         updated_at = now()
+   where user_id = auth.uid();
+end;
+$$;
+
+-- Guarda: só dá pra equipar borda que o usuário realmente possui.
+-- Bloqueia UPDATE burlado direto em profiles.border_id (protege a loja).
+create or replace function public.guard_border_equip()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if new.border_id is not null and new.border_id is distinct from old.border_id then
+    if not exists (
+      select 1 from public.user_items
+      where user_id = auth.uid() and item_id = new.border_id
+    ) then
+      raise exception 'você não possui esta borda';
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_guard_border_equip on public.profiles;
+create trigger trg_guard_border_equip
+  before update on public.profiles
+  for each row execute function public.guard_border_equip();
+
 -- Função para excluir conta e todos os dados do usuário -----------
 create or replace function delete_my_account()
 returns void
@@ -324,6 +516,8 @@ security definer
 as $$
 begin
   delete from public.user_points where user_id = auth.uid();
+  delete from public.user_crystals where user_id = auth.uid();
+  delete from public.user_items where user_id = auth.uid();
   delete from public.profiles where user_id = auth.uid();
   delete from public.rewards where user_id = auth.uid();
   delete from public.subjects where user_id = auth.uid();
