@@ -1726,8 +1726,14 @@ function renderShopGrid(gridId, items, defaultAction) {
     el.className = 'shop-item' + (isEquipped ? ' equipped' : '');
     let btnClass = 'btn-primary';
     let btnAct = defaultAction;
-    let btnText = defaultAction === 'buy' ? 'Comprar' : (isEquipped ? 'Em uso' : 'Equipar');
+    let btnText = defaultAction === 'buy' ? `💎 ${item.cost}` : (isEquipped ? 'Remover' : 'Equipar');
     let btnDisabled = false;
+    let meta = '';
+    if (defaultAction === 'buy') {
+      meta = 'Ainda não possui';
+    } else {
+      meta = isEquipped ? 'Em uso' : 'Na coleção';
+    }
     if (isEquipped) {
       if (defaultAction === 'buy') {
         btnClass = 'shop-btn-disabled';
@@ -1737,12 +1743,10 @@ function renderShopGrid(gridId, items, defaultAction) {
       } else {
         btnClass = 'btn-danger';
         btnAct = 'unequip';
-        btnText = 'Remover';
       }
     }
-    let meta = defaultAction === 'buy' ? `💎 ${item.cost}` : (isEquipped ? 'Em uso' : 'Na coleção');
     el.innerHTML = `
-      <div class="shop-avatar" style="${borderCss(item.id)}">${item.name.split(' ')[1] || 'B'}</div>
+      <div class="shop-avatar" style="${borderCss(item.id)}"></div>
       <div class="shop-item-info">
         <span class="shop-item-name">${escapeHtml(item.name)}</span>
         <span class="shop-item-cost">${meta}</span>
