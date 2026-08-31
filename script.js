@@ -45,6 +45,10 @@ function isShopAllowed() {
   return SHOP_ALLOWED.includes(uname);
 }
 
+function isAdmin() {
+  return !!(sb.user && ADMIN_USER_ID && sb.user.id === ADMIN_USER_ID);
+}
+
 function getTotalPoints() { return userPoints + (rewardedDays.size * POINTS_PER_DAY); }
 
 async function loadUserPoints() {
@@ -581,7 +585,7 @@ function syncTimerUI() {
 }
 
 /* ================= Views ================= */
-const views = ['study', 'stats', 'feed', 'friends', 'shop', 'settings'];
+const views = ['study', 'stats', 'feed', 'friends', 'shop', 'settings', 'admin'];
 let currentView = 'study';
 
 function switchView(name) {
@@ -602,6 +606,7 @@ function switchView(name) {
   if (name === 'settings') syncSettingsUI();
   else if (name === 'friends') loadFriends();
   else if (name === 'shop') { if (isShopAllowed()) openShop(); else switchView('study'); }
+  else if (name === 'admin') { if (isAdmin()) { loadAdminStats(); loadAdminFeedback(); } else switchView('study'); }
   else if (name !== 'study') renderStatsAndFeed();
 }
 
@@ -1404,6 +1409,7 @@ function syncProfileUI() {
   }
 
   syncShopButtons();
+  syncAdminButtons();
   applyBorderTo($('avatarBtn'), sb.user ? equippedBorder : null);
   applyBorderTo($('profileAvatarLabel'), sb.user ? equippedBorder : null);
 }
@@ -1444,6 +1450,68 @@ function syncShopButtons() {
   if (nav) nav.hidden = !show;
   if (tab) tab.hidden = !show;
   if (!show && currentView === 'shop') switchView('study');
+}
+
+function syncAdminButtons() {
+  const admin = isAdmin();
+  const nav = $('adminNavBtn');
+  const tab = $('adminTabBtn');
+  if (nav) nav.hidden = !admin;
+  if (tab) tab.hidden = !admin;
+  if (!admin && currentView === 'admin') switchView('study');
+}
+
+function fmtHM(secs) { const m = Math.floor((secs || 0) / 60); const h = Math.floor(m / 60); return h > 0 ? `${h}h ${m % 60}m` : `${m}m`; }
+
+async function loadAdminStats() {
+  if (!isAdmin()) return;
+  const box = $('adminStats');
+  if (!box) return;
+  box.innerHTML = '<p class="muted-p">Carregando estatísticas…</p>';
+  try {
+    const { data: stats, error } = await sb.client.rpc('get_admin_stats');
+    if (error) throw error;
+    if (!stats) throw new Error('sem dados');
+    const s = stats;
+    const cards = [
+      { l: 'Usuários', v: s.users },
+      { l: 'Usuários ativos', v: s.active_users },
+      { l: 'Sessões (total)', v: s.sessions },
+      { l: 'Tempo total', v: fmtHM(s.seconds_total) },
+      { l: 'Sessões hoje', v: s.sessions_today },
+      { l: 'Tempo hoje', v: fmtHM(s.seconds_today) },
+      { l: 'Feedbacks', v: s.feedback },
+      { l: 'Cristais emitidos', v: s.crystals_total },
+      { l: 'Itens vendidos', v: s.items_sold },
+      { l: 'Amizades', v: s.friendships },
+      { l: 'Pedidos de amizade', v: s.friend_requests }
+    ];
+    box.innerHTML = cards.map(c =>
+      `<div class="stat-tile"><span class="stat-tile-val">${escapeHtml(String(c.v))}</span><span class="stat-tile-label">${escapeHtml(c.l)}</span></div>`
+    ).join('');
+  } catch (e) {
+    console.error('loadAdminStats:', e);
+    box.innerHTML = '<p class="muted-p">Não foi possível carregar (RPC get_admin_stats pode não ter sido criada).</p>';
+  }
+}
+
+async function loadAdminFeedback() {
+  if (!isAdmin()) return;
+  const list = $('adminFeedbackList');
+  if (!list) return;
+  list.innerHTML = '<p class="muted-p">Carregando…</p>';
+  try {
+    const { data, error } = await sb.client.rpc('get_admin_feedback', { p_limit: 50 });
+    if (error) throw error;
+    const rows = data || [];
+    if (!rows.length) { list.innerHTML = '<p class="muted-p">Nenhum feedback ainda.</p>'; return; }
+    list.innerHTML = rows.map(f =>
+      `<div class="feedback-row"><div class="feedback-head"><strong>${escapeHtml(f.username || 'Anônimo')}</strong><span class="muted-p feedback-date">${new Date(f.created_at).toLocaleString('pt-BR')}</span></div><div class="feedback-msg">${escapeHtml(f.message)}</div></div>`
+    ).join('');
+  } catch (e) {
+    console.error('loadAdminFeedback:', e);
+    list.innerHTML = '<p class="muted-p">Não foi possível carregar (RPC get_admin_feedback pode não ter sido criada).</p>';
+  }
 }
 
 function borderCss(itemId) {

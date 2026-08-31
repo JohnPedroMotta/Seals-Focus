@@ -664,3 +664,85 @@ begin
   values (auth.uid(), v_username, left(trim(p_message), 1000), now());
 end;
 $$;
+
+-- ================= Painel Admin =================
+-- Só o UID do dono pode chamar. Qualquer outro chama → erro (não vaza dados).
+create or replace function public.get_admin_stats()
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_admin  uuid := '104915e0-319a-40db-a9f9-568bcaf2d456';
+  v_users       int;
+  v_active      int;
+  v_sessions    int;
+  v_seconds     bigint;
+  v_sessions_today int;
+  v_seconds_today  bigint;
+  v_feedback    int;
+  v_crystals    bigint;
+  v_items       int;
+  v_friends     int;
+  v_requests    int;
+begin
+  if auth.uid() <> v_admin then
+    raise exception 'acesso negado';
+  end if;
+
+  select count(*) into v_users      from public.profiles;
+  select count(distinct user_id) into v_active from public.sessions;
+  select count(*) into v_sessions   from public.sessions;
+  select coalesce(sum(duration),0) into v_seconds from public.sessions;
+  select count(*) into v_sessions_today from public.sessions where date_iso::date = current_date;
+  select coalesce(sum(duration),0) into v_seconds_today from public.sessions where date_iso::date = current_date;
+  select count(*) into v_feedback   from public.feedback;
+  select coalesce(sum(total_crystals),0) into v_crystals from public.user_crystals;
+  select count(*) into v_items      from public.user_items;
+  select count(*) into v_friends    from public.friendships;
+  select count(*) into v_requests   from public.friend_requests;
+
+  return jsonb_build_object(
+    'users',           v_users,
+    'active_users',    v_active,
+    'sessions',        v_sessions,
+    'seconds_total',   v_seconds,
+    'sessions_today',  v_sessions_today,
+    'seconds_today',   v_seconds_today,
+    'feedback',        v_feedback,
+    'crystals_total',  v_crystals,
+    'items_sold',      v_items,
+    'friendships',     v_friends,
+    'friend_requests', v_requests
+  );
+end;
+$$;
+
+-- Últimos feedbacks (admin)
+create or replace function public.get_admin_feedback(p_limit int default 50)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_admin uuid := '104915e0-319a-40db-a9f9-568bcaf2d456';
+  v_rows  jsonb;
+begin
+  if auth.uid() <> v_admin then
+    raise exception 'acesso negado';
+  end if;
+
+  select coalesce(jsonb_agg(row_to_jsonb(t) order by t.created_at desc), '[]'::jsonb)
+    into v_rows
+    from (
+      select f.id, f.username, f.message, f.created_at
+      from public.feedback f
+      order by f.created_at desc
+      limit p_limit
+    ) t;
+
+  return v_rows;
+end;
+$$;

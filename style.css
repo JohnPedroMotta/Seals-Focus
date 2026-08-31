@@ -2087,5 +2087,58 @@ body.light ::selection { color: #fff; }
     #ffffff, #ff5e8a, #ffd166, #80ffdb, #7b9cff, #c9b8ff, #ffffff, #ff5e8a, #ffffff);
 }
 
+/* ---------- Painel Admin ---------- */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.stat-tile {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.stat-tile-val {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--accent-color);
+}
+.stat-tile-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.feedback-row {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-color);
+}
+.feedback-row:last-child { border-bottom: none; }
+.feedback-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+.feedback-msg {
+  color: var(--text-main);
+  white-space: pre-wrap;
+}
+.feedback-date {
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  .feedback-head { flex-direction: column; gap: 2px; }
+}
+
+
 
 

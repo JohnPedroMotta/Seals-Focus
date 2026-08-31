@@ -16,7 +16,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3/dist/tabler-icons.min.css" />
   </noscript>
-  <link rel="stylesheet" href="style.css?v=40" />
+  <link rel="stylesheet" href="style.css?v=41" />
   <!-- Anti-bfcache + popup auto-close -->
   <script>
     window.addEventListener('pageshow', function(e) {
@@ -25,8 +25,8 @@
     window.addEventListener('unload', function() {});
   </script>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-  <script defer src="config.js?v=3"></script>
-  <script defer src="script.js?v=55"></script>
+  <script defer src="config.js?v=4"></script>
+  <script defer src="script.js?v=56"></script>
 </head>
 <body>
 
@@ -71,6 +71,10 @@
         <button class="nav-btn" data-view="settings">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
           Ajustes
+        </button>
+        <button class="nav-btn" data-view="admin" id="adminNavBtn" hidden>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 5 6v6c0 4.42 3 7.5 7 9 4-1.5 7-4.58 7-9V6l-7-3z"/><path d="m9 12 2 2 4-4"/></svg>
+          Admin
         </button>
       </nav>
 
@@ -466,6 +470,23 @@
         </div>
       </section>
     </section>
+
+    <!-- ===================== VISÃO: ADMIN ===================== -->
+    <section class="view" id="view-admin" hidden>
+      <section class="card">
+        <div class="card-head">
+          <h3 class="panel-title">Painel Admin</h3>
+        </div>
+        <p class="muted-p">Visão geral do site (apenas para a conta dona).</p>
+
+        <div class="stat-grid" id="adminStats"><p class="muted-p">Carregando estatísticas…</p></div>
+
+        <div class="card-head" style="margin-top:22px;">
+          <h3 class="panel-title">Feedbacks dos usuários</h3>
+        </div>
+        <div id="adminFeedbackList"><p class="muted-p">Carregando…</p></div>
+      </section>
+    </section>
   </main>
   </div>
 
@@ -495,6 +516,10 @@
     <button class="tab-btn" data-view="settings">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       <span>Ajustes</span>
+    </button>
+    <button class="tab-btn" data-view="admin" id="adminTabBtn" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 5 6v6c0 4.42 3 7.5 7 9 4-1.5 7-4.58 7-9V6l-7-3z"/><path d="m9 12 2 2 4-4"/></svg>
+      <span>Admin</span>
     </button>
   </nav>
 
