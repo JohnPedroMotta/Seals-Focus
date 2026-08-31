@@ -746,3 +746,237 @@ begin
   return v_rows;
 end;
 $$;
+
+
+/* =========================================================
+ *  GESTÃO DE USUÁRIOS (admin)
+ *  Todas as funções exigem auth.uid() = UID da conta dona.
+ * ========================================================= */
+
+-- Busca usuários por nome/@username (parcial, case-insensitive)
+create or replace function public.admin_search_users(p_q text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_admin uuid := '104915e0-319a-40db-a9f9-568bcaf2d456';
+  v_rows  jsonb;
+begin
+  if auth.uid() <> v_admin then
+    raise exception 'acesso negado';
+  end if;
+
+  select coalesce(jsonb_agg(t order by t.display_name asc), '[]'::jsonb)
+    into v_rows
+    from (
+      select
+        pr.user_id,
+        pr.username,
+        pr.display_name,
+        pr.avatar_url,
+        pr.border_id,
+        coalesce(cr.total_crystals, 0) as total_crystals,
+        coalesce(pn.total_points,  0)  as total_points,
+        (select count(*) from public.sessions s where s.user_id = pr.user_id) as sessions_count
+      from public.profiles pr
+      left join public.user_crystals cr on cr.user_id = pr.user_id
+      left join public.user_points   pn on pn.user_id = pr.user_id
+      where length(coalesce(p_q,'')) = 0
+         or pr.username ilike '%' || p_q || '%'
+         or pr.display_name ilike '%' || p_q || '%'
+      limit 50
+    ) t;
+
+  return v_rows;
+end;
+$$;
+
+-- Detalhe completo de um usuário (incluindo streak atual)
+create or replace function public.admin_get_user(p_user_id uuid)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_admin uuid := '104915e0-319a-40db-a9f9-568bcaf2d456';
+  v_res   jsonb;
+  v_streak int;
+  v_last date;
+  v_cur date;
+  v_dayset date[];
+begin
+  if auth.uid() <> v_admin then
+    raise exception 'acesso negado';
+  end if;
+
+  -- cálculo de streak: dias consecutivos com sessão, terminando hoje ou ontem
+  v_streak := 0;
+  select array_agg(d order by d desc) into v_dayset
+    from (select distinct (date_iso::date) as d from public.sessions where user_id = p_user_id) t;
+
+  if v_dayset is not null then
+    select max(d) into v_last
+      from (select distinct (date_iso::date) as d from public.sessions where user_id = p_user_id) t;
+    if v_last >= current_date - 1 then
+      v_cur := v_last;
+      v_streak := 0;
+      while v_cur is not null and array_position(v_dayset, v_cur) is not null loop
+        v_streak := v_streak + 1;
+        v_cur := v_cur - 1;
+      end loop;
+    end if;
+  end if;
+
+  select jsonb_build_object(
+    'user_id',      pr.user_id,
+    'username',     pr.username,
+    'display_name', pr.display_name,
+    'avatar_url',   pr.avatar_url,
+    'bio',          pr.bio,
+    'border_id',    pr.border_id,
+    'total_crystals', coalesce(cr.total_crystals, 0),
+    'total_points',   coalesce(pn.total_points,  0),
+    'sessions_count', (select count(*) from public.sessions s where s.user_id = pr.user_id),
+    'rewards_count',  (select count(*) from public.rewards r where r.user_id = pr.user_id),
+    'streak',       v_streak
+  ) into v_res
+  from public.profiles pr
+  left join public.user_crystals cr on cr.user_id = pr.user_id
+  left join public.user_points   pn on pn.user_id = pr.user_id
+  where pr.user_id = p_user_id;
+
+  -- conta pode não ter perfil ainda
+  if v_res is null then
+    return null;
+  end if;
+
+  return v_res;
+end;
+$$;
+
+-- Edita dados do perfil de um usuário
+create or replace function public.admin_update_user(
+  p_user_id uuid,
+  p_display_name text,
+  p_username text,
+  p_bio text,
+  p_border_id int
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_admin uuid := '104915e0-319a-40db-a9f9-568bcaf2d456';
+begin
+  if auth.uid() <> v_admin then
+    raise exception 'acesso negado';
+  end if;
+
+  if p_username is null or length(trim(p_username)) = 0 then
+    raise exception 'username obrigatorio';
+  end if;
+
+  -- username único (ignorando você mesmo)
+  if exists (
+    select 1 from public.profiles
+    where username = trim(p_username) and user_id <> p_user_id
+  ) then
+    raise exception 'username ja em uso';
+  end if;
+
+  update public.profiles
+     set display_name = coalesce(trim(p_display_name), ''),
+         username     = trim(p_username),
+         bio          = coalesce(p_bio, ''),
+         border_id    = p_border_id,
+         updated_at   = now()
+   where user_id = p_user_id;
+
+  if not found then
+    raise exception 'usuario nao encontrado';
+  end if;
+
+  return jsonb_build_object('ok', true);
+end;
+$$;
+
+-- Define os cristais de um usuário
+create or replace function public.admin_set_crystals(p_user_id uuid, p_total int)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_admin uuid := '104915e0-319a-40db-a9f9-568bcaf2d456';
+begin
+  if auth.uid() <> v_admin then
+    raise exception 'acesso negado';
+  end if;
+
+  insert into public.user_crystals (user_id, total_crystals, updated_at)
+  values (p_user_id, greatest(p_total,0), now())
+  on conflict (user_id)
+  do update set total_crystals = greatest(p_total,0), updated_at = now();
+
+  return jsonb_build_object('ok', true);
+end;
+$$;
+
+-- Define os pontos de um usuário
+create or replace function public.admin_set_points(p_user_id uuid, p_total int)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_admin uuid := '104915e0-319a-40db-a9f9-568bcaf2d456';
+begin
+  if auth.uid() <> v_admin then
+    raise exception 'acesso negado';
+  end if;
+
+  insert into public.user_points (user_id, total_points, updated_at)
+  values (p_user_id, greatest(p_total,0), now())
+  on conflict (user_id)
+  do update set total_points = greatest(p_total,0), updated_at = now();
+
+  return jsonb_build_object('ok', true);
+end;
+$$;
+
+-- Limpa streak/conquistas: apaga sessões, recompensas e zera pontos/cristais
+create or replace function public.admin_reset_user(p_user_id uuid)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_admin uuid := '104915e0-319a-40db-a9f9-568bcaf2d456';
+begin
+  if auth.uid() <> v_admin then
+    raise exception 'acesso negado';
+  end if;
+
+  delete from public.sessions where user_id = p_user_id;
+  delete from public.rewards  where user_id = p_user_id;
+
+  insert into public.user_points   (user_id, total_points, updated_at)
+  values (p_user_id, 0, now())
+  on conflict (user_id) do update set total_points = 0, updated_at = now();
+
+  insert into public.user_crystals (user_id, total_crystals, updated_at)
+  values (p_user_id, 0, now())
+  on conflict (user_id) do update set total_crystals = 0, updated_at = now();
+
+  return jsonb_build_object('ok', true);
+end;
+$$;
+

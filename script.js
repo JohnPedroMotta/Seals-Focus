@@ -614,6 +614,8 @@ document.querySelectorAll('.nav-btn, .tab-btn').forEach(btn =>
   btn.addEventListener('click', () => switchView(btn.dataset.view))
 );
 
+bindAdminUserEvents();
+
 document.querySelectorAll('[data-goto]').forEach(btn =>
   btn.addEventListener('click', () => switchView(btn.dataset.goto))
 );
@@ -1519,6 +1521,169 @@ function borderCss(itemId) {
   const color = BORDER_COLORS[itemId];
   if (!color || EFFECT_FLAGS[color]) return '';
   return `box-shadow: 0 0 0 3px var(--bg-color), 0 0 0 6px ${color}, 0 0 14px ${color};`;
+}
+
+/* ================= GESTÃO DE USUÁRIOS (admin) ================= */
+function switchAdminTab(which) {
+  const isOverview = which === 'overview';
+  $('adminOverview').hidden = !isOverview;
+  $('adminUsers').hidden = isOverview;
+  document.querySelectorAll('.admin-tab').forEach(b => {
+    b.classList.toggle('active', b.dataset.atab === which);
+  });
+  if (!isOverview && $('adminUserSearch').value) searchAdminUsers();
+}
+
+async function adminRpc(name, params) {
+  const { data, error } = await sb.client.rpc(name, params);
+  if (error) throw error;
+  return data;
+}
+
+async function searchAdminUsers() {
+  if (!isAdmin()) return;
+  const box = $('adminUserResults');
+  const q = ($('adminUserSearch').value || '').trim();
+  box.innerHTML = '<p class="muted-p">Buscando…</p>';
+  try {
+    const rows = (await adminRpc('admin_search_users', { p_q: q })) || [];
+    if (!rows.length) { box.innerHTML = '<p class="muted-p">Nenhum usuário encontrado.</p>'; return; }
+    box.innerHTML = rows.map(u => `
+      <div class="admin-user-row" data-uid="${u.user_id}">
+        <div class="admin-user-avatar">${u.avatar_url
+          ? `<img src="${escapeHtml(u.avatar_url)}" alt="" onerror="this.remove()">`
+          : (u.display_name || u.username || '?').slice(0,1).toUpperCase()}</div>
+        <div class="admin-user-info">
+          <strong>${escapeHtml(u.display_name || 'Sem nome')}${ownerBadgeHTML(u.user_id)}</strong>
+          <span class="muted-p">${u.username ? '@' + escapeHtml(u.username) : 'sem @username'} · ${u.sessions_count ?? 0} sessões</span>
+        </div>
+        <div class="admin-user-meta">
+          <span title="Cristais">${crystalIcon('1em')} ${u.total_crystals ?? 0}</span>
+          <span title="Pontos">· ${u.total_points ?? 0} pts</span>
+        </div>
+        <button class="btn btn-sm" data-openadmin="1">Gerenciar</button>
+      </div>`).join('');
+    box.querySelectorAll('.admin-user-row').forEach(row => {
+      row.querySelector('[data-openadmin]').addEventListener('click', () => openAdminUser(row.dataset.uid));
+    });
+  } catch (e) {
+    console.error('searchAdminUsers:', e);
+    box.innerHTML = '<p class="muted-p">Não foi possível buscar (RPC admin_search_users pode não ter sido criada).</p>';
+  }
+}
+
+async function openAdminUser(uid) {
+  const editor = $('adminUserEditor');
+  editor.hidden = false;
+  editor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  $('auMsg').textContent = 'Carregando…';
+  try {
+    const u = await adminRpc('admin_get_user', { p_user_id: uid });
+    if (!u) { $('auMsg').textContent = 'Usuário sem perfil registrado.'; return; }
+    $('adminEditorTitle').innerHTML =
+      `Editar: ${escapeHtml(u.display_name || ('@' + (u.username || '...')))}${ownerBadgeHTML(uid)}`;
+    $('auName').value = u.display_name || '';
+    $('auUsername').value = u.username || '';
+    $('auBio').value = u.bio || '';
+    $('auCrystals').value = u.total_crystals ?? 0;
+    $('auPoints').value = u.total_points ?? 0;
+    if (!shopItems.length) await loadShopCatalog();
+    fillAdminBorderSelect(u.border_id);
+    $('auMsg').innerHTML =
+      `${u.sessions_count ?? 0} sessões · ${u.rewards_count ?? 0} recompensas · streak ${u.streak ?? 0} dia(s) · ${crystalIcon('1em')} ${u.total_crystals ?? 0}`;
+    editor._uid = uid;
+  } catch (e) {
+    console.error('openAdminUser:', e);
+    editor.hidden = true;
+    toast('Não foi possível carregar o usuário.', 'error');
+  }
+}
+
+function fillAdminBorderSelect(selectedId) {
+  const sel = $('auBorder');
+  sel.innerHTML = '<option value="0">Nenhuma borda</option>'
+    + (shopItems || []).map(i =>
+      `<option value="${i.id}"${String(i.id) === String(selectedId) ? ' selected' : ''}>${escapeHtml(i.name)}</option>`).join('');
+}
+
+async function saveAdminProfile() {
+  if (!isAdmin() || !$('adminUserEditor')._uid) return;
+  const uid = $('adminUserEditor')._uid;
+  $('auMsg').textContent = 'Salvando…';
+  try {
+    await adminRpc('admin_update_user', {
+      p_user_id: uid,
+      p_display_name: $('auName').value,
+      p_username: $('auUsername').value,
+      p_bio: $('auBio').value,
+      p_border_id: parseInt($('auBorder').value, 10) || null,
+    });
+    $('auMsg').textContent = 'Perfil salvo com sucesso.';
+    toast('Perfil atualizado.', 'success');
+    searchAdminUsers();
+    if (uid === sb.user.id) syncProfilePreview();
+  } catch (e) {
+    console.error('saveAdminProfile:', e);
+    $('auMsg').textContent = 'Erro: ' + (e.message || 'falha ao salvar');
+    toast('Erro ao salvar perfil.', 'error');
+  }
+}
+
+async function saveAdminField(kind) {
+  if (!isAdmin() || !$('adminUserEditor')._uid) return;
+  const uid = $('adminUserEditor')._uid;
+  const inp = kind === 'crystals' ? $('auCrystals') : $('auPoints');
+  const val = parseInt(inp.value, 10);
+  if (isNaN(val) || val < 0) { toast('Valor inválido.', 'error'); return; }
+  try {
+    if (kind === 'crystals') await adminRpc('admin_set_crystals', { p_user_id: uid, p_total: val });
+    else await adminRpc('admin_set_points', { p_user_id: uid, p_total: val });
+    $('auMsg').textContent = (kind === 'crystals' ? 'Cristais' : 'Pontos') + ' atualizados.';
+    toast('Salvo.', 'success');
+  } catch (e) {
+    console.error('saveAdminField:', e);
+    $('auMsg').textContent = 'Erro ao salvar.';
+    toast('Erro ao salvar.', 'error');
+  }
+}
+
+async function resetAdminUser() {
+  if (!isAdmin() || !$('adminUserEditor')._uid) return;
+  const uid = $('adminUserEditor')._uid;
+  const name = $('auName').value || 'este usuário';
+  const ok = await confirmDialog({
+    title: 'Limpar streak/conquistas',
+    text: `Apagar TODAS as sessões e recompensas de ${name}, e zerar pontos e cristais? Essa ação não pode ser desfeita.`,
+    okText: 'Limpar tudo',
+  });
+  if (!ok) return;
+  $('auMsg').textContent = 'Limpando…';
+  try {
+    await adminRpc('admin_reset_user', { p_user_id: uid });
+    $('auMsg').textContent = 'Streak, conquistas e cristais zerados.';
+    toast('Usuário zerado.', 'success');
+    openAdminUser(uid);
+    searchAdminUsers();
+  } catch (e) {
+    console.error('resetAdminUser:', e);
+    $('auMsg').textContent = 'Erro ao limpar.';
+    toast('Erro ao limpar.', 'error');
+  }
+}
+
+function bindAdminUserEvents() {
+  document.querySelectorAll('.admin-tab').forEach(b =>
+    b.addEventListener('click', () => switchAdminTab(b.dataset.atab)));
+  $('adminUserSearchBtn').addEventListener('click', searchAdminUsers);
+  $('adminUserSearch').addEventListener('keydown', e => { if (e.key === 'Enter') searchAdminUsers(); });
+  document.querySelectorAll('[data-auaction]').forEach(b =>
+    b.addEventListener('click', () => {
+      const a = b.dataset.auaction;
+      if (a === 'save') saveAdminProfile();
+      else if (a === 'crystals') saveAdminField('crystals');
+      else if (a === 'points') saveAdminField('points');
+      else if (a === 'reset') resetAdminUser();
+    }));
 }
 
 function effectType(itemId) {
