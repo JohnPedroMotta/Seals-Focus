@@ -1967,25 +1967,52 @@ body.light ::selection { color: #fff; }
   inherits: false;
 }
 
-.border-anim {
+.border-eff {
   position: relative;
   overflow: visible !important;
 }
 
-.border-anim::before {
+.border-eff::before {
   content: '';
   position: absolute;
   inset: -6px;
   border-radius: 50%;
-  background: conic-gradient(from var(--a), #ff004c, #ff9f00, #ffe600, #2bff6b, #00d4ff, #7a5cff, #ff004c);
+  animation: borderSpin var(--dur, 3s) linear infinite;
+  z-index: 1;
   -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 5px));
           mask: radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 5px));
-  animation: borderSpin 3s linear infinite;
-  z-index: 1;
 }
 
 @keyframes borderSpin {
   to { --a: 360deg; }
+}
+
+/* RGB arco-íris */
+.border-eff[data-effect="rgb"]::before {
+  --dur: 3s;
+  background: conic-gradient(from var(--a),
+    #ff004c, #ff9f00, #ffe600, #2bff6b, #00d4ff, #7a5cff, #ff004c);
+}
+
+/* Dourado metálico com brilho viajando */
+.border-eff[data-effect="gold"]::before {
+  --dur: 2.6s;
+  background: conic-gradient(from var(--a),
+    #8a6d1a, #ffd700, #fff7cc, #ffd700, #8a6d1a, #b8860b, #fff2a8, #ffd700, #8a6d1a);
+}
+
+/* Rubi profundo com brilho quente */
+.border-eff[data-effect="ruby"]::before {
+  --dur: 2.8s;
+  background: conic-gradient(from var(--a),
+    #6b0000, #e11d48, #ff9eb8, #e11d48, #6b0000, #800020, #ff7ba1, #e11d48, #6b0000);
+}
+
+/* Prisma: refração de luz com brilho branco percorrendo */
+.border-eff[data-effect="prism"]::before {
+  --dur: 2.2s;
+  background: conic-gradient(from var(--a),
+    #ffffff, #ff5e8a, #ffd166, #80ffdb, #7b9cff, #c9b8ff, #ffffff, #ff5e8a, #ffffff);
 }
 
 

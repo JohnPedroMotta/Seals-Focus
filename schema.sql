@@ -405,6 +405,15 @@ insert into public.shop_items (name, category, cost, color, sort_order) values
   ('Borda RGB',      'border', 500, 'rgb',      7)
 on conflict (name) do nothing;
 
+-- Upgrades de efeito (idempotente): merece bordas estáticas para efeitos animados
+update public.shop_items set color = 'gold', cost = 400
+  where name = 'Borda Dourada' and color <> 'gold';
+update public.shop_items set color = 'ruby', cost = 350
+  where name = 'Borda Rubi' and color <> 'ruby';
+insert into public.shop_items (name, category, cost, color, sort_order) values
+  ('Borda Prisma',   'border', 600, 'prism',    8)
+on conflict (name) do nothing;
+
 -- Saldo inicial de cristais (bônus único, idempotente)
 -- Só concede quando o usuário NÃO tem linha ainda (primeira visita à loja)
 create or replace function public.grant_starting_crystals()

@@ -31,8 +31,8 @@ let crystals = 0;               // saldo de cristais (moeda da loja)
 let shopItems = [];             // catálogo: [{id, name, category, cost, color}]
 let ownedItems = new Set();     // ids de bordas que o usuário já comprou
 let equippedBorder = null;      // id da borda equipada (do perfil do usuário)
-const BORDER_COLORS = {};       // id -> cor hex (preenchido do catálogo)
-const ANIMATED = new Set();     // ids de bordas animadas (ex.: RGB, cor 'rgb')
+const BORDER_COLORS = {};       // id -> cor hex ou flag de efeito (preenchido do catálogo)
+const EFFECT_FLAGS = { rgb: 1, gold: 1, ruby: 1, prism: 1 }; // flags de bordas animadas
 
 function isShopAllowed() {
   if (SHOP_ALLOWED.length === 0) return true; // lista vazia = liberado p/ todos
@@ -1398,18 +1398,27 @@ function syncShopButtons() {
 function borderCss(itemId) {
   if (!itemId) return '';
   const color = BORDER_COLORS[itemId];
-  if (!color || color === 'rgb') return '';
+  if (!color || EFFECT_FLAGS[color]) return '';
   return `box-shadow: 0 0 0 3px var(--bg-color), 0 0 0 6px ${color}, 0 0 14px ${color};`;
+}
+
+function effectType(itemId) {
+  const color = BORDER_COLORS[itemId];
+  if (!color || !EFFECT_FLAGS[color]) return null;
+  return color;
 }
 
 function applyBorderTo(el, itemId) {
   if (!el) return;
-  if (itemId && ANIMATED.has(itemId)) {
-    el.classList.add('border-anim');
+  const type = effectType(itemId);
+  if (type) {
+    el.classList.add('border-eff');
+    el.dataset.effect = type;
     el.removeAttribute('style');
     return;
   }
-  el.classList.remove('border-anim');
+  el.classList.remove('border-eff');
+  delete el.dataset.effect;
   const inline = borderCss(itemId);
   if (inline) el.setAttribute('style', inline);
   else el.removeAttribute('style');
@@ -1728,7 +1737,6 @@ async function loadShopCatalog() {
     shopItems = (items || []).filter(i => i.category === 'border');
     shopItems.forEach(i => {
       BORDER_COLORS[i.id] = i.color;
-      if (i.color === 'rgb') ANIMATED.add(i.id);
     });
   } catch (e) { console.error('loadShopCatalog:', e); }
 }
@@ -1737,7 +1745,6 @@ function applyShopState(data) {
   shopItems = (data.catalog || []).filter(i => i.category === 'border');
   shopItems.forEach(i => {
     BORDER_COLORS[i.id] = i.color;
-    if (i.color === 'rgb') ANIMATED.add(i.id);
   });
   crystals = data.crystals ?? 0;
   ownedItems = new Set(data.owned || []);
