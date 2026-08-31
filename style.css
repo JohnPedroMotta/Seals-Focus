@@ -161,6 +161,19 @@ body {
   color: var(--accent-color);
 }
 
+.donate-card {
+  text-align: center;
+}
+.donate-card-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.donate-card-body .btn {
+  margin-top: 4px;
+}
+
 /* ---------- Conteúdo principal ---------- */
 main {
   flex: 1;

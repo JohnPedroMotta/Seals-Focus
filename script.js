@@ -1235,6 +1235,10 @@ $('donateBtn').addEventListener('click', e => {
   openDonation();
 });
 
+$('shopDonateBtn').addEventListener('click', () => {
+  openDonation();
+});
+
 $('avatarBtn').addEventListener('click', e => {
   e.stopPropagation();
   if (!sb.user && isCloudConfigured()) { goToLogin(); return; }
