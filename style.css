@@ -1859,6 +1859,19 @@ body.light ::selection { color: #fff; }
   margin-top: 0;
 }
 
+.shop-group-title {
+  grid-column: 1 / -1;
+  margin: 10px 0 2px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+}
+
+.shop-group-title:first-child {
+  margin-top: 0;
+}
+
 .shop-subcard {
   margin-top: 14px;
   padding: 16px;

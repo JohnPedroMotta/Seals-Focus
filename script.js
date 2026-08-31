@@ -1788,13 +1788,25 @@ function borderName(item) {
 
 function renderShop() {
   $('shopCrystalsChip').textContent = `💎 ${crystals}`;
-  renderShopGrid('shopGrid', shopItems);
-}
-
-function renderShopGrid(gridId, items) {
-  const grid = $(gridId);
+  const grid = $('shopGrid');
   if (!grid) return;
   grid.innerHTML = '';
+  const normal = shopItems.filter(i => !effectType(i.id));
+  const animated = shopItems.filter(i => effectType(i.id));
+  renderShopGroup(grid, 'Simples', normal);
+  if (animated.length) renderShopGroup(grid, 'Animadas', animated);
+  grid.querySelectorAll('button[data-act]').forEach(btn =>
+    btn.addEventListener('click', () => {
+      buyItem(Number(btn.dataset.id));
+    })
+  );
+}
+
+function renderShopGroup(grid, label, items) {
+  const header = document.createElement('div');
+  header.className = 'shop-group-title';
+  header.textContent = label;
+  grid.appendChild(header);
   items.forEach(item => {
     const owned = ownedItems.has(item.id);
     const isEquipped = equippedBorder === item.id;
@@ -1817,11 +1829,6 @@ function renderShopGrid(gridId, items) {
     applyBorderTo(el.querySelector('.shop-avatar'), item.id);
     grid.appendChild(el);
   });
-  grid.querySelectorAll('button[data-act]').forEach(btn =>
-    btn.addEventListener('click', () => {
-      buyItem(Number(btn.dataset.id));
-    })
-  );
 }
 
 async function openShop() {
