@@ -24,9 +24,9 @@ const SIGNUP_BONUS = 200;
 let userPoints = 0;
 
 /* ================= Loja (cristais + bordas) ================= */
-// Whitelist temporária: só essas contas veem a aba Loja (fase de teste).
-// Use @username sem o @, minúsculo. Pra liberar p/ todo mundo, esvazie o array.
-const SHOP_ALLOWED = ['casper', 'tsuy_ru'];
+// Whitelist da Loja. Esvaziada = liberada para todos. Para restringir,
+// coloque os @username (sem @, minúsculo) aqui.
+const SHOP_ALLOWED = [];
 let crystals = 0;               // saldo de cristais (moeda da loja)
 let shopItems = [];             // catálogo: [{id, name, category, cost, color}]
 let ownedItems = new Set();     // ids de bordas que o usuário já comprou
@@ -436,10 +436,11 @@ function dayLabel(key) {
   return `${d}/${m}/${y}`;
 }
 
-function toast(msg, type = '') {
+function toast(msg, type = '', html = false) {
   const el = document.createElement('div');
   el.className = `toast ${type}`.trim();
-  el.textContent = msg;
+  if (html) el.innerHTML = msg;
+  else el.textContent = msg;
   $('toastStack').appendChild(el);
   setTimeout(() => {
     el.classList.add('out');
@@ -1134,7 +1135,35 @@ function confirmSaveSession(session) {
   clearModalForm();
   modal.classList.remove('active');
   renderAll();
+  grantFocusRewards(session.duration);
   toast(`Sessão salva: ${fmtHM(session.duration)} de ${session.subject}.`, 'success');
+}
+
+const DAILY_POINTS_GOAL = 3600; // 1h de foco por dia
+const DAILY_POINTS_BONUS = 10;  // bônus ao bater a meta
+const PER_SESSION_POINTS = 5;   // cristais por sessão salva
+
+function grantFocusRewards(durationSecs) {
+  const rewards = [];
+  addCrystals(PER_SESSION_POINTS);
+  rewards.push({ amt: PER_SESSION_POINTS, label: 'sessão concluída' });
+
+  const todayKey = dateKey(new Date());
+  const todaysSecs = (state.sessions || [])
+    .filter(s => dateKey(new Date(s.dateISO)) === todayKey)
+    .reduce((a, s) => a + s.duration, 0);
+  const key = 'crystalDailyGoal_' + todayKey;
+  if (todaysSecs >= DAILY_POINTS_GOAL && !localStorage.getItem(key)) {
+    localStorage.setItem(key, '1');
+    addCrystals(DAILY_POINTS_BONUS);
+    rewards.push({ amt: DAILY_POINTS_BONUS, label: 'meta diária de 1h' });
+  }
+
+  const total = rewards.reduce((a, r) => a + r.amt, 0);
+  const txt = rewards.length > 1
+    ? `+${total}${crystalIcon('0.9em')} (${rewards.map(r => `${r.amt} ${r.label}`).join(', ')})`
+    : `+${total}${crystalIcon('0.9em')} (${rewards[0].label})`;
+  toast(txt, 'success', true);
 }
 
 $('confirmSaveBtn').addEventListener('click', () => {
@@ -1786,8 +1815,37 @@ function borderName(item) {
   return (item.name || '').replace(/^Borda\s+/i, '');
 }
 
+function crystalIcon(size) {
+  const w = size || '1em';
+  return `<svg class="crystal-ico" style="width:${w};height:${w}" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+  <defs>
+    <linearGradient id="geminiG" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#4D7DFF"/>
+      <stop offset="55%" stop-color="#8A4FFF"/>
+      <stop offset="100%" stop-color="#FF4FD8"/>
+    </linearGradient>
+  </defs>
+  <path d="M12 2 L20.5 8.5 L12 22 L3.5 8.5 Z" fill="url(#geminiG)"/>
+  <path d="M3.5 8.5 H20.5 M12 2 V22" stroke="#ffffff" stroke-opacity="0.35" stroke-width="1"/>
+</svg>`;
+}
+
+async function addCrystals(amount) {
+  if (!amount || amount <= 0) return crystals;
+  crystals += amount;
+  const chip = $('shopCrystalsChip');
+  if (chip) chip.innerHTML = `${crystalIcon()} ${crystals}`;
+  if (sb.client && sb.user) {
+    try {
+      const { data } = await sb.client.rpc('add_crystals', { p_amount: amount });
+      if (typeof data === 'number' && Number.isFinite(data)) crystals = data;
+    } catch (e) { console.warn('addCrystals:', e); }
+  }
+  return crystals;
+}
+
 function renderShop() {
-  $('shopCrystalsChip').textContent = `💎 ${crystals}`;
+  $('shopCrystalsChip').innerHTML = `${crystalIcon()} ${crystals}`;
   const grid = $('shopGrid');
   if (!grid) return;
   grid.innerHTML = '';
@@ -1814,7 +1872,7 @@ function renderShopGroup(grid, label, items) {
     el.className = 'shop-item' + (isEquipped ? ' equipped' : '');
     let right;
     if (!owned) {
-      right = `<button class="btn btn-sm btn-primary" data-act="buy" data-id="${item.id}">💎 ${item.cost}</button>`;
+      right = `<button class="btn btn-sm btn-primary" data-act="buy" data-id="${item.id}">${crystalIcon()} ${item.cost}</button>`;
     } else {
       right = `<span class="shop-check" title="Comprada"><i class="ti ti-circle-check-filled"></i></span>`;
     }
@@ -1845,7 +1903,7 @@ async function buyItem(itemId) {
   if (!sb.client || !sb.user) return;
   const it = shopItems.find(s => s.id === itemId);
   const name = it ? borderName(it) : 'este item';
-  const cost = it ? ` por ${it.cost}💎` : '';
+  const cost = it ? ` por ${it.cost} cristais` : '';
   const ok = await confirmDialog({
     title: 'Confirmar compra',
     text: `Você tem certeza de que quer comprar "${name}"${cost}?`,

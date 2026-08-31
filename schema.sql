@@ -517,6 +517,33 @@ begin
 end;
 $$;
 
+-- Soma cristais ao saldo do usuário (recompensas por foco) e devolve o novo saldo
+create or replace function public.add_crystals(p_amount int)
+returns int
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_new int;
+begin
+  if p_amount <= 0 then
+    return (select coalesce(total_crystals, 0) from public.user_crystals where user_id = auth.uid());
+  end if;
+
+  insert into public.user_crystals (user_id, total_crystals)
+  values (auth.uid(), 0) on conflict (user_id) do nothing;
+
+  update public.user_crystals
+     set total_crystals = total_crystals + p_amount,
+         updated_at = now()
+   where user_id = auth.uid()
+   returning total_crystals into v_new;
+
+  return v_new;
+end;
+$$;
+
 -- Equipa uma borda que o usuário possui
 create or replace function public.equip_border(p_item_id integer)
 returns void

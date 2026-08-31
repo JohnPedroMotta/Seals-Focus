@@ -1766,6 +1766,16 @@ body.light ::selection { color: #fff; }
   margin-top: 14px;
 }
 
+.crystal-ico {
+  display: inline-block;
+  vertical-align: -0.15em;
+  flex-shrink: 0;
+}
+
+.chip .crystal-ico {
+  vertical-align: -0.12em;
+}
+
 .shop-item {
   display: flex;
   align-items: center;
