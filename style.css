@@ -1961,18 +1961,31 @@ body.light ::selection { color: #fff; }
   color: var(--success-color, #22c55e);
 }
 
-.border-anim {
-  animation: borderRgb 2.4s linear infinite;
+@property --a {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
 }
 
-@keyframes borderRgb {
-  0%   { box-shadow: 0 0 0 3px var(--bg-color), 0 0 0 6px #ff004c, 0 0 14px #ff004c; }
-  16%  { box-shadow: 0 0 0 3px var(--bg-color), 0 0 0 6px #ff9f00, 0 0 14px #ff9f00; }
-  33%  { box-shadow: 0 0 0 3px var(--bg-color), 0 0 0 6px #ffe600, 0 0 14px #ffe600; }
-  50%  { box-shadow: 0 0 0 3px var(--bg-color), 0 0 0 6px #2bff6b, 0 0 14px #2bff6b; }
-  66%  { box-shadow: 0 0 0 3px var(--bg-color), 0 0 0 6px #00d4ff, 0 0 14px #00d4ff; }
-  83%  { box-shadow: 0 0 0 3px var(--bg-color), 0 0 0 6px #7a5cff, 0 0 14px #7a5cff; }
-  100% { box-shadow: 0 0 0 3px var(--bg-color), 0 0 0 6px #ff004c, 0 0 14px #ff004c; }
+.border-anim {
+  position: relative;
+  overflow: visible !important;
+}
+
+.border-anim::before {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  background: conic-gradient(from var(--a), #ff004c, #ff9f00, #ffe600, #2bff6b, #00d4ff, #7a5cff, #ff004c);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 5px));
+          mask: radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 5px));
+  animation: borderSpin 3s linear infinite;
+  z-index: 1;
+}
+
+@keyframes borderSpin {
+  to { --a: 360deg; }
 }
 
 
