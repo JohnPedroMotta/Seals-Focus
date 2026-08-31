@@ -763,10 +763,14 @@ as $$
 declare
   v_admin uuid := '104915e0-319a-40db-a9f9-568bcaf2d456';
   v_rows  jsonb;
+  v_q     text;
 begin
   if auth.uid() <> v_admin then
     raise exception 'acesso negado';
   end if;
+
+  -- ignora o "@" opcional no termo de busca (user digita @shizouki)
+  v_q := regexp_replace(coalesce(trim(p_q), ''), '^@+', '');
 
   select coalesce(jsonb_agg(t order by t.display_name asc), '[]'::jsonb)
     into v_rows
@@ -783,9 +787,9 @@ begin
       from public.profiles pr
       left join public.user_crystals cr on cr.user_id = pr.user_id
       left join public.user_points   pn on pn.user_id = pr.user_id
-      where length(coalesce(p_q,'')) = 0
-         or pr.username ilike '%' || p_q || '%'
-         or pr.display_name ilike '%' || p_q || '%'
+      where length(v_q) = 0
+         or pr.username ilike '%' || v_q || '%'
+         or pr.display_name ilike '%' || v_q || '%'
       limit 50
     ) t;
 

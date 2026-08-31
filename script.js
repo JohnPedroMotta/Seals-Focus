@@ -1543,7 +1543,8 @@ async function adminRpc(name, params) {
 async function searchAdminUsers() {
   if (!isAdmin()) return;
   const box = $('adminUserResults');
-  const q = ($('adminUserSearch').value || '').trim();
+  const raw = ($('adminUserSearch').value || '').trim();
+  const q = raw.replace(/^@+/, '');
   box.innerHTML = '<p class="muted-p">Buscando…</p>';
   try {
     const rows = (await adminRpc('admin_search_users', { p_q: q })) || [];
