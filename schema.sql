@@ -414,6 +414,15 @@ insert into public.shop_items (name, category, cost, color, sort_order) values
   ('Borda Prisma',   'border', 600, 'prism',    8)
 on conflict (name) do nothing;
 
+-- ══════════ Bordas PREMIUM (raras e animadas) ══════════
+insert into public.shop_items (name, category, cost, color, sort_order) values
+  ('Borda Ice',     'border', 1200, 'ice',     9),
+  ('Borda Neon',    'border', 1500, 'neon',   10),
+  ('Borda Aurora',  'border', 1500, 'aurora', 11),
+  ('Borda Lava',    'border', 2000, 'lava',   12),
+  ('Borda Cosmic',  'border', 2500, 'cosmic', 13)
+on conflict (name) do nothing;
+
 -- Saldo inicial de cristais (bônus único, idempotente)
 -- Só concede quando o usuário NÃO tem linha ainda (primeira visita à loja)
 create or replace function public.grant_starting_crystals()

@@ -1921,6 +1921,83 @@ body.light ::selection { color: #fff; }
   margin-top: 0;
 }
 
+/* ---------- Premium ---------- */
+.premium-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--text-main);
+}
+.premium-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #fff;
+  background: linear-gradient(135deg, #7b2ff7, #f72fb8);
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+.premium-item {
+  border-width: 1px;
+  border-style: solid;
+  border-color: rgba(123, 47, 247, 0.45);
+  box-shadow: 0 0 0 1px rgba(247, 47, 184, 0.12), 0 4px 18px rgba(123, 47, 247, 0.16);
+}
+.premium-badge {
+  display: inline-flex;
+  margin-left: 5px;
+  color: #f72fb8;
+  vertical-align: middle;
+}
+
+/* ---------- Pacotes de cristais ---------- */
+.pkg-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+.pkg-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  padding: 14px;
+  background: var(--card-bg);
+}
+.pkg-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.pkg-amount {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+.pkg-bonus {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #0d8a4e;
+  background: rgba(16, 185, 129, 0.14);
+  padding: 2px 7px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.pkg-label {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
 .shop-subcard {
   margin-top: 14px;
   padding: 16px;
@@ -2085,6 +2162,43 @@ body.light ::selection { color: #fff; }
   --dur: 2.2s;
   background: conic-gradient(from var(--a),
     #ffffff, #ff5e8a, #ffd166, #80ffdb, #7b9cff, #c9b8ff, #ffffff, #ff5e8a, #ffffff);
+}
+
+/* ===== Bordas premium (animadas, raras) ===== */
+
+/* Ice: gelo cristalino gelado */
+.border-eff[data-effect="ice"]::before {
+  --dur: 2.4s;
+  background: conic-gradient(from var(--a),
+    #0ea5e9, #7dd3fc, #e0f2fe, #a5f3fc, #38bdf8, #bae6fd, #67e8f9, #0ea5e9);
+}
+
+/* Neon: neon vibrante de rotação rápida */
+.border-eff[data-effect="neon"]::before {
+  --dur: 1.1s;
+  background: conic-gradient(from var(--a),
+    #22ff88, #00d1ff, #ff2ec4, #faff00, #22ff88);
+}
+
+/* Aurora: luz de aurora boreal */
+.border-eff[data-effect="aurora"]::before {
+  --dur: 2.6s;
+  background: conic-gradient(from var(--a),
+    #00f5a0, #00d9f5, #7b2ff7, #f72fb8, #00f5a0);
+}
+
+/* Lava: magma quente pulsante */
+.border-eff[data-effect="lava"]::before {
+  --dur: 1.6s;
+  background: conic-gradient(from var(--a),
+    #7f1d1d, #f97316, #fde047, #ff7a18, #b91c1c, #ff5722, #7f1d1d);
+}
+
+/* Cosmic: cosmos profundo */
+.border-eff[data-effect="cosmic"]::before {
+  --dur: 2.6s;
+  background: conic-gradient(from var(--a),
+    #4a148c, #7b1fa2, #d500f9, #3a0ca3, #7209b7, #b5179e, #4a148c);
 }
 
 /* ---------- Painel Admin ---------- */

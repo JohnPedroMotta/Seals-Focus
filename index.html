@@ -16,7 +16,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3/dist/tabler-icons.min.css" />
   </noscript>
-  <link rel="stylesheet" href="style.css?v=43" />
+  <link rel="stylesheet" href="style.css?v=44" />
   <!-- Anti-bfcache + popup auto-close -->
   <script>
     window.addEventListener('pageshow', function(e) {
@@ -26,7 +26,7 @@
   </script>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script defer src="config.js?v=4"></script>
-  <script defer src="script.js?v=59"></script>
+  <script defer src="script.js?v=60"></script>
 </head>
 <body>
 
@@ -279,6 +279,12 @@
           <h3 class="shop-subcard-title">Bordas</h3>
           <p class="muted-p shop-subcard-hint">Escolha uma borda para destacar o seu perfil.</p>
           <div class="shop-grid" id="shopGrid"></div>
+        </section>
+
+        <section class="card shop-subcard">
+          <h3 class="shop-subcard-title">Cristais <span class="premium-tag"><i class="ti ti-sparkles"></i> pacotes</span></h3>
+          <p class="muted-p shop-subcard-hint">Pegue um pacote para turbinar seus cristais e desbloquear bordas premium mais rápido. Ganhe cristais a cada sessão de foco — ou adicione um pacote quando quiser.</p>
+          <div class="pkg-grid" id="crystalPkgGrid"></div>
         </section>
 
         <section class="card shop-subcard donate-card">
@@ -654,6 +660,18 @@
       <div class="modal-actions">
         <button class="btn" id="cancelModalBtn">Cancelar</button>
         <button class="btn btn-primary" id="confirmSaveBtn">Salvar Período</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="pkgModal" role="dialog" aria-modal="true" aria-labelledby="pkgModalName">
+    <div class="modal card">
+      <div class="modal-header">
+        <h2 id="pkgModalName">Pacote</h2>
+      </div>
+      <p class="confirm-text" id="pkgModalText"></p>
+      <div class="modal-actions">
+        <button class="btn btn-primary" id="pkgModalCloseBtn">OK</button>
       </div>
     </div>
   </div>

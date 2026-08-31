@@ -37,7 +37,17 @@ let shopItems = [];             // catálogo: [{id, name, category, cost, color}
 let ownedItems = new Set();     // ids de bordas que o usuário já comprou
 let equippedBorder = null;      // id da borda equipada (do perfil do usuário)
 const BORDER_COLORS = {};       // id -> cor hex ou flag de efeito (preenchido do catálogo)
-const EFFECT_FLAGS = { rgb: 1, gold: 1, ruby: 1, prism: 1 }; // flags de bordas animadas
+const EFFECT_FLAGS = { rgb: 1, gold: 1, ruby: 1, prism: 1, ice: 1, neon: 1, aurora: 1, lava: 1, cosmic: 1 }; // flags de bordas animadas
+const PREMIUM_COST = 1000; // bordas com custo >= isso entram no grupo "Premium"
+
+// Pacotes de cristais exibidos na loja (bônus sobre o valor base).
+// A venda por dinheiro real ainda está por vir — hoje servem de meta/atrativo.
+const CRYSTAL_PACKAGES = [
+  { id: 'pkg1', label: 'Pacote Pequeno', amount: 300,  bonus: '+0',   base: 300  },
+  { id: 'pkg2', label: 'Pacote Médio',    amount: 900,  bonus: '+100', base: 800, tag: '+100 bônus' },
+  { id: 'pkg3', label: 'Pacote Grande',   amount: 2500, bonus: '+500', base: 2000, tag: '+500 bônus' },
+  { id: 'pkg4', label: 'Pacote Mestre',   amount: 6000, bonus: '+1500', base: 4500, tag: '+1500 bônus', premium: true },
+];
 
 function isShopAllowed() {
   if (SHOP_ALLOWED.length === 0) return true; // lista vazia = liberado p/ todos
@@ -2110,13 +2120,44 @@ async function addCrystals(amount) {
 
 function renderShop() {
   $('shopCrystalsChip').innerHTML = `${crystalIcon()} ${crystals}`;
+  renderCrystalPackages();
   const grid = $('shopGrid');
   if (!grid) return;
   grid.innerHTML = '';
-  const normal = shopItems.filter(i => !effectType(i.id));
-  const animated = shopItems.filter(i => effectType(i.id));
+  const normal = shopItems.filter(i => !effectType(i.id) && (i.cost || 0) < PREMIUM_COST);
+  const animated = shopItems.filter(i => effectType(i.id) && (i.cost || 0) < PREMIUM_COST);
+  const premium = shopItems.filter(i => (i.cost || 0) >= PREMIUM_COST);
   renderShopGroup(grid, 'Simples', normal);
   if (animated.length) renderShopGroup(grid, 'Animadas', animated);
+  if (premium.length) {
+    const hdr = document.createElement('div');
+    hdr.className = 'shop-group-title premium-title';
+    hdr.innerHTML = `<span>Premium</span><span class="premium-tag"><i class="ti ti-crown"></i> Exclusivas</span>`;
+    grid.appendChild(hdr);
+    premium.forEach(item => {
+      const owned = ownedItems.has(item.id);
+      const isEquipped = equippedBorder === item.id;
+      const el = document.createElement('div');
+      el.className = 'shop-item' + (isEquipped ? ' equipped' : '');
+      el.classList.add('premium-item');
+      let right;
+      if (!owned) {
+        right = `<button class="btn btn-sm btn-crystal" data-act="buy" data-id="${item.id}">${crystalIcon()} ${item.cost}</button>`;
+      } else {
+        right = `<span class="shop-check" title="Comprada"><i class="ti ti-circle-check-filled"></i></span>`;
+      }
+      el.innerHTML = `
+        <div class="shop-avatar">${shopPreviewAvatar()}</div>
+        <div class="shop-item-info">
+          <span class="shop-item-name">${escapeHtml(borderName(item))}<span class="premium-badge"><i class="ti ti-crown"></i></span></span>
+          <span class="shop-item-cost">${owned ? (isEquipped ? 'Em uso' : 'Comprada') : 'Exclusiva'}</span>
+        </div>
+        ${right}
+      `;
+      applyBorderTo(el.querySelector('.shop-avatar'), item.id);
+      grid.appendChild(el);
+    });
+  }
   grid.querySelectorAll('button[data-act]').forEach(btn =>
     btn.addEventListener('click', () => {
       buyItem(Number(btn.dataset.id));
@@ -2152,6 +2193,37 @@ function renderShopGroup(grid, label, items) {
     grid.appendChild(el);
   });
 }
+
+function renderCrystalPackages() {
+  const grid = $('crystalPkgGrid');
+  if (!grid) return;
+  grid.innerHTML = CRYSTAL_PACKAGES.map(pk => `
+    <div class="pkg-card${pk.premium ? ' premium-item' : ''}">
+      <div class="pkg-top">
+        <span class="pkg-amount">${crystalIcon('1em')} <strong>${pk.amount}</strong></span>
+        ${pk.tag ? `<span class="pkg-bonus">${escapeHtml(pk.tag)}</span>` : ''}
+      </div>
+      <span class="pkg-label">${escapeHtml(pk.label)}</span>
+      <button class="btn btn-sm btn-crystal" data-pkg="${pk.id}">Adicionar</button>
+    </div>`).join('');
+  grid.querySelectorAll('[data-pkg]').forEach(btn =>
+    btn.addEventListener('click', onPackageClick));
+}
+
+function onPackageClick(e) {
+  e.stopPropagation();
+  const pk = CRYSTAL_PACKAGES.find(p => p.id === e.currentTarget.dataset.pkg);
+  if (!pk) return;
+  $('pkgModalName').textContent = pk.label;
+  $('pkgModalText').innerHTML =
+    `Este pacote dá ${pk.amount} cristais. A compra por dinheiro real ainda não está disponível — ` +
+    `por enquanto você ganha cristais a cada sessão de foco.${crystalIcon('1em')}`;
+  $('pkgModal').classList.add('active');
+}
+
+$('pkgModalCloseBtn').addEventListener('click', () => $('pkgModal').classList.remove('active'));
+$('pkgModal').addEventListener('click', e => { if (e.target === $('pkgModal')) $('pkgModal').classList.remove('active'); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') $('pkgModal').classList.remove('active'); });
 
 async function openShop() {
   if (!sb.client || !sb.user) { switchView('study'); return; }
