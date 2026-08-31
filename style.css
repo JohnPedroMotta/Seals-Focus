@@ -1987,6 +1987,16 @@ body.light ::selection { color: #fff; }
   to { --a: 360deg; }
 }
 
+/* corta a foto em círculo mesmo quando overflow:visible do anel estiver ativo */
+.border-eff img,
+.border-eff .shop-preview-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50% !important;
+  overflow: hidden !important;
+}
+
 /* RGB arco-íris */
 .border-eff[data-effect="rgb"]::before {
   --dur: 3s;
