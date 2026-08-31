@@ -8,6 +8,11 @@ const GOAL_KEY = 'foco.goal.v1';
 const THEME_KEY = 'foco.theme.v1';
 const ACCENT_KEY = 'foco.accent.v1';
 const PROFILE_KEY = 'foco.profile.v1';
+
+/* Doação: link de apoio "ajude o site a ficar no ar".
+   Coloque aqui sua chave Pix / link (Buy me a Coffee, GitHub Sponsors, etc.).
+   Ex.: 'pix:seu-email-ou-chave' ou 'https://linkdedoacao.com'. Vazio = botão avisa. */
+const DONATION_LINK = '';
 const REWARDS_KEY = 'foco.rewards.v1';
 const UPOINTS_KEY = 'foco.points.v1';
 
@@ -446,6 +451,14 @@ function toast(msg, type = '', html = false) {
     el.classList.add('out');
     el.addEventListener('animationend', () => el.remove(), { once: true });
   }, 3200);
+}
+
+function openDonation() {
+  if (DONATION_LINK) {
+    window.open(DONATION_LINK, '_blank', 'noopener');
+    return;
+  }
+  toast('Link de doação não configurado. Adicione sua URL na constante DONATION_LINK no topo de script.js.', '');
 }
 
 function confirmDialog({ title = 'Confirmar', text = 'Tem certeza?', okText = 'Confirmar', okClass = 'btn-danger' } = {}) {
@@ -1216,6 +1229,11 @@ function goToLogin() {
 function goToApp() {
   window.location.href = 'index.html';
 }
+
+$('donateBtn').addEventListener('click', e => {
+  e.preventDefault();
+  openDonation();
+});
 
 $('avatarBtn').addEventListener('click', e => {
   e.stopPropagation();

@@ -149,6 +149,18 @@ body {
   padding-top: 16px;
 }
 
+.donate-link {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-decoration: none;
+  opacity: 0.7;
+  transition: opacity 0.2s, color 0.2s;
+}
+.donate-link:hover {
+  opacity: 1;
+  color: var(--accent-color);
+}
+
 /* ---------- Conteúdo principal ---------- */
 main {
   flex: 1;
