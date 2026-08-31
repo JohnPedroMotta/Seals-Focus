@@ -1979,8 +1979,8 @@ body.light ::selection { color: #fff; }
   border-radius: 50%;
   animation: borderSpin var(--dur, 3s) linear infinite;
   z-index: 1;
-  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 5px));
-          mask: radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 5px));
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 4px));
+          mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 4px));
 }
 
 @keyframes borderSpin {
