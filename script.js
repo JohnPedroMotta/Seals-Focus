@@ -228,6 +228,7 @@ function setCloudUser(user) {
     });
     loadShop().then(() => {
       if (currentView === 'shop') renderShop();
+      renderProfileBorders();
     });
   } else {
     avatar.textContent = '?';
@@ -1355,6 +1356,34 @@ function syncProfileUI() {
   applyBorderTo($('profileAvatarLabel'), sb.user ? equippedBorder : null);
 }
 
+function renderProfileBorders() {
+  const section = $('profileBorderSection');
+  const grid = $('profileBorderGrid');
+  if (!section || !grid) return;
+  if (!sb.user) { section.hidden = true; return; }
+  const owned = shopItems.filter(i => ownedItems.has(i.id));
+  section.hidden = false;
+  $('profileBorderEmpty').hidden = owned.length > 0;
+  grid.innerHTML = '';
+  owned.forEach(item => {
+    const isEquipped = equippedBorder === item.id;
+    const el = document.createElement('button');
+    el.type = 'button';
+    el.className = 'profile-border-opt' + (isEquipped ? ' active' : '');
+    el.title = isEquipped ? 'Em uso — clique para remover' : 'Clique para equipar';
+    el.innerHTML = `
+      <span class="profile-border-avatar" style="${borderCss(item.id)}">${shopPreviewAvatar()}</span>
+      <span class="profile-border-name">${escapeHtml(borderName(item))}</span>
+      ${isEquipped ? '<i class="ti ti-check profile-border-check"></i>' : ''}
+    `;
+    el.addEventListener('click', () => {
+      if (equippedBorder === item.id) unequipItem(item.id);
+      else equipItem(item.id);
+    });
+    grid.appendChild(el);
+  });
+}
+
 function syncShopButtons() {
   const show = isShopAllowed();
   const nav = $('shopNavBtn');
@@ -1815,8 +1844,11 @@ async function equipItem(itemId) {
     if (error) throw error;
     equippedBorder = itemId;
     await loadShop();
-    renderShop();
+    if (currentView === 'shop') renderShop();
     applyBorderTo($('avatarBtn'), equippedBorder);
+    applyBorderTo($('profileAvatarLabel'), equippedBorder);
+    renderProfileBorders();
+    syncProfileUI();
     toast('Borda equipada!', 'success');
   } catch (e) { console.error('equipItem:', e); toast('Não foi possível equipar.', 'error'); }
 }
@@ -1828,8 +1860,11 @@ async function unequipItem(itemId) {
     if (error) throw error;
     equippedBorder = null;
     await loadShop();
-    renderShop();
+    if (currentView === 'shop') renderShop();
     applyBorderTo($('avatarBtn'), null);
+    applyBorderTo($('profileAvatarLabel'), null);
+    renderProfileBorders();
+    syncProfileUI();
   } catch (e) { console.error('unequipItem:', e); }
 }
 
@@ -2254,6 +2289,7 @@ $('deleteAccountBtn').addEventListener('click', async () => {
 /* ================= Ajustes: metas / dados / notificações ================= */
 function syncSettingsUI() {
   $('goalInput').value = Math.round(dailyGoalSecs / 60);
+  renderProfileBorders();
 }
 
 function initSettingsUI() {
