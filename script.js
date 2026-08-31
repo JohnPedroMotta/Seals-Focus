@@ -1820,13 +1820,15 @@ function crystalIcon(size) {
   return `<svg class="crystal-ico" style="width:${w};height:${w}" viewBox="0 0 24 24" fill="none" aria-hidden="true">
   <defs>
     <linearGradient id="geminiG" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#4D7DFF"/>
-      <stop offset="55%" stop-color="#8A4FFF"/>
-      <stop offset="100%" stop-color="#FF4FD8"/>
+      <stop offset="0%" stop-color="#5B8CFF"/>
+      <stop offset="52%" stop-color="#B96BFF"/>
+      <stop offset="100%" stop-color="#FF5FD0"/>
     </linearGradient>
   </defs>
-  <path d="M12 2 L20.5 8.5 L12 22 L3.5 8.5 Z" fill="url(#geminiG)"/>
-  <path d="M3.5 8.5 H20.5 M12 2 V22" stroke="#ffffff" stroke-opacity="0.35" stroke-width="1"/>
+  <path d="M12 2 L18.6 7.6 L12 22 L5.4 7.6 Z" fill="url(#geminiG)"/>
+  <path d="M5.4 7.6 H18.6 L12 11.2 Z" fill="rgba(255,255,255,0.16)"/>
+  <path d="M12 11.2 L18.6 7.6 L17 20.4 Z" fill="rgba(0,0,0,0.10)"/>
+  <path d="M12 4.4 V7.6 M8.6 5.8 L10.1 7.6 M15.4 5.8 L13.9 7.6" stroke="rgba(255,255,255,0.55)" stroke-width="1.1" stroke-linecap="round"/>
 </svg>`;
 }
 
@@ -1872,7 +1874,7 @@ function renderShopGroup(grid, label, items) {
     el.className = 'shop-item' + (isEquipped ? ' equipped' : '');
     let right;
     if (!owned) {
-      right = `<button class="btn btn-sm btn-primary" data-act="buy" data-id="${item.id}">${crystalIcon()} ${item.cost}</button>`;
+      right = `<button class="btn btn-sm btn-crystal" data-act="buy" data-id="${item.id}">${crystalIcon()} ${item.cost}</button>`;
     } else {
       right = `<span class="shop-check" title="Comprada"><i class="ti ti-circle-check-filled"></i></span>`;
     }

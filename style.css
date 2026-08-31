@@ -422,6 +422,20 @@ button.foot-name:hover { text-decoration: underline; }
 .btn-primary { background-color: var(--accent-color); border-color: var(--accent-color); color: #fff; }
 .btn-primary:hover { background-color: var(--accent-hover); transform: translateY(-1px); }
 
+/* Botão de compra de bordas: cor única fixa, não muda com o tema do usuário */
+.btn-crystal {
+  background: linear-gradient(135deg, #5b8cff, #8a4fff) !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+  color: #fff !important;
+}
+.btn-crystal:hover,
+.btn-crystal:active {
+  background: linear-gradient(135deg, #4b7dff, #7a3fff) !important;
+  transform: translateY(-1px);
+  color: #fff !important;
+  box-shadow: 0 0 12px rgba(139, 92, 255, 0.35);
+}
+
 .btn-success { background-color: rgba(34, 197, 94, 0.12); border-color: rgba(34, 197, 94, 0.45); color: var(--success-color); }
 .btn-success:hover { background-color: rgba(34, 197, 94, 0.22); }
 
