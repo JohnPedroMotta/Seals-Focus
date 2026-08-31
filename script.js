@@ -1359,7 +1359,7 @@ function applyProfilePhoto(src) {
 function syncProfilePreview() {
   const nameEl = $('profileSummaryName');
   const subEl = $('profileSummarySub');
-  nameEl.textContent = profile.displayName || (profile.username ? `@${profile.username}` : 'Seu nome');
+  nameEl.innerHTML = `${escapeHtml(profile.displayName || (profile.username ? `@${profile.username}` : 'Seu nome'))}${ownerBadgeHTML(sb.user ? sb.user.id : null)}`;
   if (subEl) subEl.textContent = profile.username ? `@${profile.username}` : '';
 }
 
@@ -1783,6 +1783,12 @@ function friendLabel(p) {
   return p.display_name || (p.username ? `@${p.username}` : 'Usuário');
 }
 
+function ownerBadgeHTML(userId) {
+  return ADMIN_USER_ID && userId === ADMIN_USER_ID
+    ? ' <span class="owner-badge" title="Dono do site">Owner</span>'
+    : '';
+}
+
 function friendSub(p) {
   return p.username ? `@${p.username}` : '';
 }
@@ -2062,7 +2068,7 @@ function renderFriends() {
         ? `<img src="${escapeHtml(f.avatar_url)}" alt="" onerror="this.remove()">`
         : (f.display_name ? f.display_name.slice(0,1).toUpperCase() : '?')}</div>
       <div class="friend-info">
-        <span class="friend-name">${escapeHtml(friendLabel(f))}</span>
+        <span class="friend-name">${escapeHtml(friendLabel(f))}${ownerBadgeHTML(f.user_id)}</span>
         <span class="friend-user">${escapeHtml(friendSub(f)) || 'sem @username'}</span>
       </div>
       <button class="btn btn-sm friend-view" data-id="${f.user_id}" title="Ver perfil">
@@ -2116,7 +2122,7 @@ function renderRequests() {
         ? `<img src="${escapeHtml(p.avatar_url)}" alt="" onerror="this.remove()">`
         : (p.display_name ? p.display_name.slice(0,1).toUpperCase() : '?')}</div>
       <div class="friend-info">
-        <span class="friend-name">${escapeHtml(friendLabel(p))}</span>
+        <span class="friend-name">${escapeHtml(friendLabel(p))}${ownerBadgeHTML(p.user_id)}</span>
         <span class="friend-user">${escapeHtml(friendSub(p)) || 'sem @username'}</span>
       </div>
       <div class="friend-actions">
@@ -2179,7 +2185,7 @@ async function openProfileModal(friendId) {
   const f = friendsCache.find(x => x.user_id === friendId) || {};
   const name = f.display_name || ('@' + (f.username || ''));
   const user = f.username ? '@' + f.username : '';
-  $('profileViewName').textContent = name || 'Usuário';
+  $('profileViewName').innerHTML = `${escapeHtml(name || 'Usuário')}${ownerBadgeHTML(friendId)}`;
   $('profileViewUser').textContent = user;
   const av = $('profileViewAvatar');
   av.innerHTML = f.avatar_url

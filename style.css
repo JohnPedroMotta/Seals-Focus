@@ -2135,6 +2135,20 @@ body.light ::selection { color: #fff; }
   white-space: nowrap;
 }
 
+.owner-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 7px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  color: #fff;
+  background: linear-gradient(135deg, #5b8cff, #8a4fff);
+  vertical-align: middle;
+}
+
 @media (max-width: 600px) {
   .feedback-head { flex-direction: column; gap: 2px; }
 }
