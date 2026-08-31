@@ -32,6 +32,7 @@ let shopItems = [];             // catálogo: [{id, name, category, cost, color}
 let ownedItems = new Set();     // ids de bordas que o usuário já comprou
 let equippedBorder = null;      // id da borda equipada (do perfil do usuário)
 const BORDER_COLORS = {};       // id -> cor hex (preenchido do catálogo)
+const ANIMATED = new Set();     // ids de bordas animadas (ex.: RGB, cor 'rgb')
 
 function isShopAllowed() {
   if (SHOP_ALLOWED.length === 0) return true; // lista vazia = liberado p/ todos
@@ -1372,10 +1373,11 @@ function renderProfileBorders() {
     el.className = 'profile-border-opt' + (isEquipped ? ' active' : '');
     el.title = isEquipped ? 'Em uso — clique para remover' : 'Clique para equipar';
     el.innerHTML = `
-      <span class="profile-border-avatar" style="${borderCss(item.id)}">${shopPreviewAvatar()}</span>
+      <span class="profile-border-avatar">${shopPreviewAvatar()}</span>
       <span class="profile-border-name">${escapeHtml(borderName(item))}</span>
       ${isEquipped ? '<i class="ti ti-check profile-border-check"></i>' : ''}
     `;
+    applyBorderTo(el.querySelector('.profile-border-avatar'), item.id);
     el.addEventListener('click', () => {
       if (equippedBorder === item.id) unequipItem(item.id);
       else equipItem(item.id);
@@ -1396,12 +1398,18 @@ function syncShopButtons() {
 function borderCss(itemId) {
   if (!itemId) return '';
   const color = BORDER_COLORS[itemId];
-  if (!color) return '';
+  if (!color || color === 'rgb') return '';
   return `box-shadow: 0 0 0 3px var(--bg-color), 0 0 0 6px ${color}, 0 0 14px ${color};`;
 }
 
 function applyBorderTo(el, itemId) {
   if (!el) return;
+  if (itemId && ANIMATED.has(itemId)) {
+    el.classList.add('border-anim');
+    el.removeAttribute('style');
+    return;
+  }
+  el.classList.remove('border-anim');
   const inline = borderCss(itemId);
   if (inline) el.setAttribute('style', inline);
   else el.removeAttribute('style');
@@ -1718,13 +1726,19 @@ async function loadShopCatalog() {
       .order('sort_order');
     if (error) throw error;
     shopItems = (items || []).filter(i => i.category === 'border');
-    shopItems.forEach(i => { BORDER_COLORS[i.id] = i.color; });
+    shopItems.forEach(i => {
+      BORDER_COLORS[i.id] = i.color;
+      if (i.color === 'rgb') ANIMATED.add(i.id);
+    });
   } catch (e) { console.error('loadShopCatalog:', e); }
 }
 
 function applyShopState(data) {
   shopItems = (data.catalog || []).filter(i => i.category === 'border');
-  shopItems.forEach(i => { BORDER_COLORS[i.id] = i.color; });
+  shopItems.forEach(i => {
+    BORDER_COLORS[i.id] = i.color;
+    if (i.color === 'rgb') ANIMATED.add(i.id);
+  });
   crystals = data.crystals ?? 0;
   ownedItems = new Set(data.owned || []);
   equippedBorder = data.border ?? null;
@@ -1786,13 +1800,14 @@ function renderShopGrid(gridId, items) {
       right = `<span class="shop-check" title="Comprada"><i class="ti ti-circle-check-filled"></i></span>`;
     }
     el.innerHTML = `
-      <div class="shop-avatar" style="${borderCss(item.id)}">${shopPreviewAvatar()}</div>
+      <div class="shop-avatar">${shopPreviewAvatar()}</div>
       <div class="shop-item-info">
         <span class="shop-item-name">${escapeHtml(borderName(item))}</span>
         <span class="shop-item-cost">${owned ? (isEquipped ? 'Em uso' : 'Comprada') : ''}</span>
       </div>
       ${right}
     `;
+    applyBorderTo(el.querySelector('.shop-avatar'), item.id);
     grid.appendChild(el);
   });
   grid.querySelectorAll('button[data-act]').forEach(btn =>
@@ -1879,7 +1894,7 @@ function renderFriends() {
     const el = document.createElement('div');
     el.className = 'friend-row';
     el.innerHTML = `
-      <div class="friend-avatar" style="${borderCss(f.border_id)}">${f.avatar_url
+      <div class="friend-avatar">${f.avatar_url
         ? `<img src="${escapeHtml(f.avatar_url)}" alt="" onerror="this.remove()">`
         : (f.display_name ? f.display_name.slice(0,1).toUpperCase() : '?')}</div>
       <div class="friend-info">
@@ -1893,6 +1908,7 @@ function renderFriends() {
         <i class="ti ti-user-x"></i>
       </button>
     `;
+    applyBorderTo(el.querySelector('.friend-avatar'), f.border_id);
     list.appendChild(el);
   });
   list.querySelectorAll('.friend-view').forEach(btn =>
@@ -1932,7 +1948,7 @@ function renderRequests() {
     const el = document.createElement('div');
     el.className = 'friend-row';
     el.innerHTML = `
-      <div class="friend-avatar" style="${borderCss(p.border_id)}">${p.avatar_url
+      <div class="friend-avatar">${p.avatar_url
         ? `<img src="${escapeHtml(p.avatar_url)}" alt="" onerror="this.remove()">`
         : (p.display_name ? p.display_name.slice(0,1).toUpperCase() : '?')}</div>
       <div class="friend-info">
@@ -1944,6 +1960,7 @@ function renderRequests() {
         <button class="btn btn-sm btn-danger request-reject" data-id="${r.id}"><i class="ti ti-x"></i></button>
       </div>
     `;
+    applyBorderTo(el.querySelector('.friend-avatar'), p.border_id);
     list.appendChild(el);
   });
   list.querySelectorAll('.request-accept').forEach(btn =>

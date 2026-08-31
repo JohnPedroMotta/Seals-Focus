@@ -1961,4 +1961,19 @@ body.light ::selection { color: #fff; }
   color: var(--success-color, #22c55e);
 }
 
+.border-anim {
+  animation: borderRgb 2.4s linear infinite;
+}
+
+@keyframes borderRgb {
+  0%   { box-shadow: 0 0 0 3px var(--bg-color), 0 0 0 6px #ff004c, 0 0 14px #ff004c; }
+  16%  { box-shadow: 0 0 0 3px var(--bg-color), 0 0 0 6px #ff9f00, 0 0 14px #ff9f00; }
+  33%  { box-shadow: 0 0 0 3px var(--bg-color), 0 0 0 6px #ffe600, 0 0 14px #ffe600; }
+  50%  { box-shadow: 0 0 0 3px var(--bg-color), 0 0 0 6px #2bff6b, 0 0 14px #2bff6b; }
+  66%  { box-shadow: 0 0 0 3px var(--bg-color), 0 0 0 6px #00d4ff, 0 0 14px #00d4ff; }
+  83%  { box-shadow: 0 0 0 3px var(--bg-color), 0 0 0 6px #7a5cff, 0 0 14px #7a5cff; }
+  100% { box-shadow: 0 0 0 3px var(--bg-color), 0 0 0 6px #ff004c, 0 0 14px #ff004c; }
+}
+
+
 

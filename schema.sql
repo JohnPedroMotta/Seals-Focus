@@ -401,7 +401,8 @@ insert into public.shop_items (name, category, cost, color, sort_order) values
   ('Borda Safira',   'border', 100, '#38bdf8', 3),
   ('Borda Rubi',     'border', 150, '#f87171', 4),
   ('Borda Dourada',  'border', 250, '#facc15', 5),
-  ('Borda Rosa',     'border', 150, '#f472b6', 6)
+  ('Borda Rosa',     'border', 150, '#f472b6', 6),
+  ('Borda RGB',      'border', 500, 'rgb',      7)
 on conflict (name) do nothing;
 
 -- Saldo inicial de cristais (bônus único, idempotente)
