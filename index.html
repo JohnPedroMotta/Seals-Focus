@@ -26,7 +26,7 @@
   </script>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script defer src="config.js?v=3"></script>
-  <script defer src="script.js?v=54"></script>
+  <script defer src="script.js?v=55"></script>
 </head>
 <body>
 
@@ -448,6 +448,21 @@
         <p class="muted-p">Exporte seu histórico completo em CSV.</p>
         <div class="row-btns">
           <button class="btn btn-sm" id="exportCsvBtn"><i class="ti ti-file-export"></i> Exportar histórico (CSV)</button>
+        </div>
+      </section>
+
+      <section class="card" id="feedbackCard">
+        <div class="card-head">
+          <h3 class="panel-title">Feedback</h3>
+        </div>
+        <p class="muted-p">Sua opinião ajuda a melhorar o site. Conte o que acha, sugira recursos ou reporte problemas.</p>
+        <div class="form-group">
+          <label for="feedbackInput">Sua mensagem</label>
+          <textarea id="feedbackInput" rows="4" maxlength="1000" placeholder="Escreva seu feedback aqui..."></textarea>
+          <p class="field-hint" id="feedbackHint"></p>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-primary btn-sm" id="sendFeedbackBtn"><i class="ti ti-send"></i> Enviar feedback</button>
         </div>
       </section>
     </section>

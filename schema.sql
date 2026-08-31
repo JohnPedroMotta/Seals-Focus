@@ -624,3 +624,43 @@ begin
   delete from auth.users where id = auth.uid();
 end;
 $$;
+
+-- Feedback/opinião dos usuários ------------------------------------
+create table if not exists public.feedback (
+  id          bigserial primary key,
+  user_id     uuid references auth.users (id) on delete set null,
+  username    text,
+  message     text not null,
+  created_at  timestamptz not null default now()
+);
+
+alter table public.feedback enable row level security;
+
+-- Qualquer autenticado pode enviar feedback; leitura fica restrita
+-- (você lê direto no painel Supabase — tabela fechada para o público).
+drop policy if exists "feedback: enviar" on public.feedback;
+create policy "feedback: enviar"
+  on public.feedback for insert
+  to authenticated
+  with check (auth.uid() = user_id);
+
+-- RPC de envio (security definer): captura user_id + username sozinho
+create or replace function public.submit_feedback(p_message text)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_username text;
+begin
+  if p_message is null or length(trim(p_message)) = 0 then
+    raise exception 'mensagem vazia';
+  end if;
+
+  select username into v_username from public.profiles where user_id = auth.uid();
+
+  insert into public.feedback (user_id, username, message, created_at)
+  values (auth.uid(), v_username, left(trim(p_message), 1000), now());
+end;
+$$;

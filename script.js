@@ -2437,7 +2437,39 @@ function initSettingsUI() {
 
   $('exportCsvBtn').addEventListener('click', exportCsv);
 
+  $('sendFeedbackBtn').addEventListener('click', sendFeedback);
+
   syncSettingsUI();
+}
+
+async function sendFeedback() {
+  const input = $('feedbackInput');
+  const hint = $('feedbackHint');
+  const msg = (input.value || '').trim();
+  if (!msg) {
+    if (hint) hint.textContent = 'Escreva uma mensagem antes de enviar.';
+    input.focus();
+    return;
+  }
+  if (!sb.client || !sb.user) {
+    if (hint) hint.textContent = 'Conecte sua conta para enviar feedback.';
+    return;
+  }
+  const btn = $('sendFeedbackBtn');
+  btn.disabled = true;
+  btn.textContent = 'Enviando...';
+  try {
+    await sb.client.rpc('submit_feedback', { p_message: msg });
+    input.value = '';
+    if (hint) hint.textContent = '';
+    toast('Feedback enviado! Obrigado pela opinião. 💬', 'success');
+  } catch (e) {
+    console.error('sendFeedback:', e);
+    toast('Não foi possível enviar o feedback agora.', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti ti-send"></i> Enviar feedback';
+  }
 }
 
 /* ================= Exportar / Importar ================= */
