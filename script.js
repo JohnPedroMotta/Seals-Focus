@@ -4,6 +4,8 @@
 const DATA_KEY = 'foco.data.v1';
 const TIMER_KEY = 'foco.timer.v1';
 const PENDING_KEY = 'foco.pending.v1';
+const PUSHED_KEY = 'foco.pushed.v1';
+const TOMBSYNC_KEY = 'foco.tombsync.v1';
 const GOAL_KEY = 'foco.goal.v1';
 const THEME_KEY = 'foco.theme.v1';
 const ACCENT_KEY = 'foco.accent.v1';
@@ -150,10 +152,16 @@ function saveState() {
 /* ================= Nuvem (Supabase) ================= */
 const sb = { client: null, user: null };
 let pendingSync = new Set();
+let pushedIds = new Set();   // ids de sessões já confirmadas no servidor (push incremental)
+let tombSynced = new Set();  // tombstones já excluídos no servidor
 let syncingNow = false;
 
 try { pendingSync = new Set(JSON.parse(localStorage.getItem(PENDING_KEY) || '[]')); } catch { /* ignora */ }
 const persistPending = () => localStorage.setItem(PENDING_KEY, JSON.stringify([...pendingSync]));
+try { pushedIds = new Set(JSON.parse(localStorage.getItem(PUSHED_KEY) || '[]')); } catch { /* ignora */ }
+const persistPushed = () => localStorage.setItem(PUSHED_KEY, JSON.stringify([...pushedIds]));
+try { tombSynced = new Set(JSON.parse(localStorage.getItem(TOMBSYNC_KEY) || '[]')); } catch { /* ignora */ }
+const persistTombSync = () => localStorage.setItem(TOMBSYNC_KEY, JSON.stringify([...tombSynced]));
 
 function isCloudConfigured() {
   return typeof supabase !== 'undefined'
@@ -191,10 +199,11 @@ function initCloud() {
 
   window.addEventListener('online', () => { if (sb.user) flushPending(); });
 
+  // Sync automático periódico: mantém celular e PC como a MESMA coisa.
   setInterval(() => {
-    if (sb.user && sb.client) {
-      loadPendingRequests();
-    }
+    if (!sb.user || !sb.client) return;
+    loadPendingRequests();
+    if (!document.hidden && !syncingNow && !bootTimer) syncFromCloud();
   }, 30000);
 }
 
@@ -359,10 +368,20 @@ async function syncFromCloud() {
 
     // união por id; respeita exclusões locais recentes (tombstones)
     const byId = new Map(state.sessions.map(s => [s.id, s]));
-    (rs || []).forEach(r => { const s = rowToSession(r); if (!byId.has(s.id)) byId.set(s.id, s); });
+    const serverIds = new Set();
+    (rs || []).forEach(r => {
+      const s = rowToSession(r);
+      if (!byId.has(s.id)) byId.set(s.id, s);
+      serverIds.add(s.id);
+      pushedIds.add(s.id); // já está no servidor
+    });
+    persistPushed();
     const tombs = new Set(state.deletedIds);
-    state.sessions = [...byId.values()].filter(s => !tombs.has(s.id))
-      .sort((a, b) => new Date(b.dateISO) - new Date(a.dateISO));
+    // remove localmente o que outro aparelho apagou no servidor
+    state.sessions = [...byId.values()].filter(s =>
+      !tombs.has(s.id)
+      && !(pushedIds.has(s.id) && !serverIds.has(s.id) && !pendingSync.has(s.id))
+    ).sort((a, b) => new Date(b.dateISO) - new Date(a.dateISO));
 
     // matérias: união de tópicos
     (rj || []).forEach(r => {
@@ -419,6 +438,8 @@ async function pushSession(session) {
     });
     if (error) throw error;
     pendingSync.delete(session.id);
+    pushedIds.add(session.id);
+    persistPushed();
   } catch (e) {
     console.error('pushSession:', e);
     pendingSync.add(session.id);
@@ -463,8 +484,15 @@ async function flushPending() {
 
 async function syncToCloud() {
   if (!sb.client || !sb.user) return;
-  console.log('[sync] syncToCloud: pushing', state.sessions.length, 'sessions');
-  for (const s of state.sessions) await pushSession(s);
+  const toPush = state.sessions.filter(s => !pushedIds.has(s.id));
+  console.log('[sync] syncToCloud: pushing', toPush.length, 'novas de', state.sessions.length);
+  for (const s of toPush) await pushSession(s);
+  for (const id of state.deletedIds) {
+    if (tombSynced.has(id) || pendingSync.has(id)) continue;
+    await deleteSessionRemote(id);
+    tombSynced.add(id);
+    persistTombSync();
+  }
   await pushSubjects(Object.keys(state.subjects));
   await pushRewards([...rewardedDays]);
   await pushProfile();
@@ -3124,6 +3152,7 @@ document.addEventListener('visibilitychange', () => {
     renderClock(true); // volta pra aba já com a hora certa
     if (timer.running) startTick(); // rAF pausou em segundo plano: retoma o loop
     renderMetrics();
+    if (sb.user && sb.client && !syncingNow && !bootTimer) syncFromCloud();
   }
 });
 
