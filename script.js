@@ -359,23 +359,23 @@ async function syncFromCloud() {
 
     // união por id; respeita exclusões locais recentes (tombstones)
     const byId = new Map(state.sessions.map(s => [s.id, s]));
-    (rs.data || []).forEach(r => { const s = rowToSession(r); if (!byId.has(s.id)) byId.set(s.id, s); });
+    (rs || []).forEach(r => { const s = rowToSession(r); if (!byId.has(s.id)) byId.set(s.id, s); });
     const tombs = new Set(state.deletedIds);
     state.sessions = [...byId.values()].filter(s => !tombs.has(s.id))
       .sort((a, b) => new Date(b.dateISO) - new Date(a.dateISO));
 
     // matérias: união de tópicos
-    (rj.data || []).forEach(r => {
+    (rj || []).forEach(r => {
       const topics = Array.isArray(r.topics) ? r.topics : [];
       state.subjects[r.name] = [...new Set([...(state.subjects[r.name] || []), ...topics])];
     });
 
     // recompensas: união de dias
-    (rw.data || []).forEach(r => { rewardedDays.add(r.day_key); });
+    (rw || []).forEach(r => { rewardedDays.add(r.day_key); });
     saveRewards();
 
     // perfil: usa o do servidor se existir
-    if (rp && !rp.error) {
+    if (rp && !eP) {
       profile = {
         displayName: rp.display_name || '',
         username: rp.username || '',
