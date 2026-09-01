@@ -2377,7 +2377,9 @@ function renderShop() {
       el.classList.add('premium-item');
       let right;
       if (!owned) {
-        right = `<button class="btn btn-sm btn-crystal" data-act="buy" data-id="${item.id}">${crystalIcon()} ${item.cost}</button>`;
+        right = locked
+          ? `<span class="shop-lock" title="Requer Premium para comprar"><i class="ti ti-lock"></i></span>`
+          : `<button class="btn btn-sm btn-crystal" data-act="buy" data-id="${item.id}">${crystalIcon()} ${item.cost}</button>`;
       } else if (locked) {
         right = `<span class="shop-lock" title="Requer Premium"><i class="ti ti-lock"></i></span>`;
       } else {
@@ -2499,7 +2501,10 @@ async function buyItem(itemId) {
     toast('Borda comprada! Agora equipe para usar.', 'success');
   } catch (e) {
     console.error('buyItem:', e);
-    toast(e.message === 'cristais insuficientes' ? 'Cristais insuficientes.' : 'Não foi possível comprar.', 'error');
+    const em = (e.message || '').toLowerCase();
+    if (em.includes('cristais insuficientes')) toast('Cristais insuficientes.', 'error');
+    else if (em.includes('premium')) toast('Este item é Premium. Você precisa ser Premium para comprá-lo.', 'error');
+    else toast('Não foi possível comprar.', 'error');
   }
 }
 

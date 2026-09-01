@@ -514,7 +514,8 @@ begin
 end;
 $$;
 
--- Compra atômica: confere/bônus não aplicado + desconta cristais + registra item
+-- Compra atômica: confere/bônus não aplicado + desconta cristais + registra item.
+-- Itens premium (cost >= 1000) só podem ser comprados por quem é Premium.
 create or replace function public.buy_item(p_item_id integer)
 returns boolean
 language plpgsql
@@ -524,10 +525,18 @@ as $$
 declare
   v_cost int;
   v_bal  int;
+  v_is_premium boolean;
 begin
   select cost into v_cost from public.shop_items where id = p_item_id;
   if not found then
     raise exception 'item não existe';
+  end if;
+
+  if v_cost >= 1000 then
+    select coalesce(is_premium, false) into v_is_premium from public.profiles where user_id = auth.uid();
+    if not v_is_premium then
+      raise exception 'necessário ser Premium para comprar este item';
+    end if;
   end if;
 
   select total_crystals into v_bal from public.user_crystals where user_id = auth.uid();
