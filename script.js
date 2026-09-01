@@ -173,7 +173,7 @@ function initCloud() {
     console.log('[auth] getSession:', data?.session?.user?.email ?? 'null', error?.message ?? 'ok');
     setCloudUser(data.session?.user ?? null);
     if (sb.user) {
-      syncFromCloud().then(flushPending);
+      finishBoot(syncFromCloud);
     } else {
       goToLogin();
     }
@@ -185,7 +185,7 @@ function initCloud() {
       setCloudUser(u);
       syncProfileUI();
       renderAll();
-      if (u) syncFromCloud().then(flushPending);
+      if (u) finishBoot(syncFromCloud);
     }
   });
 
@@ -196,6 +196,38 @@ function initCloud() {
       loadPendingRequests();
     }
   }, 30000);
+}
+
+/* Mantém a tela de loading visível até a 1ª sincronização terminar,
+   com timeout de segurança para nunca travar (ex.: sem internet). */
+let bootTimer = null;
+function finishBoot(promiseFn) {
+  const loader = $('loader');
+  if (loader && !loader.classList.contains('hide')) {
+    loader.classList.remove('hide'); // garante visível
+  }
+  showLoader(true);
+  const done = () => {
+    if (bootTimer) { clearTimeout(bootTimer); bootTimer = null; }
+    hideLoader();
+  };
+  if (bootTimer) clearTimeout(bootTimer);
+  bootTimer = setTimeout(done, 10000); // segurança: máx. 10s na tela de loading
+  if (promiseFn) {
+    Promise.resolve().then(() => promiseFn()).then(flushPending).then(done).catch(() => done());
+  }
+}
+
+function showLoader(on) {
+  const loader = $('loader');
+  if (!loader) return;
+  if (on) loader.classList.remove('hide');
+  else hideLoader();
+}
+function hideLoader() {
+  const loader = $('loader');
+  if (!loader) return;
+  loader.classList.add('hide');
 }
 
 function setCloudUser(user) {
@@ -354,7 +386,7 @@ async function syncFromCloud() {
 }
 
 async function pushSession(session) {
-  if (!sb.client || !sb.user) return;
+  if (!sb.client || !sb.user) { pendingSync.add(session.id); persistPending(); return; }
   try {
     const { error } = await sb.client.from('sessions').upsert({
       id: session.id,
@@ -1168,7 +1200,6 @@ function confirmSaveSession(session) {
   grantFocusRewards(session.duration);
   toast(`Sessão salva: ${fmtHM(session.duration)} de ${session.subject}.`, 'success');
 }
-
 const DAILY_POINTS_GOAL = 3600; // 1h de foco por dia
 const DAILY_POINTS_BONUS = 10;  // bônus ao bater a meta
 const PER_SESSION_POINTS = 5;   // cristais por sessão salva
