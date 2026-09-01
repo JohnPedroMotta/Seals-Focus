@@ -296,18 +296,38 @@ function setCloudUser(user) {
 }
 
 function updateSyncUI() {
-  const chip = $('syncChip');
-  chip.hidden = !isCloudConfigured();
+  const row = $('syncRow');
+  row.hidden = !isCloudConfigured();
+  const statsBtn = $('syncBtnStats');
+  if (statsBtn) statsBtn.hidden = !(isCloudConfigured() && sb.user);
   if (!isCloudConfigured()) return;
 
   const label = $('syncLabel');
   const dot = $('syncDot');
+  const btn = $('syncBtn');
   dot.className = 'sync-dot';
 
   if (!sb.user) label.textContent = 'Local';
   else if (syncingNow) { label.textContent = 'Sincronizando...'; dot.classList.add('busy'); }
   else if (pendingSync.size > 0) { label.textContent = `${pendingSync.size} pendentes`; dot.classList.add('warn'); }
   else { label.textContent = 'Em dia'; dot.classList.add('ok'); }
+  if (btn) btn.disabled = !sb.user || syncingNow;
+  if (statsBtn) statsBtn.disabled = !sb.user || syncingNow;
+}
+
+$('syncBtn').addEventListener('click', () => { manualSync(); });
+$('syncBtnStats').addEventListener('click', () => { manualSync(); });
+
+async function manualSync() {
+  if (!sb.client || !sb.user) return;
+  if (syncingNow) return;
+  toast('Sincronizando…', 'info');
+  try {
+    await Promise.resolve().then(() => syncFromCloud());
+    await flushPending();
+  } catch (e) { console.error('manualSync:', e); }
+  updateSyncUI();
+  toast('Sincronizado.', 'success');
 }
 
 const rowToSession = r => ({

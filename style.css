@@ -225,6 +225,27 @@ main {
 }
 .sync-dot.off { background: var(--danger-color); }
 
+.sync-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: stretch;
+}
+.sync-row .chip-btn {
+  width: 100%;
+  justify-content: center;
+}
+.btn-sync {
+  padding: 5px 10px !important;
+  font-size: 0.78rem !important;
+}
+.btn-sync:disabled { opacity: 0.55; cursor: default; }
+.card-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 @keyframes pulseDot {
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.4; transform: scale(0.8); }

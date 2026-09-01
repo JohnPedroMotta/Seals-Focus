@@ -16,7 +16,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3/dist/tabler-icons.min.css" />
   </noscript>
-  <link rel="stylesheet" href="style.css?v=44" />
+  <link rel="stylesheet" href="style.css?v=45" />
   <!-- Anti-bfcache + popup auto-close -->
   <script>
     window.addEventListener('pageshow', function(e) {
@@ -26,7 +26,7 @@
   </script>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script defer src="config.js?v=4"></script>
-  <script defer src="script.js?v=61"></script>
+  <script defer src="script.js?v=62"></script>
 </head>
 <body>
 
@@ -78,11 +78,16 @@
         </button>
       </nav>
 
-      <div class="sidebar-foot">
+        <div class="sidebar-foot">
         <a href="#" class="donate-link" id="donateBtn" title="Ajude o site a ficar no ar">Ajude o site ❤</a>
-        <button class="chip chip-btn" id="syncChip" hidden title="Status da sincronização">
-          <span class="sync-dot" id="syncDot"></span><span id="syncLabel">Local</span>
-        </button>
+        <div class="sync-row" id="syncRow" hidden title="Status da sincronização">
+          <button class="chip chip-btn" id="syncChip">
+            <span class="sync-dot" id="syncDot"></span><span id="syncLabel">Local</span>
+          </button>
+          <button class="btn btn-sm btn-sync" id="syncBtn" title="Sincronizar agora" type="button">
+            <i class="ti ti-refresh"></i> Sincronizar
+          </button>
+        </div>
         <div class="avatar-wrap">
           <button class="avatar avatar-btn" id="avatarBtn" aria-haspopup="true" aria-expanded="false" title="Conectar conta">
             <img id="avatarPhoto" alt="" hidden />
@@ -177,7 +182,12 @@
       <section class="card">
         <div class="card-head">
           <h3 class="panel-title">Horas por Dia</h3>
-          <span class="chip" id="weekTotalChip">Total: 0h</span>
+          <div class="card-head-actions">
+            <button class="btn btn-sm btn-sync" id="syncBtnStats" title="Sincronizar agora" type="button" hidden>
+              <i class="ti ti-refresh"></i> Sincronizar
+            </button>
+            <span class="chip" id="weekTotalChip">Total: 0h</span>
+          </div>
         </div>
         <div class="chart" id="weekChart" role="img" aria-label="Gráfico de horas estudadas nos últimos 7 dias"></div>
       </section>
