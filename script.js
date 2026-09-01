@@ -6,6 +6,9 @@ const TIMER_KEY = 'foco.timer.v1';
 const PENDING_KEY = 'foco.pending.v1';
 const PUSHED_KEY = 'foco.pushed.v1';
 const TOMBSYNC_KEY = 'foco.tombsync.v1';
+const KNOWN_KEY = 'foco.known.v1';
+const PUSHED_REWARDS_KEY = 'foco.pushedrewards.v1';
+const SYNC_INTERVAL = 60000; // 60s: mantém aparelhos iguais sem pesar no servidor
 const GOAL_KEY = 'foco.goal.v1';
 const THEME_KEY = 'foco.theme.v1';
 const ACCENT_KEY = 'foco.accent.v1';
@@ -162,6 +165,12 @@ try { pushedIds = new Set(JSON.parse(localStorage.getItem(PUSHED_KEY) || '[]'));
 const persistPushed = () => localStorage.setItem(PUSHED_KEY, JSON.stringify([...pushedIds]));
 try { tombSynced = new Set(JSON.parse(localStorage.getItem(TOMBSYNC_KEY) || '[]')); } catch { /* ignora */ }
 const persistTombSync = () => localStorage.setItem(TOMBSYNC_KEY, JSON.stringify([...tombSynced]));
+let rewardPushed = new Set(); // dias de recompensa já confirmados no servidor
+try { rewardPushed = new Set(JSON.parse(localStorage.getItem(PUSHED_REWARDS_KEY) || '[]')); } catch { /* ignora */ }
+const persistRewarded = () => localStorage.setItem(PUSHED_REWARDS_KEY, JSON.stringify([...rewardPushed]));
+const knownKey = () => sb.user ? `${KNOWN_KEY}.u.${sb.user.id}` : KNOWN_KEY;
+const loadKnownIds = () => { try { return new Set(JSON.parse(localStorage.getItem(knownKey()) || '[]')); } catch { return new Set(); } };
+const saveKnownIds = ids => localStorage.setItem(knownKey(), JSON.stringify([...ids]));
 
 function isCloudConfigured() {
   return typeof supabase !== 'undefined'
@@ -199,12 +208,13 @@ function initCloud() {
 
   window.addEventListener('online', () => { if (sb.user) flushPending(); });
 
-  // Sync automático periódico: mantém celular e PC como a MESMA coisa.
+  // Sync automático periódico: mantém celular e PC como a MESMA coisa,
+  // com pull leve (só IDs) pra não pesar no servidor.
   setInterval(() => {
     if (!sb.user || !sb.client) return;
     loadPendingRequests();
     if (!document.hidden && !syncingNow && !bootTimer) syncFromCloud();
-  }, 30000);
+  }, SYNC_INTERVAL);
 }
 
 /* Mantém a tela de loading visível até a 1ª sincronização terminar,
@@ -353,45 +363,57 @@ async function syncFromCloud() {
   updateSyncUI();
   console.log('[sync] syncFromCloud: user_id=', sb.user.id);
   try {
-    const [{ data: rs, error: eS }, { data: rj, error: eJ }, { data: rw, error: eR }, { data: rp, error: eP }] = await Promise.all([
-      sb.client.from('sessions').select('*').order('date_iso', { ascending: false }),
+    // Pull leve: sessões só por ID; o corpo vêm apenas quando muda.
+    const [{ data: rIds, error: eS }, { data: rj, error: eJ }, { data: rw, error: eR }, { data: rp, error: eP }] = await Promise.all([
+      sb.client.from('sessions').select('id'),
       sb.client.from('subjects').select('*'),
-      sb.client.from('rewards').select('*'),
+      sb.client.from('rewards').select('day_key'),
       sb.client.from('profiles').select('*').eq('user_id', sb.user.id).maybeSingle()
     ]);
-    console.log('[sync] sessions:', (rs || []).length, 'subjects:', (rj || []).length, 'rewards:', (rw || []).length);
-    if (eS) console.error('[sync] sessions error:', eS.message);
-    if (eJ) console.error('[sync] subjects error:', eJ.message);
-    if (eR) console.error('[sync] rewards error:', eR.message);
-    if (eP) console.error('[sync] profiles error:', eP.message);
     if (eS || eJ) throw eS || eJ;
 
-    // união por id; respeita exclusões locais recentes (tombstones)
-    const byId = new Map(state.sessions.map(s => [s.id, s]));
-    const serverIds = new Set();
-    (rs || []).forEach(r => {
-      const s = rowToSession(r);
-      if (!byId.has(s.id)) byId.set(s.id, s);
-      serverIds.add(s.id);
-      pushedIds.add(s.id); // já está no servidor
-    });
-    persistPushed();
-    const tombs = new Set(state.deletedIds);
-    // remove localmente o que outro aparelho apagou no servidor
-    state.sessions = [...byId.values()].filter(s =>
-      !tombs.has(s.id)
-      && !(pushedIds.has(s.id) && !serverIds.has(s.id) && !pendingSync.has(s.id))
-    ).sort((a, b) => new Date(b.dateISO) - new Date(a.dateISO));
+    const serverIds = new Set((rIds || []).map(r => r.id));
+    const known = loadKnownIds();
 
-    // matérias: união de tópicos
+    // exclusões feitas em outro aparelho: id não está mais no servidor
+    const removed = [...known].filter(id => !serverIds.has(id));
+    if (removed.length) {
+      const del = new Set(removed);
+      state.sessions = state.sessions.filter(s => !del.has(s.id));
+      saveState();
+    }
+
+    // novidades: baixa só o que o aparelho ainda não conhece (em lotes)
+    const added = [...serverIds].filter(id => !known.has(id));
+    if (added.length) {
+      for (let i = 0; i < added.length; i += 100) {
+        const { data, error } = await sb.client.from('sessions')
+          .select('*').in('id', added.slice(i, i + 100));
+        if (error) throw error;
+        (data || []).forEach(r => {
+          state.sessions = [...state.sessions.filter(s => s.id !== r.id), rowToSession(r)];
+          pushedIds.add(r.id); // já está no servidor: não re-envia
+        });
+      }
+      persistPushed();
+      saveState();
+    }
+    saveKnownIds(serverIds);
+
+    // matérias: união de tópicos (poucas linhas por usuário)
     (rj || []).forEach(r => {
       const topics = Array.isArray(r.topics) ? r.topics : [];
       state.subjects[r.name] = [...new Set([...(state.subjects[r.name] || []), ...topics])];
     });
 
     // recompensas: união de dias
-    (rw || []).forEach(r => { rewardedDays.add(r.day_key); });
-    saveRewards();
+    let changedRewards = false;
+    (rw || []).forEach(r => {
+      if (!rewardedDays.has(r.day_key)) { rewardedDays.add(r.day_key); changedRewards = true; }
+      rewardPushed.add(r.day_key); // já está no servidor
+    });
+    if (changedRewards) { saveRewards(); persistRewarded(); }
+    else if (rw && rw.length) persistRewarded();
 
     // perfil: usa o do servidor se existir
     if (rp && !eP) {
@@ -410,6 +432,9 @@ async function syncFromCloud() {
     await loadUserPoints();
     await awardSignupBonus();
 
+    const tombs = new Set(state.deletedIds);
+    state.sessions = state.sessions.filter(s => !tombs.has(s.id))
+      .sort((a, b) => new Date(b.dateISO) - new Date(a.dateISO));
     saveState();
     await syncToCloud();
     renderAll();
@@ -470,8 +495,12 @@ async function pushSubjects(names) {
 async function pushRewards(days) {
   if (!sb.client || !sb.user || !days.length) return;
   const rows = days.map(d => ({ user_id: sb.user.id, day_key: d, points: POINTS_PER_DAY }));
-  try { await sb.client.from('rewards').upsert(rows); }
-  catch (e) { console.error('pushRewards:', e); }
+  try {
+    const { error } = await sb.client.from('rewards').upsert(rows);
+    if (error) throw error;
+    days.forEach(d => rewardPushed.add(d));
+    persistRewarded();
+  } catch (e) { console.error('pushRewards:', e); }
 }
 
 async function flushPending() {
@@ -494,7 +523,8 @@ async function syncToCloud() {
     persistTombSync();
   }
   await pushSubjects(Object.keys(state.subjects));
-  await pushRewards([...rewardedDays]);
+  const newRewardDays = [...rewardedDays].filter(d => !rewardPushed.has(d));
+  if (newRewardDays.length) await pushRewards(newRewardDays);
   await pushProfile();
   await setUserPoints(userPoints);
   console.log('[sync] syncToCloud: done');
