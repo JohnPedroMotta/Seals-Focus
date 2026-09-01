@@ -2175,6 +2175,11 @@ function ownerBadgeHTML(userId) {
     : '';
 }
 
+/* Coroa exibida ao lado do nome de quem é Premium */
+function premiumBadgeHTML() {
+  return ' <span class="premium-mini-badge" title="Premium"><i class="ti ti-crown"></i></span>';
+}
+
 function friendSub(p) {
   return p.username ? `@${p.username}` : '';
 }
@@ -2195,7 +2200,7 @@ async function loadFriends() {
     if (friendIds.length > 0) {
       const { data: profs, error: pErr } = await sb.client
         .from('profiles')
-        .select('user_id, username, display_name, avatar_url, bio, border_id')
+        .select('user_id, username, display_name, avatar_url, bio, border_id, is_premium')
         .in('user_id', friendIds);
       if (pErr) throw pErr;
       friendsCache = (profs || []).map(p => ({ ...p, user_id: p.user_id }));
@@ -2220,7 +2225,7 @@ async function fetchPendingRequests() {
     let fromProfs = {};
     if (fromIds.length > 0) {
       const { data } = await sb.client.from('profiles')
-        .select('user_id, username, display_name, avatar_url, bio, border_id')
+        .select('user_id, username, display_name, avatar_url, bio, border_id, is_premium')
         .in('user_id', fromIds);
       (data || []).forEach(p => { fromProfs[p.user_id] = p; });
     }
@@ -2549,7 +2554,7 @@ function renderFriends() {
         ? `<img src="${escapeHtml(f.avatar_url)}" alt="" onerror="this.remove()">`
         : (f.display_name ? f.display_name.slice(0,1).toUpperCase() : '?')}</div>
       <div class="friend-info">
-        <span class="friend-name">${escapeHtml(friendLabel(f))}${ownerBadgeHTML(f.user_id)}</span>
+        <span class="friend-name">${escapeHtml(friendLabel(f))}${f.is_premium ? premiumBadgeHTML() : ''}${ownerBadgeHTML(f.user_id)}</span>
         <span class="friend-user">${escapeHtml(friendSub(f)) || 'sem @username'}</span>
       </div>
       <button class="btn btn-sm friend-view" data-id="${f.user_id}" title="Ver perfil">
@@ -2603,7 +2608,7 @@ function renderRequests() {
         ? `<img src="${escapeHtml(p.avatar_url)}" alt="" onerror="this.remove()">`
         : (p.display_name ? p.display_name.slice(0,1).toUpperCase() : '?')}</div>
       <div class="friend-info">
-        <span class="friend-name">${escapeHtml(friendLabel(p))}${ownerBadgeHTML(p.user_id)}</span>
+        <span class="friend-name">${escapeHtml(friendLabel(p))}${p.is_premium ? premiumBadgeHTML() : ''}${ownerBadgeHTML(p.user_id)}</span>
         <span class="friend-user">${escapeHtml(friendSub(p)) || 'sem @username'}</span>
       </div>
       <div class="friend-actions">
@@ -2666,7 +2671,7 @@ async function openProfileModal(friendId) {
   const f = friendsCache.find(x => x.user_id === friendId) || {};
   const name = f.display_name || ('@' + (f.username || ''));
   const user = f.username ? '@' + f.username : '';
-  $('profileViewName').innerHTML = `${escapeHtml(name || 'Usuário')}${ownerBadgeHTML(friendId)}`;
+  $('profileViewName').innerHTML = `${escapeHtml(name || 'Usuário')}${f.is_premium ? premiumBadgeHTML() : ''}${ownerBadgeHTML(friendId)}`;
   $('profileViewUser').textContent = user;
   const av = $('profileViewAvatar');
   av.innerHTML = f.avatar_url
@@ -2736,7 +2741,7 @@ $('friendSearchBtn').addEventListener('click', async () => {
   const username = q.replace('@', '').toLowerCase();
   try {
     const { data, error } = await sb.client.from('profiles')
-      .select('user_id, username, display_name, avatar_url, border_id')
+      .select('user_id, username, display_name, avatar_url, border_id, is_premium')
       .ilike('username', username + '%')
       .limit(5);
     if (error) throw error;
@@ -2747,7 +2752,7 @@ $('friendSearchBtn').addEventListener('click', async () => {
       $('friendSearchResults').hidden = true;
       return;
     }
-    $('friendResultName').textContent = hit.display_name || '@' + hit.username;
+    $('friendResultName').innerHTML = `${escapeHtml(hit.display_name || '@' + hit.username)}${hit.is_premium ? premiumBadgeHTML() : ''}`;
     $('friendResultUser').textContent = '@' + hit.username;
     const avEl = $('friendResultAvatar');
     avEl.innerHTML = hit.avatar_url
