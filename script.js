@@ -1860,7 +1860,8 @@ async function toggleAdminPremium() {
     searchAdminUsers();
   } catch (e) {
     console.error('toggleAdminPremium:', e);
-    $('auMsg').textContent = 'Erro ao alterar Premium.';
+    const em = (e && (e.message || e.error_description)) || 'erro desconhecido';
+    $('auMsg').textContent = 'Erro ao alterar Premium: ' + em;
     toast('Erro ao alterar Premium.', 'error');
   }
 }
