@@ -315,9 +315,6 @@ function updateSyncUI() {
   if (statsBtn) statsBtn.disabled = !sb.user || syncingNow;
 }
 
-$('syncBtn').addEventListener('click', () => { manualSync(); });
-$('syncBtnStats').addEventListener('click', () => { manualSync(); });
-
 async function manualSync() {
   if (!sb.client || !sb.user) return;
   if (syncingNow) return;
@@ -476,6 +473,9 @@ async function syncToCloud() {
 
 /* ================= Utils ================= */
 const $ = id => document.getElementById(id);
+
+$('syncBtn').addEventListener('click', () => { manualSync(); });
+$('syncBtnStats').addEventListener('click', () => { manualSync(); });
 
 function fmtHMS(sec) {
   const h = String(Math.floor(sec / 3600)).padStart(2, '0');
