@@ -385,6 +385,7 @@ async function syncFromCloud() {
       };
       localStorage.setItem(profileStoreKey(), JSON.stringify(profile));
       resetProfileForm();
+      applyCloudPrefs(rp);
     }
 
     await loadUserPoints();
@@ -1361,37 +1362,89 @@ const PALETTES = {
 };
 
 function applyTheme(theme, persist = true) {
-  document.body.classList.toggle('light', theme === 'light');
-  if (persist) localStorage.setItem(THEME_KEY, theme);
+  prefs.theme = theme === 'light' ? 'light' : 'dark';
+  document.body.classList.toggle('light', prefs.theme === 'light');
+  if (persist) savePrefs();
   document.querySelectorAll('#themeSeg .seg-btn').forEach(b =>
-    b.classList.toggle('active', b.dataset.theme === theme));
+    b.classList.toggle('active', b.dataset.theme === prefs.theme));
 }
 
 function applyAccent(name, persist = true) {
   const p = PALETTES[name] || PALETTES.amber;
+  prefs.accent = name;
   const root = document.documentElement.style;
   root.setProperty('--accent-color', p.accent);
   root.setProperty('--accent-hover', p.hover);
   root.setProperty('--accent-glow', p.glow);
-  if (persist) localStorage.setItem(ACCENT_KEY, name);
+  if (persist) savePrefs();
   document.querySelectorAll('.swatch').forEach(sw =>
-    sw.classList.toggle('active', sw.dataset.palette === name));
+    sw.classList.toggle('active', sw.dataset.palette === prefs.accent));
 }
 
 function loadGoal() {
   try {
     const mins = parseInt(localStorage.getItem(GOAL_KEY), 10);
-    if (Number.isFinite(mins) && mins >= 5 && mins <= 720) dailyGoalSecs = mins * 60;
+    if (Number.isFinite(mins) && mins >= 5 && mins <= 720) {
+      dailyGoalSecs = mins * 60;
+      prefs.dailyGoal = mins;
+    }
   } catch { /* ignora */ }
 }
 
+/* Preferências sincronizadas na nuvem (tema/paleta/meta) */
+let prefs = { theme: 'dark', accent: 'amber', dailyGoal: null };
+let isPremium = false; // status premium do perfil (vem do cloud)
+
+function savePrefs() {
+  localStorage.setItem(THEME_KEY, prefs.theme);
+  localStorage.setItem(ACCENT_KEY, prefs.accent);
+  if (prefs.dailyGoal != null) localStorage.setItem(GOAL_KEY, String(prefs.dailyGoal));
+  if (sb.client && sb.user) pushPrefs();
+}
+
+async function pushPrefs() {
+  if (!sb.client || !sb.user) return;
+  try {
+    await sb.client.from('profiles').update({
+      theme: prefs.theme,
+      accent: prefs.accent,
+      daily_goal: prefs.dailyGoal
+    }).eq('user_id', sb.user.id);
+  } catch (e) { console.error('pushPrefs:', e); }
+}
+
+/* Aplica preferências + Premium vindos do cloud ao aparelho atual */
+function applyCloudPrefs(r) {
+  if (!r) return;
+  if (r.theme === 'light' || r.theme === 'dark') {
+    prefs.theme = r.theme;
+    localStorage.setItem(THEME_KEY, r.theme);
+    applyTheme(r.theme, false);
+  }
+  if (typeof r.accent === 'string' && PALETTES[r.accent]) {
+    prefs.accent = r.accent;
+    localStorage.setItem(ACCENT_KEY, r.accent);
+    applyAccent(r.accent, false);
+  }
+  if (Number.isFinite(r.daily_goal) && r.daily_goal >= 5 && r.daily_goal <= 720) {
+    prefs.dailyGoal = r.daily_goal;
+    dailyGoalSecs = r.daily_goal * 60;
+    localStorage.setItem(GOAL_KEY, String(r.daily_goal));
+    renderAll();
+  }
+  if (typeof r.is_premium === 'boolean') {
+    isPremium = r.is_premium;
+    enforcePremiumGuard();
+  }
+}
+
 function loadAppearance() {
-  let theme = 'dark';
-  try { theme = localStorage.getItem(THEME_KEY) || 'dark'; } catch { /* ignora */ }
-  applyTheme(theme, false);
-  let pal = 'amber';
-  try { pal = localStorage.getItem(ACCENT_KEY) || 'amber'; } catch { /* ignora */ }
-  applyAccent(pal, false);
+  prefs.theme = 'dark';
+  try { prefs.theme = localStorage.getItem(THEME_KEY) || 'dark'; } catch { /* ignora */ }
+  prefs.accent = 'amber';
+  try { prefs.accent = localStorage.getItem(ACCENT_KEY) || 'amber'; } catch { /* ignora */ }
+  applyTheme(prefs.theme, false);
+  applyAccent(prefs.accent, false);
 }
 
 /* ================= Perfil ================= */
@@ -1488,17 +1541,19 @@ function renderProfileBorders() {
   grid.innerHTML = '';
   owned.forEach(item => {
     const isEquipped = equippedBorder === item.id;
+    const locked = !isPremium && (item.cost || 0) >= PREMIUM_COST;
     const el = document.createElement('button');
     el.type = 'button';
-    el.className = 'profile-border-opt' + (isEquipped ? ' active' : '');
-    el.title = isEquipped ? 'Em uso — clique para remover' : 'Clique para equipar';
+    el.className = 'profile-border-opt' + (isEquipped ? ' active' : '') + (locked ? ' locked' : '');
+    el.title = locked ? 'Requer Premium' : (isEquipped ? 'Em uso — clique para remover' : 'Clique para equipar');
     el.innerHTML = `
       <span class="profile-border-avatar">${shopPreviewAvatar()}</span>
       <span class="profile-border-name">${escapeHtml(borderName(item))}</span>
-      ${isEquipped ? '<i class="ti ti-check profile-border-check"></i>' : ''}
+      ${isEquipped ? '<i class="ti ti-check profile-border-check"></i>' : (locked ? '<i class="ti ti-lock profile-border-lock"></i>' : '')}
     `;
     applyBorderTo(el.querySelector('.profile-border-avatar'), item.id);
     el.addEventListener('click', () => {
+      if (locked) { toast('Este item é Premium. Você precisa ser Premium para usá-lo.', 'error'); return; }
       if (equippedBorder === item.id) unequipItem(item.id);
       else equipItem(item.id);
     });
@@ -1616,7 +1671,7 @@ async function searchAdminUsers() {
           ? `<img src="${escapeHtml(u.avatar_url)}" alt="" onerror="this.remove()">`
           : (u.display_name || u.username || '?').slice(0,1).toUpperCase()}</div>
         <div class="admin-user-info">
-          <strong>${escapeHtml(u.display_name || 'Sem nome')}${ownerBadgeHTML(u.user_id)}</strong>
+          <strong>${escapeHtml(u.display_name || 'Sem nome')}${u.is_premium ? '<span class="premium-mini-badge" title="Premium"><i class="ti ti-crown"></i></span>' : ''}${ownerBadgeHTML(u.user_id)}</strong>
           <span class="muted-p">${u.username ? '@' + escapeHtml(u.username) : 'sem @username'} · ${u.sessions_count ?? 0} sessões</span>
         </div>
         <div class="admin-user-meta">
@@ -1649,6 +1704,8 @@ async function openAdminUser(uid) {
     $('auBio').value = u.bio || '';
     $('auCrystals').value = u.total_crystals ?? 0;
     $('auPoints').value = u.total_points ?? 0;
+    editor._premiumState = !!u.is_premium;
+    renderAdminPremiumState();
     if (!shopItems.length) await loadShopCatalog();
     fillAdminBorderSelect(u.border_id);
     $('auMsg').innerHTML =
@@ -1709,6 +1766,47 @@ async function saveAdminField(kind) {
   }
 }
 
+function renderAdminPremiumState() {
+  const editor = $('adminUserEditor');
+  const premium = !!editor._premiumState;
+  const st = $('auPremiumStatus');
+  const btn = editor.querySelector('[data-auaction="premium"]');
+  if (st) { st.textContent = premium ? 'Ativo' : 'Não premium'; st.classList.toggle('is-on', premium); }
+  if (btn) {
+    btn.classList.toggle('btn-success', !premium);
+    btn.innerHTML = premium
+      ? '<i class="ti ti-crown-off"></i> Remover Premium'
+      : '<i class="ti ti-crown"></i> Conceder Premium';
+  }
+}
+
+async function toggleAdminPremium() {
+  if (!isAdmin() || !$('adminUserEditor')._uid) return;
+  const editor = $('adminUserEditor');
+  const uid = editor._uid;
+  const current = !!editor._premiumState;
+  const ok = await confirmDialog({
+    title: current ? 'Remover Premium' : 'Conceder Premium',
+    text: current
+      ? 'Remover o Premium deste usuário? Se ele estiver usando uma borda premium, ela será desequipada automaticamente.'
+      : 'Conceder Premium a este usuário? Ele poderá equipar e usar os itens premium da loja.',
+    okText: current ? 'Remover Premium' : 'Conceder Premium',
+  });
+  if (!ok) return;
+  try {
+    const r = await adminRpc('admin_set_premium', { p_user_id: uid, p_premium: !current });
+    editor._premiumState = !!r && !!r.is_premium;
+    renderAdminPremiumState();
+    $('auMsg').textContent = current ? 'Premium removido e borda premium desequipada.' : 'Premium concedido!';
+    toast(current ? 'Premium removido.' : 'Premium concedido!', 'success');
+    searchAdminUsers();
+  } catch (e) {
+    console.error('toggleAdminPremium:', e);
+    $('auMsg').textContent = 'Erro ao alterar Premium.';
+    toast('Erro ao alterar Premium.', 'error');
+  }
+}
+
 async function resetAdminUser() {
   if (!isAdmin() || !$('adminUserEditor')._uid) return;
   const uid = $('adminUserEditor')._uid;
@@ -1745,6 +1843,7 @@ function bindAdminUserEvents() {
       else if (a === 'crystals') saveAdminField('crystals');
       else if (a === 'points') saveAdminField('points');
       else if (a === 'reset') resetAdminUser();
+      else if (a === 'premium') toggleAdminPremium();
     }));
 }
 
@@ -1849,6 +1948,7 @@ async function pullProfile() {
       };
       localStorage.setItem(profileStoreKey(), JSON.stringify(profile));
       resetProfileForm();
+      applyCloudPrefs(data);
     } else {
       console.log('[profile] No profile found, creating for', sb.user.id);
       const handle = (sb.user.email || '').split('@')[0].split(/[._-]/)[0];
@@ -2101,6 +2201,23 @@ function applyShopState(data) {
   crystals = data.crystals ?? 0;
   ownedItems = new Set(data.owned || []);
   equippedBorder = data.border ?? null;
+  if (typeof data.is_premium === 'boolean') isPremium = data.is_premium;
+  else if (data.is_premium == null) isPremium = false;
+  enforcePremiumGuard();
+}
+
+/* Se o usuário não for Premium mas tiver uma borda premium equipada,
+   desequipa localmente (o servidor já desequipa ao remover Premium). */
+function enforcePremiumGuard() {
+  if (isPremium || equippedBorder == null) return;
+  const item = shopItems.find(i => i.id === equippedBorder && (i.cost || 0) >= PREMIUM_COST);
+  if (!item) return;
+  equippedBorder = null;
+  if (currentView === 'shop') renderShop();
+  renderProfileBorders();
+  applyBorderTo($('avatarBtn'), null);
+  applyBorderTo($('profileAvatarLabel'), null);
+  syncProfileUI();
 }
 
 async function loadShop() {
@@ -2119,11 +2236,13 @@ async function loadShop() {
     const [{ data: bal }, { data: owned }, { data: me }] = await Promise.all([
       sb.client.from('user_crystals').select('total_crystals').eq('user_id', sb.user.id).maybeSingle(),
       sb.client.from('user_items').select('item_id').eq('user_id', sb.user.id),
-      sb.client.from('profiles').select('border_id').eq('user_id', sb.user.id).maybeSingle()
+      sb.client.from('profiles').select('border_id, is_premium').eq('user_id', sb.user.id).maybeSingle()
     ]);
     crystals = bal?.total_crystals ?? 0;
     ownedItems = new Set((owned || []).map(o => o.item_id));
     equippedBorder = me?.border_id ?? null;
+    isPremium = me?.is_premium ?? false;
+    enforcePremiumGuard();
   } catch (e2) { console.error('loadShop fallback:', e2); }
 }
 
@@ -2188,12 +2307,15 @@ function renderShop() {
     premium.forEach(item => {
       const owned = ownedItems.has(item.id);
       const isEquipped = equippedBorder === item.id;
+      const locked = !isPremium;
       const el = document.createElement('div');
       el.className = 'shop-item' + (isEquipped ? ' equipped' : '');
       el.classList.add('premium-item');
       let right;
       if (!owned) {
         right = `<button class="btn btn-sm btn-crystal" data-act="buy" data-id="${item.id}">${crystalIcon()} ${item.cost}</button>`;
+      } else if (locked) {
+        right = `<span class="shop-lock" title="Requer Premium"><i class="ti ti-lock"></i></span>`;
       } else {
         right = `<span class="shop-check" title="Comprada"><i class="ti ti-circle-check-filled"></i></span>`;
       }
@@ -2201,13 +2323,19 @@ function renderShop() {
         <div class="shop-avatar">${shopPreviewAvatar()}</div>
         <div class="shop-item-info">
           <span class="shop-item-name">${escapeHtml(borderName(item))}<span class="premium-badge"><i class="ti ti-crown"></i></span></span>
-          <span class="shop-item-cost">${owned ? (isEquipped ? 'Em uso' : 'Comprada') : 'Exclusiva'}</span>
+          <span class="shop-item-cost">${locked ? 'Requer Premium' : (owned ? (isEquipped ? 'Em uso' : 'Comprada') : 'Exclusiva')}</span>
         </div>
         ${right}
       `;
       applyBorderTo(el.querySelector('.shop-avatar'), item.id);
       grid.appendChild(el);
     });
+    if (!isPremium) {
+      const note = document.createElement('p');
+      note.className = 'muted-p shop-premium-note';
+      note.innerHTML = `<i class="ti ti-crown"></i> Para usar os itens <strong>Premium</strong> você precisa ser <strong>Premium</strong>.`;
+      grid.appendChild(note);
+    }
   }
   grid.querySelectorAll('button[data-act]').forEach(btn =>
     btn.addEventListener('click', () => {
@@ -2324,7 +2452,12 @@ async function equipItem(itemId) {
     renderProfileBorders();
     syncProfileUI();
     toast('Borda equipada!', 'success');
-  } catch (e) { console.error('equipItem:', e); toast('Não foi possível equipar.', 'error'); }
+  } catch (e) {
+    console.error('equipItem:', e);
+    const msg = (e?.message || e?.error?.message || '').toLowerCase();
+    if (msg.includes('premium')) toast('Este item é Premium. Você precisa ser Premium para usá-lo.', 'error');
+    else toast('Não foi possível equipar.', 'error');
+  }
 }
 
 async function unequipItem(itemId) {
@@ -2793,7 +2926,8 @@ function initSettingsUI() {
       return;
     }
     dailyGoalSecs = v * 60;
-    localStorage.setItem(GOAL_KEY, String(v));
+    prefs.dailyGoal = v;
+    savePrefs();
     renderAll();
     toast(`Meta diária definida: ${v} min.`, 'success');
   });

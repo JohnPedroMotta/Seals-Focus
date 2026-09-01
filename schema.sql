@@ -97,6 +97,31 @@ begin
   end if;
 end $$;
 
+-- Colunas de sincronização (tema/paleta/meta) e Premium — idempotente
+do $$
+begin
+  if not exists (select 1 from information_schema.columns
+                 where table_schema = 'public' and table_name = 'profiles'
+                   and column_name = 'theme') then
+    alter table public.profiles add column theme text not null default 'dark';
+  end if;
+  if not exists (select 1 from information_schema.columns
+                 where table_schema = 'public' and table_name = 'profiles'
+                   and column_name = 'accent') then
+    alter table public.profiles add column accent text not null default 'amber';
+  end if;
+  if not exists (select 1 from information_schema.columns
+                 where table_schema = 'public' and table_name = 'profiles'
+                   and column_name = 'daily_goal') then
+    alter table public.profiles add column daily_goal integer;
+  end if;
+  if not exists (select 1 from information_schema.columns
+                 where table_schema = 'public' and table_name = 'profiles'
+                   and column_name = 'is_premium') then
+    alter table public.profiles add column is_premium boolean not null default false;
+  end if;
+end $$;
+
 alter table public.profiles enable row level security;
 
 drop policy if exists "dono do perfil" on public.profiles;
@@ -453,6 +478,7 @@ declare
   v_bal   int;
   v_owned json;
   v_border int;
+  v_isp   boolean;
 begin
   insert into public.user_crystals (user_id, total_crystals)
   values (v_uid, 300) on conflict (user_id) do nothing;
@@ -476,12 +502,14 @@ begin
     ) ui;
 
   select border_id into v_border from public.profiles where user_id = v_uid;
+  select coalesce(is_premium, false) into v_isp from public.profiles where user_id = v_uid;
 
   return json_build_object(
     'catalog', v_cat,
     'crystals', v_bal,
     'owned', v_owned,
-    'border', v_border
+    'border', v_border,
+    'is_premium', v_isp
   );
 end;
 $$;
@@ -553,19 +581,32 @@ begin
 end;
 $$;
 
--- Equipa uma borda que o usuário possui
+-- Equipa uma borda que o usuário possui (itens premium exigem Premium)
 create or replace function public.equip_border(p_item_id integer)
 returns void
 language plpgsql
 security definer
 set search_path = public
 as $$
+declare
+  v_need_premium boolean;
+  v_is_premium   boolean;
 begin
   if not exists (
     select 1 from public.user_items where user_id = auth.uid() and item_id = p_item_id
   ) then
     raise exception 'você não possui este item';
   end if;
+
+  -- item é premium se custo >= 1000
+  select (cost >= 1000) into v_need_premium from public.shop_items where id = p_item_id;
+  if v_need_premium then
+    select coalesce(is_premium, false) into v_is_premium from public.profiles where user_id = auth.uid();
+    if not v_is_premium then
+      raise exception 'necessário ser Premium para usar este item';
+    end if;
+  end if;
+
   update public.profiles
      set border_id = p_item_id,
          updated_at = now()
@@ -588,7 +629,8 @@ begin
 end;
 $$;
 
--- Guarda: só dá pra equipar borda que o usuário realmente possui.
+-- Guarda: só dá pra equipar borda que o usuário realmente possui, e
+-- itens premium (cost >= 1000) exigem Premium (do usuário alvo).
 -- Bloqueia UPDATE burlado direto em profiles.border_id (protege a loja).
 create or replace function public.guard_border_equip()
 returns trigger
@@ -596,13 +638,28 @@ language plpgsql
 security definer
 set search_path = public
 as $$
+declare
+  v_need_premium boolean;
+  v_isp   boolean;
+  v_uid   uuid := auth.uid();
+  v_admin uuid := '104915e0-319a-40db-a9f9-568bcaf2d456';
 begin
   if new.border_id is not null and new.border_id is distinct from old.border_id then
+    -- posse: usuário só equipa o que é dele; admin pode atribuir livremente
     if not exists (
       select 1 from public.user_items
-      where user_id = auth.uid() and item_id = new.border_id
-    ) then
+      where user_id = v_uid and item_id = new.border_id
+    ) and v_uid <> v_admin then
       raise exception 'você não possui esta borda';
+    end if;
+
+    -- itens premium (cost >= 1000) exigem Premium no usuário alvo do perfil
+    select (cost >= 1000) into v_need_premium from public.shop_items where id = new.border_id;
+    if v_need_premium then
+      select coalesce(is_premium, false) into v_isp from public.profiles where user_id = new.user_id;
+      if not v_isp then
+        raise exception 'necessário ser Premium para usar este item';
+      end if;
     end if;
   end if;
   return new;
@@ -790,6 +847,7 @@ begin
         pr.display_name,
         pr.avatar_url,
         pr.border_id,
+        pr.is_premium,
         coalesce(cr.total_crystals, 0) as total_crystals,
         coalesce(pn.total_points,  0)  as total_points,
         (select count(*) from public.sessions s where s.user_id = pr.user_id) as sessions_count
@@ -850,6 +908,7 @@ begin
     'avatar_url',   pr.avatar_url,
     'bio',          pr.bio,
     'border_id',    pr.border_id,
+    'is_premium',   pr.is_premium,
     'total_crystals', coalesce(cr.total_crystals, 0),
     'total_points',   coalesce(pn.total_points,  0),
     'sessions_count', (select count(*) from public.sessions s where s.user_id = pr.user_id),
@@ -990,6 +1049,47 @@ begin
   on conflict (user_id) do update set total_crystals = 0, updated_at = now();
 
   return jsonb_build_object('ok', true);
+end;
+$$;
+
+-- Define (ou remove) o status PREMIUM de um usuário.
+-- Ao remover o Premium, desequipa automaticamente qualquer borda premium
+-- que esteja ativa (o usuário mantém o item comprado, mas não pode usá-lo).
+create or replace function public.admin_set_premium(p_user_id uuid, p_premium boolean)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_admin uuid := '104915e0-319a-40db-a9f9-568bcaf2d456';
+begin
+  if auth.uid() <> v_admin then
+    raise exception 'acesso negado';
+  end if;
+
+  if not exists (select 1 from public.profiles where user_id = p_user_id) then
+    raise exception 'usuario nao encontrado';
+  end if;
+
+  if p_premium then
+    update public.profiles
+       set is_premium = true, updated_at = now()
+     where user_id = p_user_id;
+  else
+    -- remove o premium e desequipa bordas premium (cost >= 1000)
+    update public.profiles
+       set is_premium = false,
+           border_id = case
+             when (select cost from public.shop_items where id = profiles.border_id) >= 1000
+             then null
+             else border_id
+           end,
+           updated_at = now()
+     where user_id = p_user_id;
+  end if;
+
+  return jsonb_build_object('ok', true, 'is_premium', p_premium);
 end;
 $$;
 

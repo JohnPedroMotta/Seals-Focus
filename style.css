@@ -1975,6 +1975,54 @@ body.light ::selection { color: #fff; }
   color: #f72fb8;
   vertical-align: middle;
 }
+.shop-lock {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.14);
+}
+.shop-premium-note {
+  margin-top: 10px;
+  font-size: 0.82rem;
+  color: #e0b3ff;
+}
+.profile-border-opt.locked {
+  opacity: 0.6;
+}
+.profile-border-opt.locked .profile-border-lock {
+  margin-left: auto;
+  color: #f59e0b;
+}
+.premium-mini-badge {
+  display: inline-flex;
+  margin-left: 5px;
+  color: #f72fb8;
+  vertical-align: middle;
+}
+.admin-premium-group {
+  grid-column: 1 / -1;
+}
+.admin-premium-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.admin-premium-status {
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-muted);
+}
+.admin-premium-status.is-on {
+  color: #08090b;
+  background: linear-gradient(135deg, #c084fc, #f0a6ff);
+}
 
 /* ---------- Pacotes de cristais ---------- */
 .pkg-grid {
