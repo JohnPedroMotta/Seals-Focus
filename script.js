@@ -1453,6 +1453,21 @@ function loadGoal() {
 /* Preferências sincronizadas na nuvem (tema/paleta/meta) */
 let prefs = { theme: 'dark', accent: 'amber', dailyGoal: null };
 let isPremium = false; // status premium do perfil (vem do cloud)
+let privacy = { showSubjects: true };
+
+function loadPrivacy() {
+  try {
+    const v = localStorage.getItem('foco.privacy.v1');
+    if (v !== null) privacy.showSubjects = v !== '0';
+  } catch { /* ignora */ }
+  $('privacyShowSubjects').checked = privacy.showSubjects;
+}
+
+function savePrivacy(val) {
+  privacy.showSubjects = val;
+  localStorage.setItem('foco.privacy.v1', val ? '1' : '0');
+  if (sb.client && sb.user) pushPrefs();
+}
 
 function savePrefs() {
   localStorage.setItem(THEME_KEY, prefs.theme);
@@ -1467,7 +1482,8 @@ async function pushPrefs() {
     await sb.client.from('profiles').update({
       theme: prefs.theme,
       accent: prefs.accent,
-      daily_goal: prefs.dailyGoal
+      daily_goal: prefs.dailyGoal,
+      privacy_show_subjects: privacy.showSubjects
     }).eq('user_id', sb.user.id);
   } catch (e) { console.error('pushPrefs:', e); }
 }
@@ -1494,6 +1510,11 @@ function applyCloudPrefs(r) {
   if (typeof r.is_premium === 'boolean') {
     isPremium = r.is_premium;
     enforcePremiumGuard();
+  }
+  if (typeof r.privacy_show_subjects === 'boolean') {
+    privacy.showSubjects = r.privacy_show_subjects;
+    localStorage.setItem('foco.privacy.v1', r.privacy_show_subjects ? '1' : '0');
+    $('privacyShowSubjects').checked = r.privacy_show_subjects;
   }
 }
 
@@ -2205,7 +2226,7 @@ async function loadFriends() {
     if (friendIds.length > 0) {
       const { data: profs, error: pErr } = await sb.client
         .from('profiles')
-        .select('user_id, username, display_name, avatar_url, bio, border_id, is_premium')
+        .select('user_id, username, display_name, avatar_url, bio, border_id, is_premium, privacy_show_subjects')
         .in('user_id', friendIds);
       if (pErr) throw pErr;
       friendsCache = (profs || []).map(p => ({ ...p, user_id: p.user_id }));
@@ -2699,7 +2720,7 @@ async function openProfileModal(friendId) {
   $('profileModal').classList.add('active');
 
   const s = await loadFriendStats(friendId);
-  if (s) {
+  if (s && f.privacy_show_subjects !== false) {
     $('pvPoints').textContent = String(s.total_points ?? 0);
     $('pvStreak').textContent = String(s.streak ?? 0);
     $('pvWeek').textContent = fmtHM(s.week_seconds ?? 0);
@@ -3008,6 +3029,11 @@ function initSettingsUI() {
 
   $('exportCsvBtn').addEventListener('click', exportCsv);
 
+  $('privacyShowSubjects').addEventListener('change', e => {
+    savePrivacy(e.target.checked);
+    toast(e.target.checked ? 'Amigos verão suas estatísticas.' : 'Estatísticas ocultas para amigos.', 'success');
+  });
+
   $('sendFeedbackBtn').addEventListener('click', sendFeedback);
 
   syncSettingsUI();
@@ -3215,6 +3241,7 @@ loadGoal();
 loadTimer();
 if (timer.running) startTick(); // retoma o loop de atualização após recarregar
 loadAppearance();
+loadPrivacy();
 loadProfile();
 loadRewards();
 initCloud();

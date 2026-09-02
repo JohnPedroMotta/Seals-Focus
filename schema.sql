@@ -120,6 +120,11 @@ begin
                    and column_name = 'is_premium') then
     alter table public.profiles add column is_premium boolean not null default false;
   end if;
+  if not exists (select 1 from information_schema.columns
+                 where table_schema = 'public' and table_name = 'profiles'
+                   and column_name = 'privacy_show_subjects') then
+    alter table public.profiles add column privacy_show_subjects boolean not null default true;
+  end if;
 end $$;
 
 alter table public.profiles enable row level security;
