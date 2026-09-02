@@ -928,32 +928,12 @@ function buildSessionCard(session, showDelete) {
   p.textContent = session.topic || '';
   cellSubject.append(h4, p);
 
-  // Observação: recolhida por padrão, com seta animada para expandir/retroceder
+  // Observação (expandida, de cima pra baixo, quebra de linha natural)
   if (session.obs) {
-    const obsWrap = document.createElement('div');
-    obsWrap.className = 'hc-obs-wrap';
-
     const obs = document.createElement('p');
     obs.className = 'hc-obs';
     obs.textContent = session.obs;
-
-    const toggle = document.createElement('button');
-    toggle.type = 'button';
-    toggle.className = 'hc-obs-toggle';
-    toggle.title = 'Expandir observação';
-    toggle.setAttribute('aria-expanded', 'false');
-    toggle.innerHTML = '<span class="hc-obs-toggle-label">Ver mais</span><i class="ti ti-chevron-down"></i>';
-
-    obsWrap.append(obs, toggle);
-    cellSubject.appendChild(obsWrap);
-
-    const label = toggle.querySelector('.hc-obs-toggle-label');
-    toggle.addEventListener('click', () => {
-      const expanded = obsWrap.classList.toggle('open');
-      toggle.setAttribute('aria-expanded', String(expanded));
-      toggle.title = expanded ? 'Recolher observação' : 'Expandir observação';
-      label.textContent = expanded ? 'Ver menos' : 'Ver mais';
-    });
+    cellSubject.appendChild(obs);
   }
 
   // Tempo
