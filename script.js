@@ -942,7 +942,7 @@ function buildSessionCard(session, showDelete) {
     toggle.className = 'hc-obs-toggle';
     toggle.title = 'Expandir observação';
     toggle.setAttribute('aria-expanded', 'false');
-    toggle.innerHTML = '<span class="hc-obs-toggle-label">Expandir</span><i class="ti ti-chevron-down"></i>';
+    toggle.innerHTML = '<span class="hc-obs-toggle-label">Ver mais</span><i class="ti ti-chevron-down"></i>';
 
     obsWrap.append(obs, toggle);
     cellSubject.appendChild(obsWrap);
@@ -952,7 +952,7 @@ function buildSessionCard(session, showDelete) {
       const expanded = obsWrap.classList.toggle('open');
       toggle.setAttribute('aria-expanded', String(expanded));
       toggle.title = expanded ? 'Recolher observação' : 'Expandir observação';
-      label.textContent = expanded ? 'Recolher' : 'Expandir';
+      label.textContent = expanded ? 'Ver menos' : 'Ver mais';
     });
   }
 

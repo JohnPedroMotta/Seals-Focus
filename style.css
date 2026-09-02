@@ -618,7 +618,7 @@ button.foot-name:hover { text-decoration: underline; }
   border-radius: 10px;
   display: grid;
   grid-template-columns: 1fr auto auto auto auto;
-  align-items: center;
+  align-items: start;             /* stats ficam alinhados ao topo, mesmo com obs expandida */
   gap: 14px;
   transition: border-color 0.18s;
 }
@@ -643,43 +643,43 @@ button.foot-name:hover { text-decoration: underline; }
   white-space: nowrap;
 }
 
-/* Observação: recolhida por padrão, expande com seta animada */
+/* Observação: recolhida por padrão (com fade), expande com "Ver mais" */
 .hc-obs-wrap {
   margin-top: 6px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
 }
 .hc-obs {
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   color: var(--text-muted);
-  line-height: 1.45;
+  line-height: 1.5;
   white-space: pre-wrap;
   word-break: break-word;
-  max-height: 4.2em;              /* ~3 linhas quando recolhido */
+  max-height: 3em;                 /* 2 linhas quando recolhida */
   overflow: hidden;
-  transition: max-height 0.3s ease;
+  transition: max-height 0.35s ease;
   position: relative;
+  -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 55%, transparent 100%);
 }
 .hc-obs-wrap.open .hc-obs {
-  max-height: 400px;              /* expande até o valor real */
+  max-height: 600px;               /* expande até o valor real */
+  -webkit-mask-image: none;
+  mask-image: none;
 }
 .hc-obs-toggle {
-  align-self: flex-end;
+  margin-top: 6px;
   background: none;
-  border: 1px solid var(--border-color);
-  border-radius: 999px;
+  border: none;
   color: var(--accent-color);
   cursor: pointer;
-  padding: 2px 10px;
+  padding: 0;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  transition: transform 0.3s ease, border-color 0.18s;
-  font-size: 0.85rem;
+  gap: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
 }
-.hc-obs-toggle:hover { border-color: var(--accent-color); }
-.hc-obs-toggle .ti { transition: transform 0.3s ease; }
+.hc-obs-toggle:hover { text-decoration: underline; }
+.hc-obs-toggle .ti { font-size: 1rem; transition: transform 0.3s ease; }
 .hc-obs-wrap.open .hc-obs-toggle .ti {
   transform: rotate(180deg);
 }
