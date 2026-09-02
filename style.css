@@ -620,12 +620,19 @@ button.foot-name:hover { text-decoration: underline; }
   grid-template-columns: 1fr auto auto auto auto;
   align-items: start;             /* stats ficam alinhados ao topo, mesmo com obs expandida */
   gap: 14px;
+  height: 108px;                 /* mesma altura p/ todas as sessões (visual tipo tabela) */
+  box-sizing: border-box;
   transition: border-color 0.18s;
 }
 
 .history-item:hover { border-color: var(--accent-color); }
 
-.history-item .hc-subject { min-width: 0; }
+.history-item .hc-subject {
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
 
 .hc-subject-name {
   font-size: 0.95rem;
@@ -633,6 +640,7 @@ button.foot-name:hover { text-decoration: underline; }
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .hc-topic {
@@ -641,11 +649,17 @@ button.foot-name:hover { text-decoration: underline; }
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
-/* Observação: recolhida por padrão (com fade), expande com "Ver mais" */
+/* Observação: recolhida por padrão (com fade); expandida com scroll interno
+   para não aumentar a altura do card. */
 .hc-obs-wrap {
   margin-top: 6px;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 .hc-obs {
   font-size: 0.82rem;
@@ -653,7 +667,7 @@ button.foot-name:hover { text-decoration: underline; }
   line-height: 1.5;
   white-space: pre-wrap;
   word-break: break-word;
-  max-height: 3em;                 /* 2 linhas quando recolhida */
+  max-height: 1.9em;               /* ~1 linha quando recolhida */
   overflow: hidden;
   transition: max-height 0.35s ease;
   position: relative;
@@ -661,12 +675,17 @@ button.foot-name:hover { text-decoration: underline; }
   mask-image: linear-gradient(to bottom, #000 55%, transparent 100%);
 }
 .hc-obs-wrap.open .hc-obs {
-  max-height: 600px;               /* expande até o valor real */
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+  overflow-y: auto;               /* scroll interno, sem mudar a altura do card */
   -webkit-mask-image: none;
   mask-image: none;
+  padding-right: 4px;
 }
 .hc-obs-toggle {
-  margin-top: 6px;
+  margin-top: 4px;
+  flex-shrink: 0;
   background: none;
   border: none;
   color: var(--accent-color);
@@ -675,8 +694,9 @@ button.foot-name:hover { text-decoration: underline; }
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 600;
+  align-self: flex-start;
 }
 .hc-obs-toggle:hover { text-decoration: underline; }
 .hc-obs-toggle .ti { font-size: 1rem; transition: transform 0.3s ease; }
@@ -762,8 +782,9 @@ button.foot-name:hover { text-decoration: underline; }
   .history-item {
     grid-template-columns: 1fr auto auto auto;
     row-gap: 8px;
+    height: auto;
   }
-  .history-item .hc-subject { grid-column: 1 / -1; }
+  .history-item .hc-subject { grid-column: 1 / -1; height: auto; }
   .hc-actions { grid-column: 1 / -1; justify-content: flex-end; }
   .hc-editor { grid-template-columns: 1fr; }
 }
