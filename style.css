@@ -643,14 +643,43 @@ button.foot-name:hover { text-decoration: underline; }
   white-space: nowrap;
 }
 
-/* Observação expandida: mostra o texto inteiro, de cima pra baixo */
+/* Observação: recolhida por padrão, expande com seta animada */
+.hc-obs-wrap {
+  position: relative;
+  margin-top: 6px;
+}
 .hc-obs {
   font-size: 0.8rem;
   color: var(--text-muted);
-  margin-top: 6px;
   line-height: 1.45;
   white-space: pre-wrap;
   word-break: break-word;
+  max-height: 3.6em;              /* ~2 linhas quando recolhido */
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  padding-right: 26px;
+}
+.hc-obs-wrap.open .hc-obs {
+  max-height: 400px;              /* expande até o valor real */
+}
+.hc-obs-toggle {
+  position: absolute;
+  right: 0;
+  top: 0;
+  z-index: 1;
+  background: none;
+  border: none;
+  color: var(--accent-color);
+  cursor: pointer;
+  padding: 2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.3s ease;
+  font-size: 1.05rem;
+}
+.hc-obs-wrap.open .hc-obs-toggle {
+  transform: rotate(180deg);
 }
 
 .hc-time,

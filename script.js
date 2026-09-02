@@ -928,12 +928,30 @@ function buildSessionCard(session, showDelete) {
   p.textContent = session.topic || '';
   cellSubject.append(h4, p);
 
-  // Observação (expandida, de cima pra baixo, quebra de linha natural)
+  // Observação: recolhida por padrão, com seta animada para expandir/retroceder
   if (session.obs) {
+    const obsWrap = document.createElement('div');
+    obsWrap.className = 'hc-obs-wrap';
+
     const obs = document.createElement('p');
     obs.className = 'hc-obs';
     obs.textContent = session.obs;
-    cellSubject.appendChild(obs);
+
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = 'hc-obs-toggle';
+    toggle.title = 'Expandir observação';
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.innerHTML = '<i class="ti ti-chevron-down"></i>';
+
+    obsWrap.append(obs, toggle);
+    cellSubject.appendChild(obsWrap);
+
+    toggle.addEventListener('click', () => {
+      const expanded = obsWrap.classList.toggle('open');
+      toggle.setAttribute('aria-expanded', String(expanded));
+      toggle.title = expanded ? 'Recolher observação' : 'Expandir observação';
+    });
   }
 
   // Tempo
