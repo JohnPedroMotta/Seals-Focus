@@ -26,7 +26,7 @@
   </script>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script defer src="config.js?v=4"></script>
-  <script defer src="script.js?v=84"></script>
+  <script defer src="script.js?v=85"></script>
 </head>
 <body>
 
@@ -221,7 +221,10 @@
       <section class="card">
         <div class="card-head">
           <h3 class="panel-title">Histórico Completo</h3>
-          <span class="chip" id="sessionCount">0 sessões</span>
+          <div class="card-head-actions">
+            <span class="chip" id="sessionCount">0 sessões</span>
+            <button class="btn btn-sm" id="addSessionBtn" type="button"><i class="ti ti-plus"></i> Adicionar sessão</button>
+          </div>
         </div>
         <input type="search" id="feedSearch" class="search-input" placeholder="Buscar por matéria, assunto ou observação..." aria-label="Buscar sessões" />
         <div class="filter-row">
@@ -705,6 +708,102 @@
       <div class="modal-actions">
         <button class="btn" id="cancelModalBtn">Cancelar</button>
         <button class="btn btn-primary" id="confirmSaveBtn">Salvar Período</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Adicionar Sessão Manual -->
+  <div class="modal-overlay" id="addSessionModal" role="dialog" aria-modal="true" aria-labelledby="amTitle">
+    <div class="modal card">
+      <div class="modal-header">
+        <h2 id="amTitle">Adicionar Sessão</h2>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="amDate">Data</label>
+          <input type="date" id="amDate" />
+        </div>
+        <div class="form-group">
+          <label for="amTime">Horário</label>
+          <input type="time" id="amTime" />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="amDurH">Duração (horas)</label>
+          <input type="number" id="amDurH" min="0" max="24" step="1" value="0" inputmode="numeric" placeholder="0" />
+        </div>
+        <div class="form-group">
+          <label for="amDurM">Duração (minutos)</label>
+          <input type="number" id="amDurM" min="0" max="59" step="1" value="0" inputmode="numeric" placeholder="0" />
+        </div>
+        <div class="form-group">
+          <label for="amDurS">Duração (segundos)</label>
+          <input type="number" id="amDurS" min="0" max="59" step="1" value="0" inputmode="numeric" placeholder="0" />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="amSubjectSelect">Matéria existente</label>
+          <select id="amSubjectSelect">
+            <option value="">Selecione...</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="amNewSubjectInput">ou criar nova</label>
+          <input type="text" id="amNewSubjectInput" placeholder="Ex.: Direito Constitucional" maxlength="60" />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="amTopicSelect">Assunto existente</label>
+          <select id="amTopicSelect">
+            <option value="">Selecione...</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="amNewTopicInput">ou criar novo</label>
+          <input type="text" id="amNewTopicInput" placeholder="Ex.: Controle de constitucionalidade" maxlength="80" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="amObsInput">Observação <span class="optional">(opcional)</span></label>
+        <textarea id="amObsInput" rows="2" maxlength="200" placeholder="Anotações sobre a sessão..."></textarea>
+      </div>
+
+      <label class="checkbox-container">
+        <input type="checkbox" id="amToggleQuestions" />
+        <span>Registrar questões</span>
+      </label>
+
+      <div class="questions-box" id="amQuestionsBox" hidden>
+        <div class="form-row-3">
+          <div class="form-group">
+            <label for="amQTotal">Total</label>
+            <input type="number" id="amQTotal" value="" min="0" placeholder="0" inputmode="numeric" />
+          </div>
+          <div class="form-group">
+            <label for="amQWrong">Erradas</label>
+            <input type="number" id="amQWrong" value="" min="0" placeholder="0" inputmode="numeric" />
+          </div>
+          <div class="form-group">
+            <label for="amQRight">Acertos</label>
+            <input type="number" id="amQRight" value="0" readonly tabindex="-1" />
+          </div>
+        </div>
+        <p class="field-error" id="amQError" hidden></p>
+      </div>
+
+      <p class="field-error" id="amError" hidden></p>
+
+      <div class="modal-actions">
+        <button class="btn" id="amCancelBtn">Cancelar</button>
+        <button class="btn btn-primary" id="amSaveBtn">Adicionar Sessão</button>
       </div>
     </div>
   </div>

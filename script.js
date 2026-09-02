@@ -1567,17 +1567,20 @@ function clearModalForm(clearFields = true) {
 }
 
 $('cancelModalBtn').addEventListener('click', closeModal);
-function confirmSaveSession(session) {
+function persistSession(session) {
   state.sessions.unshift(session);
   saveState();
   pushSession(session);
   pushSubjects([session.subject]);
+  renderAll();
+  toast(`Sessão salva: ${fmtHM(session.duration)} de ${session.subject}.`, 'success');
+}
+function confirmSaveSession(session) {
+  persistSession(session);
   resetTimer();
   clearModalForm();
   modal.classList.remove('active');
-  renderAll();
   grantFocusRewards(session.duration);
-  toast(`Sessão salva: ${fmtHM(session.duration)} de ${session.subject}.`, 'success');
 }
 const DAILY_POINTS_GOAL = 3600; // 1h de foco por dia
 const DAILY_POINTS_BONUS = 10;  // bônus ao bater a meta
@@ -1647,6 +1650,156 @@ $('confirmSaveBtn').addEventListener('click', () => {
   };
 
   confirmSaveSession(session);
+});
+
+/* ================= Adicionar sessão manual (Histórico) ================= */
+const amModal = document.getElementById('addSessionModal');
+
+function populateAddSubjects() {
+  const sel = $('amSubjectSelect');
+  sel.innerHTML = '<option value="">Selecione...</option>';
+  Object.keys(state.subjects).sort((a, b) => a.localeCompare(b, 'pt-BR')).forEach(sub => {
+    const opt = document.createElement('option');
+    opt.value = sub;
+    opt.textContent = sub;
+    sel.appendChild(opt);
+  });
+}
+
+function openAddSession() {
+  const today = dateKey(new Date());
+  $('amDate').value = today;
+  $('amTime').value = '';
+  $('amDurH').value = '0';
+  $('amDurM').value = '0';
+  $('amDurS').value = '0';
+  $('amNewSubjectInput').value = '';
+  $('amNewTopicInput').value = '';
+  $('amObsInput').value = '';
+  $('amError').hidden = true;
+  showAmQError('');
+  populateAddSubjects();
+  clearAddTopics();
+  $('amToggleQuestions').checked = false;
+  $('amQuestionsBox').hidden = true;
+  amModal.classList.add('active');
+  setTimeout(() => $('amNewSubjectInput').focus(), 50);
+}
+
+function closeAddSession() {
+  amModal.classList.remove('active');
+}
+
+function clearAddTopics() {
+  $('amTopicSelect').innerHTML = '<option value="">Selecione...</option>';
+  $('amQTotal').value = '';
+  $('amQWrong').value = '';
+  $('amQRight').value = '0';
+}
+
+function showAmQError(msg) {
+  const err = $('amQError');
+  err.textContent = msg;
+  err.hidden = !msg;
+}
+
+amModal.addEventListener('click', e => { if (e.target === amModal) closeAddSession(); });
+
+$('amCancelBtn').addEventListener('click', closeAddSession);
+
+$('amSubjectSelect').addEventListener('change', e => {
+  const selected = e.target.value;
+  const sel = $('amTopicSelect');
+  sel.innerHTML = '<option value="">Selecione...</option>';
+  (state.subjects[selected] || []).slice().sort((a, b) => a.localeCompare(b, 'pt-BR')).forEach(top => {
+    const opt = document.createElement('option');
+    opt.value = top;
+    opt.textContent = top;
+    sel.appendChild(opt);
+  });
+});
+
+$('amToggleQuestions').addEventListener('change', e => {
+  $('amQuestionsBox').hidden = !e.target.checked;
+  showAmQError('');
+});
+
+function updateAmRightCount() {
+  const total = parseInt($('amQTotal').value, 10) || 0;
+  const wrong = parseInt($('amQWrong').value, 10) || 0;
+  $('amQRight').value = Math.max(0, total - wrong);
+}
+$('amQTotal').addEventListener('input', updateAmRightCount);
+$('amQWrong').addEventListener('input', updateAmRightCount);
+
+$('addSessionBtn').addEventListener('click', openAddSession);
+
+$('amSaveBtn').addEventListener('click', () => {
+  const subject = $('amNewSubjectInput').value.trim() || $('amSubjectSelect').value;
+  const topic = $('amNewTopicInput').value.trim() || $('amTopicSelect').value;
+
+  if (!subject) {
+    $('amError').textContent = 'Selecione ou crie uma matéria.';
+    $('amError').hidden = false;
+    $('amNewSubjectInput').focus();
+    return;
+  }
+
+  const dH = Math.max(0, parseInt($('amDurH').value, 10) || 0);
+  const dM = Math.max(0, parseInt($('amDurM').value, 10) || 0);
+  const dS = Math.max(0, parseInt($('amDurS').value, 10) || 0);
+  const duration = dH * 3600 + dM * 60 + dS;
+
+  if (duration <= 0) {
+    $('amError').textContent = 'Informe uma duração maior que zero.';
+    $('amError').hidden = false;
+    $('amDurH').focus();
+    return;
+  }
+
+  const useQuestions = $('amToggleQuestions').checked;
+  const qTotalV = useQuestions ? parseInt($('amQTotal').value, 10) || 0 : 0;
+  const qWrongV = useQuestions ? parseInt($('amQWrong').value, 10) || 0 : 0;
+
+  if (useQuestions && qTotalV === 0) {
+    showAmQError('Informe o total de questões.');
+    $('amQTotal').focus();
+    return;
+  }
+  if (useQuestions && qWrongV > qTotalV) {
+    showAmQError('Erradas não pode ser maior que o total.');
+    $('amQWrong').focus();
+    return;
+  }
+
+  if (!state.subjects[subject]) state.subjects[subject] = [];
+  if (topic && !state.subjects[subject].includes(topic)) state.subjects[subject].push(topic);
+
+  // data/horário escolhidos pelo usuário
+  const dateStr = $('amDate').value;
+  const timeStr = $('amTime').value || '00:00';
+  let dateISO;
+  if (dateStr) {
+    dateISO = new Date(`${dateStr}T${timeStr || '00:00'}:00`).toISOString();
+  } else {
+    dateISO = new Date(Date.now() - duration * 1000).toISOString();
+  }
+
+  const session = {
+    id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
+    dateISO,
+    duration,
+    subject,
+    topic: topic || 'Geral',
+    obs: $('amObsInput').value.trim(),
+    qTotal: qTotalV,
+    qRight: Math.max(0, qTotalV - qWrongV)
+  };
+
+  persistSession(session);
+  pushSubjects([subject]);
+  grantFocusRewards(duration);
+  closeAddSession();
 });
 
 /* ================= Autenticação ================= */
