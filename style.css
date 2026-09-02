@@ -645,8 +645,10 @@ button.foot-name:hover { text-decoration: underline; }
 
 /* Observação: recolhida por padrão, expande com seta animada */
 .hc-obs-wrap {
-  position: relative;
   margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 .hc-obs {
   font-size: 0.8rem;
@@ -654,31 +656,31 @@ button.foot-name:hover { text-decoration: underline; }
   line-height: 1.45;
   white-space: pre-wrap;
   word-break: break-word;
-  max-height: 3.6em;              /* ~2 linhas quando recolhido */
+  max-height: 4.2em;              /* ~3 linhas quando recolhido */
   overflow: hidden;
   transition: max-height 0.3s ease;
-  padding-right: 26px;
+  position: relative;
 }
 .hc-obs-wrap.open .hc-obs {
   max-height: 400px;              /* expande até o valor real */
 }
 .hc-obs-toggle {
-  position: absolute;
-  right: 0;
-  top: 0;
-  z-index: 1;
+  align-self: flex-end;
   background: none;
-  border: none;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
   color: var(--accent-color);
   cursor: pointer;
-  padding: 2px;
+  padding: 2px 10px;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  transition: transform 0.3s ease;
-  font-size: 1.05rem;
+  gap: 6px;
+  transition: transform 0.3s ease, border-color 0.18s;
+  font-size: 0.85rem;
 }
-.hc-obs-wrap.open .hc-obs-toggle {
+.hc-obs-toggle:hover { border-color: var(--accent-color); }
+.hc-obs-toggle .ti { transition: transform 0.3s ease; }
+.hc-obs-wrap.open .hc-obs-toggle .ti {
   transform: rotate(180deg);
 }
 
