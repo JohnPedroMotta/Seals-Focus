@@ -1721,7 +1721,7 @@ async function searchAdminUsers() {
   const raw = ($('adminUserSearch').value || '').trim();
   const q = raw.replace(/^@+/, '');
   if (!q) {
-    box.innerHTML = '<p class="muted-p">Digite um nome ou @username para buscar (mín. 1 caractere).</p>';
+    box.innerHTML = '<p class="muted-p">Digite o @username completo ou o ID do usuário para buscar.</p>';
     return;
   }
   box.innerHTML = '<p class="muted-p">Buscando…</p>';

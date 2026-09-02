@@ -864,8 +864,11 @@ begin
       left join public.user_crystals cr on cr.user_id = pr.user_id
       left join public.user_points   pn on pn.user_id = pr.user_id
       where length(v_q) >= 1
-         and (pr.username ilike '%' || v_q || '%'
-         or pr.display_name ilike '%' || v_q || '%')
+         and (
+           lower(pr.username) = lower(v_q)
+           or pr.user_id::text = v_q
+           or lower(pr.display_name) = lower(v_q)
+         )
       limit 50
     ) t;
 
