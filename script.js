@@ -746,7 +746,9 @@ async function pushTimerSync(cleared = false) {
         : timerSyncRecord()),
       updated_at: new Date().toISOString()
     };
-    await sb.client.from('timer_sync').upsert(rec);
+    const { error } = await sb.client.from('timer_sync').upsert(rec);
+    if (error) console.error('[timerSync] upsert error:', error.message);
+    else console.log('[timerSync] push ok:', JSON.stringify(rec));
   } catch (e) { console.error('pushTimerSync:', e); }
 }
 
@@ -756,7 +758,8 @@ async function loadTimerSync() {
   try {
     const { data, error } = await sb.client.from('timer_sync')
       .select('*').eq('user_id', sb.user.id).maybeSingle();
-    if (error) throw error;
+    if (error) { console.error('[timerSync] load error:', error.message); return; }
+    console.log('[timerSync] load:', data ? JSON.stringify(data) : 'no row');
     applyTimerSync(data || null);
   } catch (e) { console.error('loadTimerSync:', e); }
 }
@@ -859,8 +862,11 @@ function subscribeTimerSync() {
     .channel('timer-sync-' + sb.user.id)
     .on('postgres_changes',
       { event: '*', schema: 'public', table: 'timer_sync', filter: `user_id=eq.${sb.user.id}` },
-      payload => { applyTimerSync(payload.new || payload.old || null); })
-    .subscribe();
+      payload => {
+        console.log('[timerSync] realtime event:', payload.eventType, payload.new || payload.old || '');
+        applyTimerSync(payload.new || payload.old || null);
+      })
+    .subscribe((status) => console.log('[timerSync] realtime status:', status));
 }
 
 /* ================= Views ================= */
