@@ -863,9 +863,9 @@ begin
       from public.profiles pr
       left join public.user_crystals cr on cr.user_id = pr.user_id
       left join public.user_points   pn on pn.user_id = pr.user_id
-      where length(v_q) = 0
-         or pr.username ilike '%' || v_q || '%'
-         or pr.display_name ilike '%' || v_q || '%'
+      where length(v_q) >= 1
+         and (pr.username ilike '%' || v_q || '%'
+         or pr.display_name ilike '%' || v_q || '%')
       limit 50
     ) t;
 

@@ -865,7 +865,8 @@ function renderMetrics() {
   if (rewardedDays.size > 0) breakdown.push(`${rewardedDays.size * POINTS_PER_DAY} de metas`);
   $('pointsSub').textContent = breakdown.length > 0 ? breakdown.join(' + ') : '100 pts por meta cumprida';
 
-  window._weekData = week;
+  // Gráfico semanal alinhado à semana corrente (segunda a domingo)
+  window._weekData = [...perDay.keys()].map(k => ({ total: perDay.get(k) }));
 }
 
 const STRIP_LABELS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
@@ -1069,8 +1070,8 @@ function renderStats() {
   chart.innerHTML = '';
   const week = window._weekData || [];
   const max = Math.max(...week.map(d => d.total), 1800);
-  const labels = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-  const todayIdx = new Date().getDay();
+  const labels = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+  const todayIdx = (new Date().getDay() + 6) % 7; // 0 = Seg ... 6 = Dom
 
   week.forEach((d, i) => {
     const col = document.createElement('div');
@@ -1719,6 +1720,10 @@ async function searchAdminUsers() {
   const box = $('adminUserResults');
   const raw = ($('adminUserSearch').value || '').trim();
   const q = raw.replace(/^@+/, '');
+  if (!q) {
+    box.innerHTML = '<p class="muted-p">Digite um nome ou @username para buscar (mín. 1 caractere).</p>';
+    return;
+  }
   box.innerHTML = '<p class="muted-p">Buscando…</p>';
   try {
     const rows = (await adminRpc('admin_search_users', { p_q: q })) || [];
