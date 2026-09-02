@@ -438,6 +438,50 @@ button.foot-name:hover { text-decoration: underline; }
   justify-content: center;
 }
 
+/* ---------- Sessão em outro aparelho (pausar/retomar) ---------- */
+.timer-sync-card {
+  margin-top: 16px;
+}
+.timer-sync-body {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.timer-sync-icon {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+}
+.timer-sync-icon.paused {
+  background: rgba(240, 166, 60, 0.14);
+  color: var(--accent-color);
+}
+.timer-sync-icon.running {
+  background: rgba(74, 222, 128, 0.14);
+  color: #4ade80;
+}
+.timer-sync-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.timer-sync-title {
+  font-weight: 700;
+  font-size: 0.96rem;
+}
+.timer-sync-sub {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
 /* ---------- Buttons ---------- */
 .btn {
   background-color: var(--input-bg);

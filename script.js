@@ -278,7 +278,16 @@ function setCloudUser(user) {
   loadState();
 
   sb.user = user;
-  if (user) loadPendingRequests();
+  if (user) {
+    loadPendingRequests();
+    subscribeTimerSync();
+    loadTimerSync();
+  } else {
+    if (timerChannel && sb.client) { sb.client.removeChannel(timerChannel); timerChannel = null; }
+    cloudTimer = null;
+    remoteRunning = false;
+    if ($('timerSyncCard')) $('timerSyncCard').hidden = true;
+  }
   const avatar = $('avatarInitials');
   if (user) {
     const handle = (user.email || '?').split('@')[0].split(/[._-]/)[0];
@@ -621,6 +630,11 @@ let timer = { running: false, accumulated: 0, startedAt: null };
 let rafId = null;
 let lastShown = '';
 
+/* ===== Timer sincronizado entre aparelhos ("luz com 2 interruptores") ===== */
+let cloudTimer = null;       // último registro de timer_sync vindo da nuvem (Realtime)
+let remoteRunning = false;   // outro aparelho está com o cronômetro RODANDO agora
+let timerChannel = null;     // canal Realtime do timer_sync do usuário
+
 function loadTimer() {
   try {
     const raw = localStorage.getItem(TIMER_KEY);
@@ -666,9 +680,11 @@ function startTimer() {
   if (timer.running) return;
   timer.running = true;
   timer.startedAt = Date.now();
+  timer.accumulated = 0;
   saveTimer();
   startTick();
   syncTimerUI();
+  pushTimerSync();
 }
 
 function pauseTimer() {
@@ -680,6 +696,7 @@ function pauseTimer() {
   stopTick();
   renderClock();
   syncTimerUI();
+  pushTimerSync();
 }
 
 function resetTimer(clearStorage = true) {
@@ -688,6 +705,7 @@ function resetTimer(clearStorage = true) {
   if (clearStorage) localStorage.removeItem(TIMER_KEY);
   renderClock();
   syncTimerUI();
+  pushTimerSync(true);
 }
 
 function syncTimerUI() {
@@ -703,6 +721,146 @@ function syncTimerUI() {
   display.classList.toggle('running', timer.running);
   display.classList.toggle('paused', !timer.running && hasTime);
   hint.textContent = timer.running ? 'Registrando...' : hasTime ? 'Pausado' : 'Pronto para começar';
+  renderTimerSync();
+}
+
+/* ================= Timer sync entre aparelhos ================= */
+function timerSyncRecord() {
+  return {
+    accumulated: timer.running ? 0 : timer.accumulated,
+    started_at: timer.running ? new Date(timer.startedAt).toISOString() : null,
+    paused_at: timer.running ? null : new Date().toISOString(),
+    running: timer.running,
+    day_key: dateKey(new Date())
+  };
+}
+
+/* Envia o estado atual do cronômetro para a nuvem (upsert). */
+async function pushTimerSync(cleared = false) {
+  if (!sb.client || !sb.user) return;
+  try {
+    const rec = {
+      user_id: sb.user.id,
+      ...(cleared
+        ? { accumulated: 0, started_at: null, paused_at: null, running: false, day_key: dateKey(new Date()) }
+        : timerSyncRecord()),
+      updated_at: new Date().toISOString()
+    };
+    await sb.client.from('timer_sync').upsert(rec);
+  } catch (e) { console.error('pushTimerSync:', e); }
+}
+
+/* Busca o estado sincronizado na nuvem (ao abrir o app). */
+async function loadTimerSync() {
+  if (!sb.client || !sb.user) return;
+  try {
+    const { data, error } = await sb.client.from('timer_sync')
+      .select('*').eq('user_id', sb.user.id).maybeSingle();
+    if (error) throw error;
+    applyTimerSync(data || null);
+  } catch (e) { console.error('loadTimerSync:', e); }
+}
+
+/* Aplica (reconcilia) o estado vindo da nuvem — do boot ou do Realtime. */
+async function applyTimerSync(record) {
+  cloudTimer = record || null;
+  const today = dateKey(new Date());
+
+  // regra "mesmo dia": sessão suspensa de outro dia é descartada
+  if (cloudTimer && cloudTimer.day_key && cloudTimer.day_key !== today) {
+    if (!timer.running) {
+      timer = { running: false, accumulated: 0, startedAt: null };
+      saveTimer();
+    }
+    cloudTimer = null;
+    if (sb.client && sb.user) {
+      try { await sb.client.from('timer_sync').delete().eq('user_id', sb.user.id); } catch (e) { console.error('stale timer delete:', e); }
+    }
+  }
+
+  if (cloudTimer && cloudTimer.running) {
+    // outro aparelho está rodando AGORA -> não contabilizar duas vezes
+    remoteRunning = true;
+    renderTimerSync();
+    return;
+  }
+  remoteRunning = false;
+  renderTimerSync();
+}
+
+/* Formata o relógio do horário (HH:MM). */
+function fmtClock(iso) {
+  try { return new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); }
+  catch { return ''; }
+}
+
+/* Renderiza o card "luz com 2 interruptores" na aba Estudo. */
+function renderTimerSync() {
+  const card = $('timerSyncCard');
+  if (!card) return;
+  const resumeBtn = $('timerSyncResumeBtn');
+  const title = $('timerSyncTitle');
+  const sub = $('timerSyncSub');
+  const icon = $('timerSyncIcon');
+
+  // aparelho local está rodando: é ele o dono -> não mostra banner
+  if (timer.running) { card.hidden = true; return; }
+
+  const today = dateKey(new Date());
+  const rec = (cloudTimer && cloudTimer.day_key === today) ? cloudTimer : null;
+
+  if (rec && rec.running) {
+    card.hidden = false;
+    icon.className = 'timer-sync-icon running';
+    icon.innerHTML = '<i class="ti ti-device-mobile"></i>';
+    title.textContent = 'Estudando em outro aparelho';
+    sub.textContent = 'Sessão em andamento desde ' + (rec.started_at ? fmtClock(rec.started_at) : 'agora') + '. Feche este aparelho para não contabilizar duas vezes.';
+    resumeBtn.hidden = true;
+  } else if (rec && rec.accumulated > 0) {
+    card.hidden = false;
+    icon.className = 'timer-sync-icon paused';
+    icon.innerHTML = '<i class="ti ti-player-pause-filled"></i>';
+    title.textContent = 'Sessão pausada';
+    sub.textContent = fmtHM(rec.accumulated) + ' registrados' + (rec.paused_at ? ' · pausada às ' + fmtClock(rec.paused_at) : '');
+    resumeBtn.hidden = false;
+  } else if (!timer.running && elapsedSec() > 0) {
+    // sessão local pausada mas ainda não compartilhada de forma útil
+    card.hidden = false;
+    icon.className = 'timer-sync-icon paused';
+    icon.innerHTML = '<i class="ti ti-player-pause-filled"></i>';
+    title.textContent = 'Sessão pausada';
+    sub.textContent = fmtHM(elapsedSec()) + ' registrados neste aparelho';
+    resumeBtn.hidden = false;
+  } else {
+    card.hidden = true;
+  }
+}
+
+/* Retoma uma sessão pausada (neste aparelho vira o dono). */
+function resumeTimerSync() {
+  const rec = cloudTimer;
+  timer = {
+    running: true,
+    accumulated: rec && rec.day_key === dateKey(new Date()) ? (rec.accumulated || 0) : 0,
+    startedAt: Date.now()
+  };
+  saveTimer();
+  startTick();
+  syncTimerUI();
+  renderTimerSync();
+  pushTimerSync();
+  toast('Cronômetro retomado neste aparelho.', 'success');
+}
+
+function subscribeTimerSync() {
+  if (!sb.client || !sb.user) return;
+  if (timerChannel) { sb.client.removeChannel(timerChannel); timerChannel = null; }
+  timerChannel = sb.client
+    .channel('timer-sync-' + sb.user.id)
+    .on('postgres_changes',
+      { event: '*', schema: 'public', table: 'timer_sync', filter: `user_id=eq.${sb.user.id}` },
+      payload => { applyTimerSync(payload.new || payload.old || null); })
+    .subscribe();
 }
 
 /* ================= Views ================= */
@@ -725,6 +883,7 @@ function switchView(name) {
   );
   window.scrollTo({ top: 0 });
   if (name === 'settings') syncSettingsUI();
+  else if (name === 'study') renderTimerSync();
   else if (name === 'friends') loadFriends();
   else if (name === 'shop') { if (isShopAllowed()) openShop(); else switchView('study'); }
   else if (name === 'admin') { if (isAdmin()) { loadAdminStats(); loadAdminFeedback(); } else switchView('study'); }
@@ -747,6 +906,7 @@ let resetArmed = false;
 $('startBtn').addEventListener('click', startTimer);
 $('pauseBtn').addEventListener('click', pauseTimer);
 $('saveBtn').addEventListener('click', openModal);
+$('timerSyncResumeBtn').addEventListener('click', resumeTimerSync);
 
 $('resetBtn').addEventListener('click', () => {
   if (!resetArmed) {
@@ -3366,6 +3526,7 @@ function renderAll() {
   renderMetrics();
   renderHistory();
   renderFeed();
+  renderTimerSync();
   if (!$('view-study').classList.contains('active')) renderStats();
 }
 

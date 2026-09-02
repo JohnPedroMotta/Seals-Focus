@@ -1110,3 +1110,37 @@ begin
 end;
 $$;
 
+
+
+/* ============================================================
+   TIMER SYNC  (pausar num aparelho e retomar em outro, mesmo dia)
+   "Luz com 2 interruptores": o cronômetro pausado fica sincronizado
+   entre PC e celular via Realtime.
+   ============================================================ */
+create table if not exists public.timer_sync (
+  user_id      uuid primary key references auth.users(id) on delete cascade,
+  accumulated  integer not null default 0,   -- segundos acumulados quando pausado
+  started_at   timestamptz,                  -- início da sessão (relógio ao vivo)
+  paused_at    timestamptz,                  -- quando pausou
+  running      boolean not null default false,
+  day_key      text not null default '',     -- data de início -> regra "mesmo dia"
+  updated_at   timestamptz default now()
+);
+
+alter table public.timer_sync enable row level security;
+
+drop policy if exists timer_sync_select on public.timer_sync;
+create policy timer_sync_select on public.timer_sync
+  for select using (auth.uid() = user_id);
+
+drop policy if exists timer_sync_insert on public.timer_sync;
+create policy timer_sync_insert on public.timer_sync
+  for insert with check (auth.uid() = user_id);
+
+drop policy if exists timer_sync_update on public.timer_sync;
+create policy timer_sync_update on public.timer_sync
+  for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- habilita o Realtime (as mudanças chegam sozinhas nos aparelhos)
+alter table public.timer_sync replica identity full;
+alter publication supabase_realtime add table public.timer_sync;
