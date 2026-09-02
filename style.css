@@ -643,6 +643,16 @@ button.foot-name:hover { text-decoration: underline; }
   white-space: nowrap;
 }
 
+/* Observação expandida: mostra o texto inteiro, de cima pra baixo */
+.hc-obs {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 6px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 .hc-time,
 .hc-questions,
 .hc-clock {
@@ -703,6 +713,13 @@ button.foot-name:hover { text-decoration: underline; }
   align-items: start;
 }
 .hc-editor .field-error { grid-column: 1 / -1; margin: 0; }
+.hc-editor .hc-editor-obs { grid-column: 1 / -1; }
+.hc-editor textarea {
+  width: 100%;
+  min-height: 84px;
+  resize: vertical;
+  font-family: inherit;
+}
 .hc-editor-actions {
   grid-column: 1 / -1;
   display: flex;

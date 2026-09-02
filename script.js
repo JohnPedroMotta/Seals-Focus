@@ -925,8 +925,16 @@ function buildSessionCard(session, showDelete) {
 
   const p = document.createElement('p');
   p.className = 'hc-topic';
-  p.textContent = session.topic + (session.obs ? ` — ${session.obs}` : '');
+  p.textContent = session.topic || '';
   cellSubject.append(h4, p);
+
+  // Observação (expandida, de cima pra baixo, quebra de linha natural)
+  if (session.obs) {
+    const obs = document.createElement('p');
+    obs.className = 'hc-obs';
+    obs.textContent = session.obs;
+    cellSubject.appendChild(obs);
+  }
 
   // Tempo
   const cellTime = document.createElement('div');
@@ -951,20 +959,19 @@ function buildSessionCard(session, showDelete) {
   meta.textContent = new Date(session.dateISO).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   cellClock.appendChild(meta);
 
-  // Ações
+  // Ações (editar/excluir só no histórico completo; na Home não polui)
   const cellActions = document.createElement('div');
   cellActions.className = 'hc-actions';
 
-  // Editar sempre disponível (home e feed); excluir só no feed
-  const edit = document.createElement('button');
-  edit.className = 'edit-btn';
-  edit.title = 'Editar matéria / legenda';
-  edit.setAttribute('aria-label', `Editar sessão de ${session.subject}`);
-  edit.dataset.id = session.id;
-  edit.innerHTML = '<i class="ti ti-pencil"></i>';
-  cellActions.appendChild(edit);
-
   if (showDelete) {
+    const edit = document.createElement('button');
+    edit.className = 'edit-btn';
+    edit.title = 'Editar matéria / legenda / observação';
+    edit.setAttribute('aria-label', `Editar sessão de ${session.subject}`);
+    edit.dataset.id = session.id;
+    edit.innerHTML = '<i class="ti ti-pencil"></i>';
+    cellActions.appendChild(edit);
+
     const del = document.createElement('button');
     del.className = 'delete-btn';
     del.title = 'Excluir sessão';
@@ -1119,7 +1126,20 @@ function beginEditSession(id, card) {
   iTopic.maxLength = 120;
   fTopic.append(lTopic, iTopic);
 
-  form.append(fSubject, fTopic);
+  const fObs = document.createElement('div');
+  fObs.className = 'form-group hc-editor-obs';
+  const lObs = document.createElement('label');
+  lObs.setAttribute('for', `ed-obs-${id}`);
+  lObs.textContent = 'Observação';
+  const tObs = document.createElement('textarea');
+  tObs.id = `ed-obs-${id}`;
+  tObs.rows = 4;
+  tObs.maxLength = 1000;
+  tObs.placeholder = 'Observações da sessão (opcional)';
+  tObs.value = s.obs || '';
+  fObs.append(lObs, tObs);
+
+  form.append(fSubject, fTopic, fObs);
 
   const err = document.createElement('p');
   err.className = 'field-error';
@@ -1151,6 +1171,7 @@ async function saveEditSession(id, err) {
   if (!s) return;
   const vSubject = $('ed-subject-' + id).value.trim();
   const vTopic = $('ed-topic-' + id).value.trim();
+  const vObs = $('ed-obs-' + id).value.trim();
   if (!vSubject) {
     err.hidden = false;
     err.textContent = 'Informe a matéria.';
@@ -1159,6 +1180,7 @@ async function saveEditSession(id, err) {
   err.hidden = true;
   s.subject = vSubject;
   s.topic = vTopic;
+  s.obs = vObs;
   saveState();
   await pushSession(s);
   renderFeed();
@@ -1170,12 +1192,6 @@ async function saveEditSession(id, err) {
 
 // botão de editar (feed)
 $('feedList').addEventListener('click', e => {
-  const btn = e.target.closest('.edit-btn');
-  if (btn) beginEditSession(btn.dataset.id, btn.closest('.history-item'));
-});
-
-// botão de editar (últimas atividades da home)
-$('historyList').addEventListener('click', e => {
   const btn = e.target.closest('.edit-btn');
   if (btn) beginEditSession(btn.dataset.id, btn.closest('.history-item'));
 });
