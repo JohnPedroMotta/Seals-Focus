@@ -916,48 +916,65 @@ function buildSessionCard(session, showDelete) {
   const card = document.createElement('div');
   card.className = 'history-item';
 
-  const info = document.createElement('div');
-  info.className = 'history-info';
-
+  // Matéria / assunto
+  const cellSubject = document.createElement('div');
+  cellSubject.className = 'hc-subject';
   const h4 = document.createElement('h4');
+  h4.className = 'hc-subject-name';
   h4.textContent = session.subject;
 
   const p = document.createElement('p');
+  p.className = 'hc-topic';
   p.textContent = session.topic + (session.obs ? ` — ${session.obs}` : '');
+  cellSubject.append(h4, p);
 
-  info.append(h4, p);
-
-  const stats = document.createElement('div');
-  stats.className = 'history-stats';
-
+  // Tempo
+  const cellTime = document.createElement('div');
+  cellTime.className = 'hc-time';
   const strong = document.createElement('strong');
   strong.textContent = fmtHM(session.duration);
+  cellTime.appendChild(strong);
 
-  const meta = document.createElement('p');
+  // Questões
+  const cellQ = document.createElement('div');
+  cellQ.className = 'hc-questions';
+  const qBadge = document.createElement('span');
+  qBadge.className = 'badge';
+  qBadge.textContent = session.qTotal > 0 ? `${session.qRight}/${session.qTotal}` : '—';
+  cellQ.appendChild(qBadge);
+
+  // Horário
+  const cellClock = document.createElement('div');
+  cellClock.className = 'hc-clock';
+  const meta = document.createElement('span');
   meta.className = 'meta';
   meta.textContent = new Date(session.dateISO).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  cellClock.appendChild(meta);
 
-  stats.append(strong, meta);
-
-  if (session.qTotal > 0) {
-    const badge = document.createElement('span');
-    badge.className = 'badge';
-    badge.textContent = `${session.qRight}/${session.qTotal}`;
-    strong.appendChild(badge);
-  }
-
-  card.append(info, stats);
+  // Ações
+  const cellActions = document.createElement('div');
+  cellActions.className = 'hc-actions';
 
   if (showDelete) {
+    const edit = document.createElement('button');
+    edit.className = 'edit-btn';
+    edit.title = 'Editar matéria / legenda';
+    edit.setAttribute('aria-label', `Editar sessão de ${session.subject}`);
+    edit.dataset.id = session.id;
+    edit.innerHTML = '<i class="ti ti-pencil"></i>';
+    cellActions.appendChild(edit);
+
     const del = document.createElement('button');
     del.className = 'delete-btn';
     del.title = 'Excluir sessão';
     del.setAttribute('aria-label', `Excluir sessão de ${session.subject}`);
     del.dataset.id = session.id;
     del.textContent = '✕';
-    card.appendChild(del);
+    cellActions.appendChild(del);
   }
 
+  card.append(cellSubject, cellTime, cellQ, cellClock, cellActions);
+  card.dataset.id = session.id;
   return card;
 }
 
@@ -1061,6 +1078,100 @@ $('feedList').addEventListener('click', e => {
       }
     }, 3000);
   }
+});
+
+// -------------------------------------------------------------
+// Edição inline de matéria e legenda (tempo/horário não mudam)
+// -------------------------------------------------------------
+function beginEditSession(id) {
+  const s = state.sessions.find(x => x.id === id);
+  if (!s) return;
+  const card = document.querySelector(`.history-item[data-id="${CSS.escape(id)}"]`);
+  if (!card) return;
+
+  card.classList.add('editing');
+  card.innerHTML = '';
+
+  const form = document.createElement('div');
+  form.className = 'hc-editor';
+
+  const fSubject = document.createElement('div');
+  fSubject.className = 'form-group';
+  const lSubject = document.createElement('label');
+  lSubject.setAttribute('for', `ed-subject-${id}`);
+  lSubject.textContent = 'Matéria';
+  const iSubject = document.createElement('input');
+  iSubject.type = 'text';
+  iSubject.id = `ed-subject-${id}`;
+  iSubject.value = s.subject || '';
+  iSubject.maxLength = 60;
+  fSubject.append(lSubject, iSubject);
+
+  const fTopic = document.createElement('div');
+  fTopic.className = 'form-group';
+  const lTopic = document.createElement('label');
+  lTopic.setAttribute('for', `ed-topic-${id}`);
+  lTopic.textContent = 'Legenda';
+  const iTopic = document.createElement('input');
+  iTopic.type = 'text';
+  iTopic.id = `ed-topic-${id}`;
+  iTopic.value = s.topic || '';
+  iTopic.maxLength = 120;
+  fTopic.append(lTopic, iTopic);
+
+  form.append(fSubject, fTopic);
+
+  const err = document.createElement('p');
+  err.className = 'field-error';
+  err.id = `ed-err-${id}`;
+  err.hidden = true;
+  form.appendChild(err);
+
+  const actions = document.createElement('div');
+  actions.className = 'hc-editor-actions';
+  const btnCancel = document.createElement('button');
+  btnCancel.type = 'button';
+  btnCancel.className = 'btn btn-sm';
+  btnCancel.textContent = 'Cancelar';
+  btnCancel.addEventListener('click', () => renderFeed());
+  const btnSave = document.createElement('button');
+  btnSave.type = 'button';
+  btnSave.className = 'btn btn-primary btn-sm';
+  btnSave.textContent = 'Salvar';
+  btnSave.addEventListener('click', () => saveEditSession(id, err));
+  actions.append(btnCancel, btnSave);
+  form.appendChild(actions);
+
+  card.appendChild(form);
+  iSubject.focus();
+}
+
+async function saveEditSession(id, err) {
+  const s = state.sessions.find(x => x.id === id);
+  if (!s) return;
+  const vSubject = $('ed-subject-' + id).value.trim();
+  const vTopic = $('ed-topic-' + id).value.trim();
+  if (!vSubject) {
+    err.hidden = false;
+    err.textContent = 'Informe a matéria.';
+    return;
+  }
+  err.hidden = true;
+  s.subject = vSubject;
+  s.topic = vTopic;
+  saveState();
+  await pushSession(s);
+  renderFeed();
+  renderHistory();
+  populateFilterSubject();
+  renderAll();
+  toast('Sessão atualizada.', 'success');
+}
+
+// botão de editar (feed)
+$('feedList').addEventListener('click', e => {
+  const btn = e.target.closest('.edit-btn');
+  if (btn) beginEditSession(btn.dataset.id);
 });
 
 /* ================= Stats ================= */

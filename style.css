@@ -614,20 +614,20 @@ button.foot-name:hover { text-decoration: underline; }
 .history-item {
   background-color: var(--input-bg);
   border: 1px solid var(--border-color);
-  padding: 14px 16px;
+  padding: 12px 14px;
   border-radius: 10px;
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr auto auto auto auto;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   transition: border-color 0.18s;
 }
 
 .history-item:hover { border-color: var(--accent-color); }
 
-.history-info { min-width: 0; }
+.history-item .hc-subject { min-width: 0; }
 
-.history-info h4 {
+.hc-subject-name {
   font-size: 0.95rem;
   font-weight: 700;
   overflow: hidden;
@@ -635,7 +635,7 @@ button.foot-name:hover { text-decoration: underline; }
   white-space: nowrap;
 }
 
-.history-info p {
+.hc-topic {
   font-size: 0.8rem;
   color: var(--text-muted);
   overflow: hidden;
@@ -643,17 +643,81 @@ button.foot-name:hover { text-decoration: underline; }
   white-space: nowrap;
 }
 
-.history-stats { text-align: right; flex-shrink: 0; }
+.hc-time,
+.hc-questions,
+.hc-clock {
+  text-align: right;
+  flex-shrink: 0;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
 
-.history-stats strong {
+.hc-time strong {
   font-size: 0.95rem;
   font-variant-numeric: tabular-nums;
 }
 
-.history-stats .meta {
+.hc-clock .meta {
   font-size: 0.76rem;
   color: var(--text-muted);
   white-space: nowrap;
+}
+
+.hc-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.hc-actions .edit-btn,
+.hc-actions .delete-btn {
+  background: none;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  border-radius: 8px;
+  padding: 6px 9px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: 0.18s;
+  line-height: 1;
+}
+.hc-actions .edit-btn:hover {
+  color: var(--accent-color);
+  border-color: var(--accent-color);
+  background: rgba(240, 166, 60, 0.08);
+}
+.hc-actions .delete-btn:hover {
+  color: var(--danger-color);
+  border-color: var(--danger-color);
+  background: rgba(239, 68, 68, 0.08);
+}
+
+/* editor inline (edição de matéria/legenda) */
+.history-item.editing {
+  display: block;
+}
+.hc-editor {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  align-items: start;
+}
+.hc-editor .field-error { grid-column: 1 / -1; margin: 0; }
+.hc-editor-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+@media (max-width: 640px) {
+  .history-item {
+    grid-template-columns: 1fr auto auto auto;
+    row-gap: 8px;
+  }
+  .history-item .hc-subject { grid-column: 1 / -1; }
+  .hc-actions { grid-column: 1 / -1; justify-content: flex-end; }
+  .hc-editor { grid-template-columns: 1fr; }
 }
 
 .badge {
