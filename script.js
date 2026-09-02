@@ -955,15 +955,16 @@ function buildSessionCard(session, showDelete) {
   const cellActions = document.createElement('div');
   cellActions.className = 'hc-actions';
 
-  if (showDelete) {
-    const edit = document.createElement('button');
-    edit.className = 'edit-btn';
-    edit.title = 'Editar matéria / legenda';
-    edit.setAttribute('aria-label', `Editar sessão de ${session.subject}`);
-    edit.dataset.id = session.id;
-    edit.innerHTML = '<i class="ti ti-pencil"></i>';
-    cellActions.appendChild(edit);
+  // Editar sempre disponível (home e feed); excluir só no feed
+  const edit = document.createElement('button');
+  edit.className = 'edit-btn';
+  edit.title = 'Editar matéria / legenda';
+  edit.setAttribute('aria-label', `Editar sessão de ${session.subject}`);
+  edit.dataset.id = session.id;
+  edit.innerHTML = '<i class="ti ti-pencil"></i>';
+  cellActions.appendChild(edit);
 
+  if (showDelete) {
     const del = document.createElement('button');
     del.className = 'delete-btn';
     del.title = 'Excluir sessão';
@@ -1083,10 +1084,9 @@ $('feedList').addEventListener('click', e => {
 // -------------------------------------------------------------
 // Edição inline de matéria e legenda (tempo/horário não mudam)
 // -------------------------------------------------------------
-function beginEditSession(id) {
+function beginEditSession(id, card) {
   const s = state.sessions.find(x => x.id === id);
   if (!s) return;
-  const card = document.querySelector(`.history-item[data-id="${CSS.escape(id)}"]`);
   if (!card) return;
 
   card.classList.add('editing');
@@ -1171,7 +1171,13 @@ async function saveEditSession(id, err) {
 // botão de editar (feed)
 $('feedList').addEventListener('click', e => {
   const btn = e.target.closest('.edit-btn');
-  if (btn) beginEditSession(btn.dataset.id);
+  if (btn) beginEditSession(btn.dataset.id, btn.closest('.history-item'));
+});
+
+// botão de editar (últimas atividades da home)
+$('historyList').addEventListener('click', e => {
+  const btn = e.target.closest('.edit-btn');
+  if (btn) beginEditSession(btn.dataset.id, btn.closest('.history-item'));
 });
 
 /* ================= Stats ================= */
