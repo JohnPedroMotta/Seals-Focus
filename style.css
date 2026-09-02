@@ -673,6 +673,8 @@ button.foot-name:hover { text-decoration: underline; }
 
 .history-item .hc-subject {
   min-width: 0;
+  min-height: 0;               /* permite encolher até a altura do card (114px) */
+  overflow: hidden;            /* evita que a obs vaze para fora do card */
   display: flex;
   flex-direction: column;
 }
