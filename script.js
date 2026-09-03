@@ -10,6 +10,7 @@ const KNOWN_KEY = 'foco.known.v1';
 const PUSHED_REWARDS_KEY = 'foco.pushedrewards.v1';
 const SYNC_INTERVAL = 60000; // 60s: mantém aparelhos iguais sem pesar no servidor
 const GOAL_KEY = 'foco.goal.v1';
+const GOAL_DATE_KEY = 'foco.goaldate.v1';
 const THEME_KEY = 'foco.theme.v1';
 const ACCENT_KEY = 'foco.accent.v1';
 const PROFILE_KEY = 'foco.profile.v1';
@@ -124,7 +125,7 @@ function getPoints() { return getTotalPoints(); }
 function awardPendingRewards(perDay) {
   const newDays = [];
   perDay.forEach((secs, key) => {
-    if (secs >= dailyGoalSecs && !rewardedDays.has(key)) {
+    if (secs >= dayThreshold(key) && !rewardedDays.has(key)) {
       rewardedDays.add(key);
       newDays.push(key);
     }
@@ -941,6 +942,22 @@ function mondayOfCurrentWeek() {
 }
 
 let dailyGoalSecs = 30 * 60; // meta diária configurável (padrão: 30 min)
+let goalStartKey = null;     // dia em que a meta passou a valer (chave YYYY-MM-DD)
+
+/* Meta passa a valer do dia em diante: dias anteriores contam como cumpridos
+   com qualquer estudo; a partir do dia/meta com a meta cheia. */
+function ensureGoalStartKey() {
+  if (goalStartKey) return;
+  try {
+    const v = localStorage.getItem(GOAL_DATE_KEY);
+    if (v) { goalStartKey = v; return; }
+  } catch { /* ignora */ }
+  goalStartKey = dateKey(new Date());
+  try { localStorage.setItem(GOAL_DATE_KEY, goalStartKey); } catch { /* ignora */ }
+}
+function dayThreshold(key) {
+  return (goalStartKey && key < goalStartKey) ? 1 : dailyGoalSecs;
+}
 
 function last7Days() {
   const days = [];
@@ -1043,7 +1060,7 @@ function renderWeekStrip(perDay) {
 
   const today = dateKey(new Date());
   const keys = [...perDay.keys()];
-  const daysDone = [...perDay.values()].filter(v => v >= dailyGoalSecs).length;
+  const daysDone = [...perDay.entries()].filter(([k, v]) => v >= dayThreshold(k)).length;
 
   $('weekDaysChip').textContent = `${daysDone} de 7 dias · meta ${fmtHM(dailyGoalSecs)}/dia`;
 
@@ -1059,7 +1076,7 @@ function renderWeekStrip(perDay) {
     label.className = 'strip-label';
     label.textContent = STRIP_LABELS[i];
 
-    if (secs >= dailyGoalSecs) {
+    if (secs >= dayThreshold(key)) {
       day.classList.add('done');
       circle.innerHTML = '<i class="ti ti-check"></i>';
     } else if (key < today) {
@@ -1899,6 +1916,7 @@ function loadGoal() {
       prefs.dailyGoal = mins;
     }
   } catch { /* ignora */ }
+  ensureGoalStartKey();
 }
 
 /* Preferências sincronizadas na nuvem (tema/paleta/meta) */
@@ -1956,6 +1974,7 @@ function applyCloudPrefs(r) {
     prefs.dailyGoal = r.daily_goal;
     dailyGoalSecs = r.daily_goal * 60;
     localStorage.setItem(GOAL_KEY, String(r.daily_goal));
+    ensureGoalStartKey();
     renderAll();
   }
   if (typeof r.is_premium === 'boolean') {
@@ -3359,10 +3378,12 @@ $('logoutBtn').addEventListener('click', async () => {
     localStorage.removeItem(THEME_KEY);
     localStorage.removeItem(ACCENT_KEY);
     localStorage.removeItem(GOAL_KEY);
+    localStorage.removeItem(GOAL_DATE_KEY);
     localStorage.removeItem(REWARDS_KEY);
     localStorage.removeItem(PENDING_KEY);
     profile = { displayName: '', username: '', avatarUrl: '', usernameUpdatedAt: null, bio: '' };
     dailyGoalSecs = 30 * 60;
+    goalStartKey = null;
     toast('Conta desconectada.', 'success');
     goToLogin();
   } catch {
@@ -3427,10 +3448,12 @@ $('deleteAccountBtn').addEventListener('click', async () => {
     localStorage.removeItem(THEME_KEY);
     localStorage.removeItem(ACCENT_KEY);
     localStorage.removeItem(GOAL_KEY);
+    localStorage.removeItem(GOAL_DATE_KEY);
     localStorage.removeItem(REWARDS_KEY);
     localStorage.removeItem(PENDING_KEY);
     profile = { displayName: '', username: '', avatarUrl: '', usernameUpdatedAt: null, bio: '' };
     dailyGoalSecs = 30 * 60;
+    goalStartKey = null;
     sb.user = null;
     goToLogin();
   } catch (e) {
@@ -3473,6 +3496,8 @@ function initSettingsUI() {
     }
     dailyGoalSecs = v * 60;
     prefs.dailyGoal = v;
+    goalStartKey = dateKey(new Date());
+    try { localStorage.setItem(GOAL_DATE_KEY, goalStartKey); } catch { /* ignora */ }
     savePrefs();
     renderAll();
     toast(`Meta diária definida: ${v} min.`, 'success');
