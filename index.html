@@ -16,7 +16,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3/dist/tabler-icons.min.css" />
   </noscript>
-  <link rel="stylesheet" href="style.css?v=63" />
+  <link rel="stylesheet" href="style.css?v=64" />
   <!-- Anti-bfcache + popup auto-close -->
   <script>
     window.addEventListener('pageshow', function(e) {
@@ -26,7 +26,7 @@
   </script>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script defer src="config.js?v=4"></script>
-  <script defer src="script.js?v=92"></script>
+  <script defer src="script.js?v=93"></script>
 </head>
 <body>
 
@@ -51,13 +51,9 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
           Estudo
         </button>
-        <button class="nav-btn" data-view="stats">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-6"/></svg>
-          Stats
-        </button>
-        <button class="nav-btn" data-view="feed">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h10"/></svg>
-          Histórico
+        <button class="nav-btn" data-view="progress">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 14 4-4 4 3 5-6"/></svg>
+          Progresso
         </button>
         <button class="nav-btn" data-view="friends">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -71,10 +67,6 @@
         <button class="nav-btn" data-view="settings">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
           Ajustes
-        </button>
-        <button class="nav-btn" data-view="admin" id="adminNavBtn" hidden>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 5 6v6c0 4.42 3 7.5 7 9 4-1.5 7-4.58 7-9V6l-7-3z"/><path d="m9 12 2 2 4-4"/></svg>
-          Admin
         </button>
       </nav>
 
@@ -183,65 +175,70 @@
       <section class="card">
         <div class="card-head">
           <h3 class="panel-title">Últimas Atividades</h3>
-          <button class="link-btn" data-goto="feed">Ver tudo →</button>
+          <button class="link-btn" data-goto="progress" data-pane="feed">Ver tudo →</button>
         </div>
         <div class="history-list" id="historyList"></div>
       </section>
     </section>
 
-    <!-- ===================== VISÃO: STATS ===================== -->
-    <section class="view" id="view-stats" hidden>
+    <!-- ===================== VISÃO: PROGRESSO (Stats + Histórico) ===================== -->
+    <section class="view" id="view-progress" hidden>
+      <div class="progress-tabs" role="tablist" aria-label="Visualização">
+        <button class="progress-tab active" data-pane="stats" role="tab" aria-selected="true" type="button"><i class="ti ti-chart-bar"></i> Desempenho</button>
+        <button class="progress-tab" data-pane="feed" role="tab" aria-selected="false" type="button"><i class="ti ti-history"></i> Histórico</button>
+      </div>
 
-      <section class="card">
-        <div class="card-head">
-          <h3 class="panel-title">Horas por Dia</h3>
-          <div class="card-head-actions">
-            <button class="btn btn-sm btn-sync" id="syncBtnStats" title="Sincronizar agora" type="button" hidden>
-              <i class="ti ti-refresh"></i> Sincronizar
-            </button>
-            <span class="chip" id="weekTotalChip">Total: 0h</span>
+      <div class="progress-pane" data-pane="stats">
+        <section class="card">
+          <div class="card-head">
+            <h3 class="panel-title">Horas por Dia</h3>
+            <div class="card-head-actions">
+              <button class="btn btn-sm btn-sync" id="syncBtnStats" title="Sincronizar agora" type="button" hidden>
+                <i class="ti ti-refresh"></i> Sincronizar
+              </button>
+              <span class="chip" id="weekTotalChip">Total: 0h</span>
+            </div>
           </div>
-        </div>
-        <div class="chart" id="weekChart" role="img" aria-label="Gráfico de horas estudadas nos últimos 7 dias"></div>
-      </section>
-
-      <div class="grid-2">
-        <section class="card">
-          <h3 class="panel-title">Desempenho por Matéria</h3>
-          <div class="subject-stats" id="subjectStats"><p class="empty">Sem dados ainda.</p></div>
+          <div class="chart" id="weekChart" role="img" aria-label="Gráfico de horas estudadas nos últimos 7 dias"></div>
         </section>
+
+        <div class="grid-2">
+          <section class="card">
+            <h3 class="panel-title">Desempenho por Matéria</h3>
+            <div class="subject-stats" id="subjectStats"><p class="empty">Sem dados ainda.</p></div>
+          </section>
+          <section class="card">
+            <h3 class="panel-title">Resumo Geral</h3>
+            <ul class="summary-list" id="summaryList"></ul>
+          </section>
+        </div>
+      </div>
+
+      <div class="progress-pane" data-pane="feed" hidden>
         <section class="card">
-          <h3 class="panel-title">Resumo Geral</h3>
-          <ul class="summary-list" id="summaryList"></ul>
+          <div class="card-head">
+            <h3 class="panel-title">Histórico Completo</h3>
+            <div class="card-head-actions">
+              <span class="chip" id="sessionCount">0 sessões</span>
+              <button class="btn btn-sm" id="addSessionBtn" type="button"><i class="ti ti-plus"></i> Adicionar sessão</button>
+            </div>
+          </div>
+          <input type="search" id="feedSearch" class="search-input" placeholder="Buscar por matéria, assunto ou observação..." aria-label="Buscar sessões" />
+          <div class="filter-row">
+            <select id="filterSubject" aria-label="Filtrar por matéria">
+              <option value="">Todas as matérias</option>
+            </select>
+            <input type="date" id="filterFrom" title="Data inicial" aria-label="Data inicial" />
+            <input type="date" id="filterTo" title="Data final" aria-label="Data final" />
+            <label class="checkbox-container slim">
+              <input type="checkbox" id="filterQuestions" />
+              <span>Só com questões</span>
+            </label>
+            <button class="link-btn" id="clearFilters" type="button">Limpar filtros</button>
+          </div>
+          <div class="history-list" id="feedList"></div>
         </section>
       </div>
-    </section>
-
-    <!-- ===================== VISÃO: FEED ===================== -->
-    <section class="view" id="view-feed" hidden>
-      <section class="card">
-        <div class="card-head">
-          <h3 class="panel-title">Histórico Completo</h3>
-          <div class="card-head-actions">
-            <span class="chip" id="sessionCount">0 sessões</span>
-            <button class="btn btn-sm" id="addSessionBtn" type="button"><i class="ti ti-plus"></i> Adicionar sessão</button>
-          </div>
-        </div>
-        <input type="search" id="feedSearch" class="search-input" placeholder="Buscar por matéria, assunto ou observação..." aria-label="Buscar sessões" />
-        <div class="filter-row">
-          <select id="filterSubject" aria-label="Filtrar por matéria">
-            <option value="">Todas as matérias</option>
-          </select>
-          <input type="date" id="filterFrom" title="Data inicial" aria-label="Data inicial" />
-          <input type="date" id="filterTo" title="Data final" aria-label="Data final" />
-          <label class="checkbox-container slim">
-            <input type="checkbox" id="filterQuestions" />
-            <span>Só com questões</span>
-          </label>
-          <button class="link-btn" id="clearFilters" type="button">Limpar filtros</button>
-        </div>
-        <div class="history-list" id="feedList"></div>
-      </section>
     </section>
 
     <!-- ===================== VISÃO: AMIGOS ===================== -->
@@ -503,6 +500,17 @@
               </div>
             </div>
           </div>
+
+          <div class="profile-section-divider" id="adminSettingsDivider" hidden></div>
+          <div class="profile-account-list">
+            <button class="profile-account-row" id="adminSettingsBtn" type="button" hidden>
+              <div class="profile-account-left">
+                <i class="ti ti-shield-lock"></i>
+                <span class="profile-account-label">Painel Admin</span>
+              </div>
+              <i class="ti ti-chevron-right profile-chevron"></i>
+            </button>
+          </div>
         </div>
       </section>
 
@@ -631,13 +639,9 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
       <span>Estudo</span>
     </button>
-    <button class="tab-btn" data-view="stats">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-6"/></svg>
-      <span>Stats</span>
-    </button>
-<button class="tab-btn" data-view="feed">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h10"/></svg>
-      <span>Histórico</span>
+    <button class="tab-btn" data-view="progress">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 14 4-4 4 3 5-6"/></svg>
+      <span>Progresso</span>
     </button>
     <button class="tab-btn" data-view="friends">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -651,10 +655,6 @@
     <button class="tab-btn" data-view="settings">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       <span>Ajustes</span>
-    </button>
-    <button class="tab-btn" data-view="admin" id="adminTabBtn" hidden>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 5 6v6c0 4.42 3 7.5 7 9 4-1.5 7-4.58 7-9V6l-7-3z"/><path d="m9 12 2 2 4-4"/></svg>
-      <span>Admin</span>
     </button>
   </nav>
 

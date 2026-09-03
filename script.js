@@ -970,8 +970,19 @@ function subscribeTimerSync() {
 }
 
 /* ================= Views ================= */
-const views = ['study', 'stats', 'feed', 'friends', 'shop', 'settings', 'admin'];
+const views = ['study', 'progress', 'friends', 'shop', 'settings', 'admin'];
 let currentView = 'study';
+
+let progressPane = 'stats';
+function setProgressPane(pane) {
+  progressPane = pane;
+  document.querySelectorAll('.progress-tab').forEach(t =>
+    t.classList.toggle('active', t.dataset.pane === pane)
+  );
+  document.querySelectorAll('.progress-pane').forEach(p =>
+    p.hidden = p.dataset.pane !== pane
+  );
+}
 
 function switchView(name) {
   currentView = name;
@@ -988,6 +999,7 @@ function switchView(name) {
     b.classList.toggle('active', b.dataset.view === name)
   );
   window.scrollTo({ top: 0 });
+  if (name === 'progress') setProgressPane(progressPane);
   if (name === 'settings') syncSettingsUI();
   else if (name === 'study') renderTimerSync();
   else if (name === 'friends') loadFriends();
@@ -1000,11 +1012,21 @@ document.querySelectorAll('.nav-btn, .tab-btn').forEach(btn =>
   btn.addEventListener('click', () => switchView(btn.dataset.view))
 );
 
+document.querySelectorAll('.progress-tab').forEach(t =>
+  t.addEventListener('click', () => setProgressPane(t.dataset.pane))
+);
+
 bindAdminUserEvents();
 
 document.querySelectorAll('[data-goto]').forEach(btn =>
-  btn.addEventListener('click', () => switchView(btn.dataset.goto))
+  btn.addEventListener('click', () => {
+    if (btn.dataset.goto === 'progress' && btn.dataset.pane) progressPane = btn.dataset.pane;
+    switchView(btn.dataset.goto);
+  })
 );
+
+const $adminSettingsBtn = $('adminSettingsBtn');
+if ($adminSettingsBtn) $adminSettingsBtn.addEventListener('click', () => switchView('admin'));
 
 /* ================= Botões do cronômetro ================= */
 let resetArmed = false;
@@ -2345,10 +2367,10 @@ function syncShopButtons() {
 
 function syncAdminButtons() {
   const admin = isAdmin();
-  const nav = $('adminNavBtn');
-  const tab = $('adminTabBtn');
-  if (nav) nav.hidden = !admin;
-  if (tab) tab.hidden = !admin;
+  const btn = $('adminSettingsBtn');
+  const divider = $('adminSettingsDivider');
+  if (btn) btn.hidden = !admin;
+  if (divider) divider.hidden = !admin;
   if (!admin && currentView === 'admin') switchView('study');
 }
 
