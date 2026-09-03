@@ -16,7 +16,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3/dist/tabler-icons.min.css" />
   </noscript>
-  <link rel="stylesheet" href="style.css?v=56" />
+  <link rel="stylesheet" href="style.css?v=57" />
   <!-- Anti-bfcache + popup auto-close -->
   <script>
     window.addEventListener('pageshow', function(e) {
@@ -26,7 +26,7 @@
   </script>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script defer src="config.js?v=4"></script>
-  <script defer src="script.js?v=87"></script>
+  <script defer src="script.js?v=88"></script>
 </head>
 <body>
 
@@ -96,6 +96,7 @@
           <button class="foot-name" id="footName" hidden type="button"></button>
           <div class="user-menu" id="userMenu" role="menu" hidden>
             <p class="menu-email" id="userEmail"></p>
+            <button class="menu-item" id="menuMyProfile" type="button"><i class="ti ti-user"></i> Meu perfil</button>
           </div>
         </div>
       </div>
@@ -847,24 +848,44 @@
       </div>
       <p class="profile-view-bio" id="profileViewBio"></p>
       <div class="profile-view-divider" id="profileViewDivider" hidden></div>
-      <div class="profile-view-stats" id="profileViewStats" hidden>
-        <div class="profile-view-stat">
-          <span class="profile-view-stat-value" id="pvPoints">0</span>
-          <span class="profile-view-stat-label">pontos</span>
+        <div class="profile-view-stats" id="profileViewStats" hidden>
+          <div class="profile-view-stat">
+            <span class="profile-view-stat-value" id="pvPoints">0</span>
+            <span class="profile-view-stat-label">pontos</span>
+          </div>
+          <div class="profile-view-stat">
+            <span class="profile-view-stat-value" id="pvBest">0</span>
+            <span class="profile-view-stat-label">melhor seq.</span>
+          </div>
+          <div class="profile-view-stat">
+            <span class="profile-view-stat-value" id="pvToday">0d</span>
+            <span class="profile-view-stat-label">seq. atual</span>
+          </div>
+          <div class="profile-view-stat">
+            <span class="profile-view-stat-value" id="pvMonth">0h</span>
+            <span class="profile-view-stat-label">no mês</span>
+          </div>
+          <div class="profile-view-stat">
+            <span class="profile-view-stat-value" id="pvCrystals">0</span>
+            <span class="profile-view-stat-label">cristais</span>
+          </div>
+          <div class="profile-view-stat">
+            <span class="profile-view-stat-value" id="pvStreak">0</span>
+            <span class="profile-view-stat-label">sequência</span>
+          </div>
+          <div class="profile-view-stat">
+            <span class="profile-view-stat-value" id="pvWeek">00:00</span>
+            <span class="profile-view-stat-label">na semana</span>
+          </div>
+          <div class="profile-view-stat">
+            <span class="profile-view-stat-value" id="pvSessions">0</span>
+            <span class="profile-view-stat-label">sessões</span>
+          </div>
         </div>
-        <div class="profile-view-stat">
-          <span class="profile-view-stat-value" id="pvStreak">0</span>
-          <span class="profile-view-stat-label">sequência</span>
+        <div class="profile-achievements-wrap" id="profileAchievementsWrap" hidden>
+          <div class="profile-achievements-title">Conquistas</div>
+          <div class="profile-achievements" id="profileAchievements"></div>
         </div>
-        <div class="profile-view-stat">
-          <span class="profile-view-stat-value" id="pvWeek">00:00</span>
-          <span class="profile-view-stat-label">na semana</span>
-        </div>
-        <div class="profile-view-stat">
-          <span class="profile-view-stat-value" id="pvSessions">0</span>
-          <span class="profile-view-stat-label">sessões</span>
-        </div>
-      </div>
       <div class="modal-actions">
         <button class="btn" id="profileViewCloseBtn">Fechar</button>
       </div>

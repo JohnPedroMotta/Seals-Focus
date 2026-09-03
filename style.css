@@ -1126,7 +1126,7 @@ select option { background-color: var(--modal-bg); }
 
 .profile-view-modal {
   width: 100%;
-  max-width: 340px;
+  max-width: 620px;
 }
 
 .profile-view-hero {
@@ -1197,7 +1197,7 @@ select option { background-color: var(--modal-bg); }
 
 .profile-view-stats {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
   gap: 10px;
   margin-bottom: 4px;
 }
@@ -1230,6 +1230,64 @@ select option { background-color: var(--modal-bg); }
   letter-spacing: 0.04em;
 }
 
+.profile-achievements-wrap {
+  margin: 16px 0 4px;
+}
+
+.profile-achievements-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 10px;
+}
+
+.profile-achievements {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+}
+
+.ach-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+  transition: border-color 0.18s;
+}
+
+.ach-item.unlocked {
+  border-color: var(--accent-color);
+  background: rgba(240, 166, 60, 0.06);
+}
+
+.ach-item.locked {
+  opacity: 0.45;
+}
+
+.ach-icon {
+  font-size: 1.3rem;
+  flex-shrink: 0;
+  width: 28px;
+  text-align: center;
+}
+
+.ach-name {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-main);
+  line-height: 1.2;
+}
+
+.ach-desc {
+  font-size: 0.62rem;
+  color: var(--text-muted);
+  line-height: 1.2;
+}
 
 .friend-view {
   flex-shrink: 0;

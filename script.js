@@ -31,6 +31,47 @@ let rewardedDays = new Set();
 const POINTS_PER_DAY = 100;
 const SIGNUP_BONUS = 200;
 
+/* ================= Conquistas ================= */
+const ACH_KEY = 'foco.ach.v1';
+let bestStreak = 0;                 // maior sequência já alcançada
+let unlockedAch = new Set();        // ids de conquistas desbloqueadas
+
+const ACHIEVEMENTS = [
+  { id: 'first_session', name: 'Primeiros Passos', desc: 'Registre sua primeira sessão de estudo', icon: '🌱', check: s => s.sessions >= 1 },
+  { id: 'first_goal',    name: 'Meta Alcançada',   desc: 'Cumpra sua meta diária pela primeira vez', icon: '✅', check: s => s.goalsMet >= 1 },
+  { id: 'streak_3',      name: '3 Dias',           desc: 'Mantenha uma sequência de 3 dias', icon: '🔥', check: s => s.bestStreak >= 3 },
+  { id: 'streak_7',      name: '1 Semana',         desc: 'Sequência de estudo de 7 dias', icon: '📅', check: s => s.bestStreak >= 7 },
+  { id: 'streak_14',     name: '2 Semanas',        desc: 'Sequência de estudo de 14 dias', icon: '🎯', check: s => s.bestStreak >= 14 },
+  { id: 'streak_21',     name: '3 Semanas',        desc: 'Sequência de estudo de 21 dias', icon: '🏆', check: s => s.bestStreak >= 21 },
+  { id: 'streak_30',     name: '1 Mês',            desc: 'Sequência de estudo de 30 dias', icon: '🥇', check: s => s.bestStreak >= 30 },
+  { id: 'streak_60',     name: '2 Meses',          desc: 'Sequência de estudo de 60 dias', icon: '💎', check: s => s.bestStreak >= 60 },
+  { id: 'streak_90',     name: '3 Meses',          desc: 'Sequência de estudo de 90 dias', icon: '👑', check: s => s.bestStreak >= 90 },
+  { id: 'hours_10',      name: '10 Horas',         desc: 'Acumule 10 horas de estudo no total', icon: '⏳', check: s => s.totalSecs >= 10 * 3600 },
+  { id: 'hours_50',      name: '50 Horas',         desc: 'Acumule 50 horas de estudo no total', icon: '🧭', check: s => s.totalSecs >= 50 * 3600 },
+  { id: 'hours_100',     name: '100 Horas',        desc: 'Acumule 100 horas de estudo no total', icon: '🚀', check: s => s.totalSecs >= 100 * 3600 },
+  { id: 'sessions_10',   name: '10 Sessões',       desc: 'Complete 10 sessões de estudo', icon: '📚', check: s => s.sessions >= 10 },
+  { id: 'sessions_50',   name: '50 Sessões',       desc: 'Complete 50 sessões de estudo', icon: '🎓', check: s => s.sessions >= 50 },
+  { id: 'sessions_100',  name: '100 Sessões',      desc: 'Complete 100 sessões de estudo', icon: '🏅', check: s => s.sessions >= 100 }
+];
+
+function achKey() {
+  return sb && sb.user ? `${ACH_KEY}.u.${sb.user.id}` : ACH_KEY;
+}
+function loadAchievements() {
+  try {
+    const raw = localStorage.getItem(achKey());
+    if (!raw) return;
+    const p = JSON.parse(raw);
+    if (Number.isFinite(p.bestStreak)) bestStreak = p.bestStreak;
+    if (Array.isArray(p.unlocked)) unlockedAch = new Set(p.unlocked);
+  } catch { /* ignora */ }
+}
+function saveAchievements() {
+  try {
+    localStorage.setItem(achKey(), JSON.stringify({ bestStreak, unlocked: [...unlockedAch] }));
+  } catch { /* ignora */ }
+}
+
 /* ================= Pontos do usuário (user_points) ================= */
 let userPoints = 0;
 
@@ -311,6 +352,7 @@ function setCloudUser(user) {
       if (currentView === 'shop') renderShop();
       renderProfileBorders();
     });
+    setTimeout(() => pushAchievements(), 500);
   } else {
     avatar.textContent = '?';
     avatar.title = 'Conectar conta';
@@ -511,6 +553,28 @@ async function pushRewards(days) {
     days.forEach(d => rewardPushed.add(d));
     persistRewarded();
   } catch (e) { console.error('pushRewards:', e); }
+}
+
+/* Sincroniza conquistas desbloqueadas + melhor sequência para a nuvem. */
+async function pushAchievements(ids, best = bestStreak) {
+  if (!sb.client || !sb.user) return;
+  const idArr = ids && ids.length ? ids : [...unlockedAch];
+  if (idArr.length) {
+    try {
+      const { error } = await sb.client.from('achievements').upsert(
+        idArr.map(id => ({ user_id: sb.user.id, achievement_id: id }))
+      );
+      if (error) console.error('pushAchievements:', error.message);
+      else console.log('[ach] pushed', idArr.length, 'achievements');
+    } catch (e) { console.error('pushAchievements:', e); }
+  }
+  try {
+    const { error } = await sb.client.from('profiles')
+      .update({ best_streak: Math.max(0, best | 0) })
+      .eq('user_id', sb.user.id);
+    if (error) console.error('pushAchievements best_streak:', error.message);
+    else console.log('[ach] pushed best_streak', best);
+  } catch (e) { console.error('pushAchievements best:', e); }
 }
 
 async function flushPending() {
@@ -989,6 +1053,62 @@ function calcStreak() {
     cursor.setDate(cursor.getDate() - 1);
   }
   return streak;
+}
+
+/* Estatísticas usadas para avaliar conquistas (do próprio usuário). */
+function achievementStats() {
+  const totalSecs = state.sessions.reduce((a, s) => a + (s.duration || 0), 0);
+  return {
+    sessions: state.sessions.length,
+    totalSecs,
+    bestStreak,
+    goalsMet: rewardedDays.size
+  };
+}
+
+/* Atualiza melhor sequência e desbloqueia conquistas novas (com toast). */
+function updateAchievements() {
+  const cur = calcStreak();
+  if (cur > bestStreak) bestStreak = cur;
+  const stats = achievementStats();
+  const newly = [];
+  ACHIEVEMENTS.forEach(a => {
+    if (!unlockedAch.has(a.id) && a.check(stats)) {
+      unlockedAch.add(a.id);
+      newly.push(a);
+    }
+  });
+  if (newly.length > 0) {
+    saveAchievements();
+    pushAchievements(newly.map(a => a.id));
+    toast(`${newly.length > 1 ? 'Novas conquistas' : 'Nova conquista'} desbloqueada${newly.length > 1 ? 's' : ''}! 🏅 ${newly.map(a => a.name).join(', ')}`, 'success');
+  } else if (cur > 0) {
+    saveAchievements();
+  }
+}
+
+/* Monta o grid de conquistas. `unlocked` = Set de ids desbloqueados (ou null p/ usar local). */
+function renderAchievements(container, unlocked /* Set|null */) {
+  if (!container) return;
+  container.innerHTML = '';
+  const has = unlocked ? (id => unlocked.has(id)) : (id => unlockedAch.has(id));
+  ACHIEVEMENTS.forEach(a => {
+    const el = document.createElement('div');
+    const on = has(a.id);
+    el.className = 'ach-item' + (on ? ' unlocked' : ' locked');
+    el.title = `${a.name} — ${a.desc}`;
+    const icon = document.createElement('div');
+    icon.className = 'ach-icon';
+    icon.textContent = on ? a.icon : '🔒';
+    const name = document.createElement('span');
+    name.className = 'ach-name';
+    name.textContent = a.name;
+    const desc = document.createElement('span');
+    desc.className = 'ach-desc';
+    desc.textContent = a.desc;
+    el.append(icon, name, desc);
+    container.appendChild(el);
+  });
 }
 
 function renderMetrics() {
@@ -3169,40 +3289,95 @@ async function loadFriendStats(friendId) {
 }
 
 async function openProfileModal(friendId) {
-  const f = friendsCache.find(x => x.user_id === friendId) || {};
-  const name = f.display_name || ('@' + (f.username || ''));
-  const user = f.username ? '@' + f.username : '';
-  $('profileViewName').innerHTML = `${escapeHtml(name || 'Usuário')}${f.is_premium ? premiumBadgeHTML() : ''}${ownerBadgeHTML(friendId)}`;
-  $('profileViewUser').textContent = user;
-  const av = $('profileViewAvatar');
-  av.innerHTML = f.avatar_url
-    ? `<img src="${escapeHtml(f.avatar_url)}" alt="" onerror="this.remove()">`
-    : ((f.display_name || '?').slice(0, 1).toUpperCase());
-  applyBorderTo(av, f.border_id);
-  const bioEl = $('profileViewBio');
-  bioEl.textContent = f.bio || '';
-  bioEl.hidden = !f.bio;
+  const isMe = sb.user && friendId === sb.user.id;
+  const f = isMe ? null : (friendsCache.find(x => x.user_id === friendId) || {});
+
+  if (isMe) {
+    $('profileViewName').innerHTML = `${escapeHtml(profile.displayName || '@' + (profile.username || ''))}${isPremium ? premiumBadgeHTML() : ''}${ownerBadgeHTML(friendId)}`;
+    $('profileViewUser').textContent = profile.username ? '@' + profile.username : '';
+    const av = $('profileViewAvatar');
+    av.innerHTML = profile.avatarUrl
+      ? `<img src="${escapeHtml(profile.avatarUrl)}" alt="" onerror="this.remove()">`
+      : ((profile.displayName || '?').slice(0, 1).toUpperCase());
+    applyBorderTo(av, equippedBorder);
+    const bioEl = $('profileViewBio');
+    bioEl.textContent = profile.bio || '';
+    bioEl.hidden = !profile.bio;
+  } else {
+    const name = f.display_name || ('@' + (f.username || ''));
+    const user = f.username ? '@' + f.username : '';
+    $('profileViewName').innerHTML = `${escapeHtml(name || 'Usuário')}${f.is_premium ? premiumBadgeHTML() : ''}${ownerBadgeHTML(friendId)}`;
+    $('profileViewUser').textContent = user;
+    const av = $('profileViewAvatar');
+    av.innerHTML = f.avatar_url
+      ? `<img src="${escapeHtml(f.avatar_url)}" alt="" onerror="this.remove()">`
+      : ((f.display_name || '?').slice(0, 1).toUpperCase());
+    applyBorderTo(av, f.border_id);
+    const bioEl = $('profileViewBio');
+    bioEl.textContent = f.bio || '';
+    bioEl.hidden = !f.bio;
+  }
 
   const statsEl = $('profileViewStats');
   statsEl.hidden = true;
   const divEl = $('profileViewDivider');
   divEl.hidden = true;
+  const achWrap = $('profileAchievementsWrap');
+  achWrap.hidden = true;
   $('profileModal').classList.add('active');
 
-  const s = await loadFriendStats(friendId);
-  if (s && f.privacy_show_subjects !== false) {
+  const achContainer = $('profileAchievements');
+  if (achContainer) achContainer.innerHTML = '';
+
+  if (isMe) {
+    const totalPoints = getTotalPoints();
+    const curStreak = calcStreak();
+    const totalSecs = state.sessions.reduce((a, s) => a + (s.duration || 0), 0);
+    const monthSecs = state.sessions
+      .filter(s => { const d = new Date(s.dateISO); const now = new Date(); const thirtyAgo = new Date(now); thirtyAgo.setDate(now.getDate() - 30); return d >= thirtyAgo; })
+      .reduce((a, s) => a + s.duration, 0);
+    const sessionsCount = state.sessions.length;
+
+    $('pvPoints').textContent = String(totalPoints);
+    $('pvBest').textContent = String(bestStreak);
+    $('pvToday').textContent = String(curStreak);
+    $('pvMonth').textContent = fmtHM(monthSecs);
+    $('pvCrystals').textContent = String(crystals);
+    $('pvStreak').textContent = String(curStreak);
+    $('pvWeek').textContent = fmtHM(totalSecs);
+    $('pvSessions').textContent = String(sessionsCount);
+    statsEl.hidden = false;
+    divEl.hidden = false;
+    renderAchievements(achContainer, unlockedAch);
+    achWrap.hidden = false;
+  } else {
+    const s = await loadFriendStats(friendId);
+    if (s && f.privacy_show_subjects !== false) {
     $('pvPoints').textContent = String(s.total_points ?? 0);
+    $('pvBest').textContent = String(s.best_streak ?? 0);
+    $('pvToday').textContent = String(s.streak ?? 0);
+    $('pvMonth').textContent = '—';
+    $('pvCrystals').textContent = '—';
     $('pvStreak').textContent = String(s.streak ?? 0);
     $('pvWeek').textContent = fmtHM(s.week_seconds ?? 0);
     $('pvSessions').textContent = String(s.total_sessions ?? 0);
     statsEl.hidden = false;
     divEl.hidden = false;
+    if (s.achievements && Array.isArray(s.achievements)) {
+      renderAchievements(achContainer, new Set(s.achievements));
+      achWrap.hidden = false;
+    }
   }
+}
 }
 
 $('profileViewCloseBtn').addEventListener('click', closeProfileModal);
 $('profileModal').addEventListener('click', e => {
   if (e.target === $('profileModal')) closeProfileModal();
+});
+$('menuMyProfile').addEventListener('click', () => {
+  if (sb.user) openProfileModal(sb.user.id);
+  $('userMenu').hidden = true;
 });
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') closeProfileModal();
@@ -3706,6 +3881,7 @@ document.addEventListener('visibilitychange', () => {
 
 /* ================= Render geral / boot ================= */
 function renderAll() {
+  updateAchievements();
   renderMetrics();
   renderHistory();
   renderFeed();
@@ -3721,6 +3897,7 @@ loadAppearance();
 loadPrivacy();
 loadProfile();
 loadRewards();
+loadAchievements();
 initCloud();
 initSettingsUI();
 initMiniTimer();
