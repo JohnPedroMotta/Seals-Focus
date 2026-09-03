@@ -16,7 +16,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3/dist/tabler-icons.min.css" />
   </noscript>
-  <link rel="stylesheet" href="style.css?v=60" />
+  <link rel="stylesheet" href="style.css?v=61" />
   <!-- Anti-bfcache + popup auto-close -->
   <script>
     window.addEventListener('pageshow', function(e) {
@@ -26,7 +26,7 @@
   </script>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script defer src="config.js?v=4"></script>
-  <script defer src="script.js?v=91"></script>
+  <script defer src="script.js?v=92"></script>
 </head>
 <body>
 
@@ -325,8 +325,9 @@
 
     <!-- ===================== VISÃO: AJUSTES ===================== -->
     <section class="view" id="view-settings" hidden>
+      <div class="settings-grid">
 
-      <section class="card" id="settingsProfileCard" hidden>
+      <section class="card settings-card span-2" id="settingsProfileCard" hidden>
         <button type="button" class="card-head card-collapse-head" id="profileCardToggle" aria-expanded="true">
           <h3 class="panel-title">Personalizar perfil</h3>
           <i class="ti ti-chevron-down card-collapse-chevron"></i>
@@ -400,11 +401,45 @@
             <span class="toggle-slider"></span>
           </label>
         </div>
+        </div>
+      </section>
 
-        <!-- Conta -->
-        <div class="profile-account-section" id="accountSection" hidden>
-          <div class="profile-section-divider"></div>
+      <section class="card settings-card" id="settingsAppearanceCard">
+        <div class="card-head">
+          <h3 class="panel-title">Aparência</h3>
+        </div>
+        <div class="form-group">
+          <label>Tema</label>
+          <div class="seg-row" id="themeSeg">
+            <button type="button" class="btn btn-sm seg-btn active" data-theme="dark">Escuro</button>
+            <button type="button" class="btn btn-sm seg-btn" data-theme="light">Claro</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Cor de destaque</label>
+          <div class="swatch-row" id="swatchRow"></div>
+        </div>
+      </section>
 
+      <section class="card settings-card" id="settingsGoalCard">
+        <div class="card-head">
+          <h3 class="panel-title">Metas</h3>
+        </div>
+        <div class="form-group">
+          <label for="goalInput">Meta diária (minutos)</label>
+          <input type="number" id="goalInput" min="5" max="720" step="5" inputmode="numeric" placeholder="30" />
+          <p class="field-hint">Usada na tira semanal e no card "Hoje".</p>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-primary btn-sm" id="saveGoalBtn">Salvar meta</button>
+        </div>
+      </section>
+
+      <section class="card settings-card span-2" id="settingsAccountCard" hidden>
+        <div class="card-head">
+          <h3 class="panel-title">Conta</h3>
+        </div>
+        <div class="profile-account-section" id="accountSection">
           <div class="profile-account-list">
             <div class="profile-account-row">
               <div class="profile-account-left">
@@ -469,41 +504,9 @@
             </div>
           </div>
         </div>
-        </div>
       </section>
 
-      <section class="card" id="settingsAppearanceCard">
-        <div class="card-head">
-          <h3 class="panel-title">Aparência</h3>
-        </div>
-        <div class="form-group">
-          <label>Tema</label>
-          <div class="seg-row" id="themeSeg">
-            <button type="button" class="btn btn-sm seg-btn active" data-theme="dark">Escuro</button>
-            <button type="button" class="btn btn-sm seg-btn" data-theme="light">Claro</button>
-          </div>
-        </div>
-        <div class="form-group">
-          <label>Cor de destaque</label>
-          <div class="swatch-row" id="swatchRow"></div>
-        </div>
-      </section>
-
-      <section class="card" id="settingsGoalCard">
-        <div class="card-head">
-          <h3 class="panel-title">Metas</h3>
-        </div>
-        <div class="form-group">
-          <label for="goalInput">Meta diária (minutos)</label>
-          <input type="number" id="goalInput" min="5" max="720" step="5" inputmode="numeric" placeholder="30" />
-          <p class="field-hint">Usada na tira semanal e no card "Hoje".</p>
-        </div>
-        <div class="modal-actions">
-          <button class="btn btn-primary btn-sm" id="saveGoalBtn">Salvar meta</button>
-        </div>
-      </section>
-
-      <section class="card" id="settingsDataCard">
+      <section class="card settings-card" id="settingsDataCard">
         <div class="card-head">
           <h3 class="panel-title">Dados</h3>
         </div>
@@ -513,7 +516,7 @@
         </div>
       </section>
 
-      <section class="card" id="feedbackCard">
+      <section class="card settings-card" id="feedbackCard">
         <div class="card-head">
           <h3 class="panel-title">Feedback</h3>
         </div>
@@ -527,6 +530,7 @@
           <button class="btn btn-primary btn-sm" id="sendFeedbackBtn"><i class="ti ti-send"></i> Enviar feedback</button>
         </div>
       </section>
+      </div>
     </section>
 
     <!-- ===================== VISÃO: ADMIN ===================== -->

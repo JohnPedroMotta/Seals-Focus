@@ -366,6 +366,7 @@ function setCloudUser(user) {
     $('settingsAppearanceCard').hidden = false;
     $('settingsGoalCard').hidden = false;
     $('settingsDataCard').hidden = false;
+    $('settingsAccountCard').hidden = false;
     loadProfile();
     pullProfile().then(() => {
       syncProfileUI();
@@ -384,6 +385,7 @@ function setCloudUser(user) {
     $('settingsAppearanceCard').hidden = true;
     $('settingsGoalCard').hidden = true;
     $('settingsDataCard').hidden = true;
+    $('settingsAccountCard').hidden = true;
     profile = { displayName: '', username: '', avatarUrl: '', usernameUpdatedAt: null, bio: '' };
     syncProfileUI();
   }
