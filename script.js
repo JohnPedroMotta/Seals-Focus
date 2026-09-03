@@ -680,7 +680,6 @@ function startTimer() {
   if (timer.running) return;
   timer.running = true;
   timer.startedAt = Date.now();
-  timer.accumulated = 0;
   saveTimer();
   startTick();
   syncTimerUI();
