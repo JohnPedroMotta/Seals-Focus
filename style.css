@@ -351,11 +351,22 @@ button.foot-name:hover { text-decoration: underline; }
   grid-template-columns: 1fr;
   gap: 18px;
   width: 100%;
-  align-items: start;
 }
 
 .settings-grid .card {
   margin: 0;
+}
+
+.settings-grid .settings-card {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Alinha as ações (botões) na base dos cards, deixando os pares simétricos */
+.settings-grid .settings-card .modal-actions,
+.settings-grid .settings-card .row-btns {
+  margin-top: auto;
+  padding-top: 14px;
 }
 
 @media (min-width: 860px) {
