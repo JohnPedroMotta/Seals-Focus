@@ -368,6 +368,34 @@ button.foot-name:hover { text-decoration: underline; }
   flex-wrap: wrap;
 }
 
+.card-collapse-head {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: none;
+  border: none;
+  margin-bottom: 14px;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.card-collapse-chevron {
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  transition: transform 0.22s ease;
+}
+
+.card-collapse-head[aria-expanded="false"] .card-collapse-chevron {
+  transform: rotate(-90deg);
+}
+
+.profile-card-body[hidden] {
+  display: none;
+}
+
 .panel-title {
   font-family: 'Space Grotesk', 'Inter', sans-serif;
   font-size: 1.05rem;

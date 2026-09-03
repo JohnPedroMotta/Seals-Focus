@@ -3790,6 +3790,16 @@ function initSettingsUI() {
 
   $('sendFeedbackBtn').addEventListener('click', sendFeedback);
 
+  const profileCardToggle = $('profileCardToggle');
+  if (profileCardToggle) {
+    profileCardToggle.addEventListener('click', () => {
+      const body = $('profileCardBody');
+      const open = body.hidden;
+      body.hidden = !open;
+      profileCardToggle.setAttribute('aria-expanded', String(!body.hidden));
+    });
+  }
+
   syncSettingsUI();
 }
 
