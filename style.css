@@ -1325,6 +1325,79 @@ select option { background-color: var(--modal-bg); }
   line-height: 1.2;
 }
 
+.profile-achievements-section {
+  padding-top: 2px;
+}
+
+.profile-achievements-pick {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.ach-pick {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-align: left;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+  cursor: pointer;
+  font: inherit;
+  color: var(--text-main);
+  transition: border-color 0.18s, background 0.18s;
+}
+
+.ach-pick:hover {
+  border-color: var(--accent-color);
+}
+
+.ach-pick.on {
+  border-color: var(--accent-color);
+  background: rgba(240, 166, 60, 0.08);
+}
+
+.ach-pick-medal {
+  flex-shrink: 0;
+  width: 26px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ach-pick-medal .ach-medal {
+  width: 26px;
+  height: 30px;
+}
+
+.ach-pick-name {
+  flex: 1;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.2;
+  min-width: 0;
+}
+
+.ach-pick-check {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.ach-pick.on .ach-pick-check {
+  color: var(--accent-color);
+}
+
 .friend-view {
   flex-shrink: 0;
 }

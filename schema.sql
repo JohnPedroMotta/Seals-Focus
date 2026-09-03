@@ -1143,6 +1143,18 @@ begin
   end if;
 end $$;
 
+-- Adicionar coluna show_achievements no profiles (conquistas que o usuário
+-- escolheu exibir no perfil; NULL = não configurado = mostra todas as
+-- desbloqueadas; vazio [] = não mostra nenhuma)
+do $$
+begin
+  if not exists (select 1 from information_schema.columns
+                 where table_schema = 'public' and table_name = 'profiles'
+                   and column_name = 'show_achievements') then
+    alter table public.profiles add column show_achievements text[];
+  end if;
+end $$;
+
 -- ============================================================
 --  ESTATÍSTICAS AGREGADAS DE UM AMIGO (só para quem é amigo).
 --  Retorna pontos, sessões, tempo da semana, tempo de hoje,
@@ -1209,10 +1221,18 @@ begin
                               where user_id = friend_id and date_iso >= date_trunc('day', now())), 0);
   streak := _streak;
   best_streak := _best_streak;
-  achievements := (
-    select coalesce(array_agg(a.achievement_id), '{}'::text[])
-      from public.achievements a where a.user_id = friend_id
-  );
+  achievements := case
+    when (select b.show_achievements from public.profiles b where b.user_id = friend_id) is null then
+      (select coalesce(array_agg(a.achievement_id), '{}'::text[])
+         from public.achievements a where a.user_id = friend_id)
+    else
+      (select coalesce(array_agg(a.achievement_id), '{}'::text[])
+         from public.achievements a
+         where a.user_id = friend_id
+           and a.achievement_id = any(
+             (select b.show_achievements from public.profiles b where b.user_id = friend_id)
+           ))
+  end;
   return next;
 end;
 $$;

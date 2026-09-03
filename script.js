@@ -35,6 +35,8 @@ const SIGNUP_BONUS = 200;
 const ACH_KEY = 'foco.ach.v1';
 let bestStreak = 0;                 // maior sequência já alcançada
 let unlockedAch = new Set();        // ids de conquistas desbloqueadas
+let shownAch = new Set();           // ids de conquistas escolhidas para aparecer no perfil
+let shownAchLoaded = false;         // evita sobrescrever escolha local na 1ª sincronização
 
 const ACHIEVEMENTS = [
   { id: 'first_session', name: 'Primeiros Passos', desc: 'Registre sua primeira sessão de estudo', tier: 'bronze', check: s => s.sessions >= 1 },
@@ -58,18 +60,37 @@ function achKey() {
   return sb && sb.user ? `${ACH_KEY}.u.${sb.user.id}` : ACH_KEY;
 }
 function loadAchievements() {
+  shownAchLoaded = false;
   try {
     const raw = localStorage.getItem(achKey());
     if (!raw) return;
     const p = JSON.parse(raw);
     if (Number.isFinite(p.bestStreak)) bestStreak = p.bestStreak;
     if (Array.isArray(p.unlocked)) unlockedAch = new Set(p.unlocked);
+    if (Array.isArray(p.shown)) {
+      shownAch = new Set(p.shown.filter(id => ACHIEVEMENTS.some(a => a.id === id)));
+      shownAchLoaded = true;
+    }
   } catch { /* ignora */ }
+  // Preenchimento padrão: se o usuário ainda não configurou (sem `shown` salvo),
+  // mostra todas as desbloqueadas por padrão.
+  if (!shownAchLoaded) {
+    shownAch = new Set([...unlockedAch].filter(id => ACHIEVEMENTS.some(a => a.id === id)));
+  }
 }
 function saveAchievements() {
   try {
-    localStorage.setItem(achKey(), JSON.stringify({ bestStreak, unlocked: [...unlockedAch] }));
+    localStorage.setItem(achKey(), JSON.stringify({ bestStreak, unlocked: [...unlockedAch], shown: [...shownAch] }));
   } catch { /* ignora */ }
+}
+function pushShownAch() {
+  if (!sb.client || !sb.user) return;
+  try {
+    sb.client.from('profiles')
+      .update({ show_achievements: [...shownAch] })
+      .eq('user_id', sb.user.id)
+      .then(({ error }) => { if (error) console.error('pushShownAch:', error.message); });
+  } catch (e) { console.error('pushShownAch:', e); }
 }
 
 /* ================= Pontos do usuário (user_points) ================= */
@@ -317,9 +338,10 @@ function setCloudUser(user) {
   // troca o cache local para o namespace do usuário logado
   storeKey = user ? `${DATA_KEY}.u.${user.id}` : DATA_KEY;
   state = defaultState();
-  loadState();
-
   sb.user = user;
+  loadState();
+  loadAchievements();
+
   if (user) {
     resetLocalTimer();          // não deixa cronômetro de outra conta vazar no aparelho
     loadPendingRequests();
@@ -1087,12 +1109,14 @@ function updateAchievements() {
   ACHIEVEMENTS.forEach(a => {
     if (!unlockedAch.has(a.id) && a.check(stats)) {
       unlockedAch.add(a.id);
+      shownAch.add(a.id);
       newly.push(a);
     }
   });
   if (newly.length > 0) {
     saveAchievements();
     pushAchievements(newly.map(a => a.id));
+    pushShownAch();
     toast(`${newly.length > 1 ? 'Novas conquistas' : 'Nova conquista'} desbloqueada${newly.length > 1 ? 's' : ''}! 🏅 ${newly.map(a => a.name).join(', ')}`, 'success');
   } else if (cur > 0) {
     saveAchievements();
@@ -1125,18 +1149,19 @@ function medalSVG(tier, unlocked) {
   </svg>`;
 }
 
-function renderAchievements(container, unlocked /* Set|null */) {
+function renderAchievements(container, showSet /* Set|null */) {
   if (!container) return;
   container.innerHTML = '';
-  const has = unlocked ? (id => unlocked.has(id)) : (id => unlockedAch.has(id));
-  ACHIEVEMENTS.forEach(a => {
+  const ids = showSet || shownAch;
+  const shown = ACHIEVEMENTS.filter(a => ids.has(a.id));
+  if (!shown.length) return;
+  shown.forEach(a => {
     const el = document.createElement('div');
-    const on = has(a.id);
-    el.className = 'ach-item' + (on ? ' unlocked' : ' locked');
+    el.className = 'ach-item unlocked';
     el.title = `${a.name} — ${a.desc}`;
     const icon = document.createElement('div');
     icon.className = 'ach-icon';
-    icon.innerHTML = medalSVG(a.tier, on);
+    icon.innerHTML = medalSVG(a.tier, true);
     const name = document.createElement('span');
     name.className = 'ach-name';
     name.textContent = a.name;
@@ -1146,6 +1171,40 @@ function renderAchievements(container, unlocked /* Set|null */) {
     el.append(icon, name, desc);
     container.appendChild(el);
   });
+}
+
+/* Renderiza a escolha das conquistas exibidas no perfil (painel de Ajustes).
+   Mostra apenas as desbloqueadas; o usuário marca quais quer exibir. */
+function renderShownAchievementPicker() {
+  const box = $('profileAchievementsPick');
+  if (!box) return;
+  box.innerHTML = '';
+  const unlocked = ACHIEVEMENTS.filter(a => unlockedAch.has(a.id));
+  if (!unlocked.length) {
+    box.innerHTML = '<p class="field-hint">Você ainda não desbloqueou nenhuma conquista. Complete sessões e sequências para ganhar medalhas.</p>';
+    return;
+  }
+  unlocked.forEach(a => {
+    const on = shownAch.has(a.id);
+    const wrap = document.createElement('button');
+    wrap.type = 'button';
+    wrap.className = 'ach-pick' + (on ? ' on' : '');
+    wrap.title = a.name + ' — ' + a.desc;
+    wrap.dataset.id = a.id;
+    wrap.innerHTML = `<span class="ach-pick-medal">${medalSVG(a.tier, on)}</span>
+      <span class="ach-pick-name">${escapeHtml(a.name)}</span>
+      <span class="ach-pick-check"><i class="ti ${on ? 'ti-check' : 'ti-plus'}"></i></span>`;
+    wrap.addEventListener('click', () => toggleShownAchievement(a.id));
+    box.appendChild(wrap);
+  });
+}
+
+function toggleShownAchievement(id) {
+  if (shownAch.has(id)) shownAch.delete(id); else shownAch.add(id);
+  saveAchievements();
+  pushShownAch();
+  renderShownAchievementPicker();
+  toast(shownAch.has(id) ? 'Conquista adicionada ao perfil.' : 'Conquista removida do perfil.');
 }
 
 function renderMetrics() {
@@ -2142,6 +2201,11 @@ function applyCloudPrefs(r) {
     privacy.showSubjects = r.privacy_show_subjects;
     localStorage.setItem('foco.privacy.v1', r.privacy_show_subjects ? '1' : '0');
     $('privacyShowSubjects').checked = r.privacy_show_subjects;
+  }
+  if (Array.isArray(r.show_achievements)) {
+    shownAch = new Set(r.show_achievements.filter(id => ACHIEVEMENTS.some(a => a.id === id)));
+    shownAchLoaded = true;
+    saveAchievements();
   }
 }
 
@@ -3386,27 +3450,27 @@ async function openProfileModal(friendId) {
     $('pvSessions').textContent = String(sessionsCount);
     statsEl.hidden = false;
     divEl.hidden = false;
-    renderAchievements(achContainer, unlockedAch);
-    achWrap.hidden = false;
+    renderAchievements(achContainer, shownAch);
+    achWrap.hidden = shownAch.size === 0;
   } else {
     const s = await loadFriendStats(friendId);
     if (s && f.privacy_show_subjects !== false) {
-    $('pvPoints').textContent = String(s.total_points ?? 0);
-    $('pvBest').textContent = String(s.best_streak ?? 0);
-    $('pvToday').textContent = String(s.streak ?? 0);
-    $('pvMonth').textContent = '—';
-    if ($('pvCrystalsTile')) $('pvCrystalsTile').hidden = true; // cristais são privados
-    $('pvStreak').textContent = String(s.streak ?? 0);
-    $('pvWeek').textContent = fmtHM(s.week_seconds ?? 0);
-    $('pvSessions').textContent = String(s.total_sessions ?? 0);
-    statsEl.hidden = false;
-    divEl.hidden = false;
-    if (s.achievements && Array.isArray(s.achievements)) {
-      renderAchievements(achContainer, new Set(s.achievements));
-      achWrap.hidden = false;
+      $('pvPoints').textContent = String(s.total_points ?? 0);
+      $('pvBest').textContent = String(s.best_streak ?? 0);
+      $('pvToday').textContent = String(s.streak ?? 0);
+      $('pvMonth').textContent = '—';
+      if ($('pvCrystalsTile')) $('pvCrystalsTile').hidden = true; // cristais são privados
+      $('pvStreak').textContent = String(s.streak ?? 0);
+      $('pvWeek').textContent = fmtHM(s.week_seconds ?? 0);
+      $('pvSessions').textContent = String(s.total_sessions ?? 0);
+      statsEl.hidden = false;
+      divEl.hidden = false;
+      if (s.achievements && Array.isArray(s.achievements)) {
+        renderAchievements(achContainer, new Set(s.achievements));
+        achWrap.hidden = s.achievements.length === 0;
+      }
     }
   }
-}
 }
 
 $('profileViewCloseBtn').addEventListener('click', closeProfileModal);
@@ -3681,6 +3745,7 @@ $('deleteAccountBtn').addEventListener('click', async () => {
 function syncSettingsUI() {
   $('goalInput').value = Math.round(dailyGoalSecs / 60);
   renderProfileBorders();
+  renderShownAchievementPicker();
 }
 
 function initSettingsUI() {
