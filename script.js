@@ -1028,6 +1028,9 @@ document.querySelectorAll('[data-goto]').forEach(btn =>
 const $adminSettingsBtn = $('adminSettingsBtn');
 if ($adminSettingsBtn) $adminSettingsBtn.addEventListener('click', () => switchView('admin'));
 
+const $adminBackBtn = $('adminBackBtn');
+if ($adminBackBtn) $adminBackBtn.addEventListener('click', () => switchView('settings'));
+
 /* ================= Botões do cronômetro ================= */
 let resetArmed = false;
 
