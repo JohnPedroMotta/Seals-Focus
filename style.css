@@ -180,7 +180,7 @@ main {
   width: 100%;
   max-width: 880px;
   margin: 0 auto;
-  padding: 34px 36px 80px;
+  padding: 40px 36px 40px;
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -459,7 +459,7 @@ button.foot-name:hover { text-decoration: underline; }
 
 .grid-2 {
   display: grid;
-  grid-template-columns: 1.4fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 20px;
 }
 
@@ -598,7 +598,7 @@ button.foot-name:hover { text-decoration: underline; }
 /* ---------- Métricas ---------- */
 .dashboard {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: 1fr;
   gap: 18px;
   padding: 22px;
 }
@@ -607,11 +607,15 @@ button.foot-name:hover { text-decoration: underline; }
   display: flex;
   flex-direction: column;
   gap: 4px;
-  border-right: 1px solid var(--border-color);
-  padding-right: 18px;
 }
 
-.metric-card:last-child { border-right: none; padding-right: 0; }
+/* Simetria: grade fixa 3x2 no desktop com divisores verticais e horizontais */
+@media (min-width: 860px) {
+  .dashboard { grid-template-columns: repeat(3, 1fr); }
+  .metric-card:nth-child(3n) { border-right: none; padding-right: 0; }
+  .metric-card:not(:nth-child(3n)) { border-right: 1px solid var(--border-color); padding-right: 18px; }
+  .metric-card:nth-child(-n+3) { border-bottom: 1px solid var(--border-color); padding-bottom: 14px; }
+}
 
 .metric-label {
   font-size: 0.72rem;
@@ -634,7 +638,7 @@ button.foot-name:hover { text-decoration: underline; }
 .highlight { color: var(--accent-color); }
 
 /* ---------- Tira da Semana ---------- */
-.week-strip { padding: 18px 22px; }
+.week-strip { padding: 22px; }
 
 .strip-row {
   display: flex;
