@@ -2066,10 +2066,10 @@ $('amSaveBtn').addEventListener('click', () => {
 
 /* ================= Autenticação ================= */
 function goToLogin() {
-  window.location.href = 'login.html';
+  window.location.href = '/login';
 }
 function goToApp() {
-  window.location.href = 'index.html';
+  window.location.href = '/';
 }
 
 $('donateBtn').addEventListener('click', e => {

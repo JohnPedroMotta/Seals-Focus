@@ -47,7 +47,7 @@ function initAuth() {
 
   sbClient.auth.getSession().then(({ data }) => {
     if (data?.session?.user) {
-      window.location.href = 'index.html';
+      window.location.href = '/';
     }
   });
 
@@ -94,7 +94,7 @@ $('authSubmitBtn').addEventListener('click', async () => {
       toast('Conta criada! Confirme no e-mail que enviamos antes de entrar.', 'success');
     } else {
       toast(`Bem-vindo, ${email}!`, 'success');
-      setTimeout(() => { window.location.href = 'index.html'; }, 500);
+      setTimeout(() => { window.location.href = '/'; }, 500);
     }
   } catch (e) {
     const msg = (e.message || '').toLowerCase();
