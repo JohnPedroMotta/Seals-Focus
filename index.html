@@ -16,7 +16,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3/dist/tabler-icons.min.css" />
   </noscript>
-  <link rel="stylesheet" href="style.css?v=57" />
+  <link rel="stylesheet" href="style.css?v=58" />
   <!-- Anti-bfcache + popup auto-close -->
   <script>
     window.addEventListener('pageshow', function(e) {
@@ -26,7 +26,7 @@
   </script>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script defer src="config.js?v=4"></script>
-  <script defer src="script.js?v=88"></script>
+  <script defer src="script.js?v=89"></script>
 </head>
 <body>
 
@@ -838,6 +838,7 @@
     <div class="modal card profile-view-modal">
       <div class="modal-header">
         <h2>Perfil</h2>
+        <button class="modal-close" id="profileViewCloseBtn" type="button" aria-label="Fechar"><i class="ti ti-x"></i></button>
       </div>
       <div class="profile-view-hero" id="profileViewHero">
         <div class="profile-view-avatar" id="profileViewAvatar">?</div>
@@ -865,7 +866,7 @@
             <span class="profile-view-stat-value" id="pvMonth">0h</span>
             <span class="profile-view-stat-label">no mês</span>
           </div>
-          <div class="profile-view-stat">
+          <div class="profile-view-stat" id="pvCrystalsTile">
             <span class="profile-view-stat-value" id="pvCrystals">0</span>
             <span class="profile-view-stat-label">cristais</span>
           </div>
@@ -886,9 +887,6 @@
           <div class="profile-achievements-title">Conquistas</div>
           <div class="profile-achievements" id="profileAchievements"></div>
         </div>
-      <div class="modal-actions">
-        <button class="btn" id="profileViewCloseBtn">Fechar</button>
-      </div>
     </div>
   </div>
 

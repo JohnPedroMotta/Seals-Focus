@@ -37,21 +37,21 @@ let bestStreak = 0;                 // maior sequência já alcançada
 let unlockedAch = new Set();        // ids de conquistas desbloqueadas
 
 const ACHIEVEMENTS = [
-  { id: 'first_session', name: 'Primeiros Passos', desc: 'Registre sua primeira sessão de estudo', icon: '🌱', check: s => s.sessions >= 1 },
-  { id: 'first_goal',    name: 'Meta Alcançada',   desc: 'Cumpra sua meta diária pela primeira vez', icon: '✅', check: s => s.goalsMet >= 1 },
-  { id: 'streak_3',      name: '3 Dias',           desc: 'Mantenha uma sequência de 3 dias', icon: '🔥', check: s => s.bestStreak >= 3 },
-  { id: 'streak_7',      name: '1 Semana',         desc: 'Sequência de estudo de 7 dias', icon: '📅', check: s => s.bestStreak >= 7 },
-  { id: 'streak_14',     name: '2 Semanas',        desc: 'Sequência de estudo de 14 dias', icon: '🎯', check: s => s.bestStreak >= 14 },
-  { id: 'streak_21',     name: '3 Semanas',        desc: 'Sequência de estudo de 21 dias', icon: '🏆', check: s => s.bestStreak >= 21 },
-  { id: 'streak_30',     name: '1 Mês',            desc: 'Sequência de estudo de 30 dias', icon: '🥇', check: s => s.bestStreak >= 30 },
-  { id: 'streak_60',     name: '2 Meses',          desc: 'Sequência de estudo de 60 dias', icon: '💎', check: s => s.bestStreak >= 60 },
-  { id: 'streak_90',     name: '3 Meses',          desc: 'Sequência de estudo de 90 dias', icon: '👑', check: s => s.bestStreak >= 90 },
-  { id: 'hours_10',      name: '10 Horas',         desc: 'Acumule 10 horas de estudo no total', icon: '⏳', check: s => s.totalSecs >= 10 * 3600 },
-  { id: 'hours_50',      name: '50 Horas',         desc: 'Acumule 50 horas de estudo no total', icon: '🧭', check: s => s.totalSecs >= 50 * 3600 },
-  { id: 'hours_100',     name: '100 Horas',        desc: 'Acumule 100 horas de estudo no total', icon: '🚀', check: s => s.totalSecs >= 100 * 3600 },
-  { id: 'sessions_10',   name: '10 Sessões',       desc: 'Complete 10 sessões de estudo', icon: '📚', check: s => s.sessions >= 10 },
-  { id: 'sessions_50',   name: '50 Sessões',       desc: 'Complete 50 sessões de estudo', icon: '🎓', check: s => s.sessions >= 50 },
-  { id: 'sessions_100',  name: '100 Sessões',      desc: 'Complete 100 sessões de estudo', icon: '🏅', check: s => s.sessions >= 100 }
+  { id: 'first_session', name: 'Primeiros Passos', desc: 'Registre sua primeira sessão de estudo', tier: 'bronze', check: s => s.sessions >= 1 },
+  { id: 'first_goal',    name: 'Meta Alcançada',   desc: 'Cumpra sua meta diária pela primeira vez', tier: 'bronze', check: s => s.goalsMet >= 1 },
+  { id: 'streak_3',      name: '3 Dias',           desc: 'Mantenha uma sequência de 3 dias', tier: 'bronze', check: s => s.bestStreak >= 3 },
+  { id: 'streak_7',      name: '1 Semana',         desc: 'Sequência de estudo de 7 dias', tier: 'silver', check: s => s.bestStreak >= 7 },
+  { id: 'streak_14',     name: '2 Semanas',        desc: 'Sequência de estudo de 14 dias', tier: 'silver', check: s => s.bestStreak >= 14 },
+  { id: 'streak_21',     name: '3 Semanas',        desc: 'Sequência de estudo de 21 dias', tier: 'gold', check: s => s.bestStreak >= 21 },
+  { id: 'streak_30',     name: '1 Mês',            desc: 'Sequência de estudo de 30 dias', tier: 'gold', check: s => s.bestStreak >= 30 },
+  { id: 'streak_60',     name: '2 Meses',          desc: 'Sequência de estudo de 60 dias', tier: 'gem', check: s => s.bestStreak >= 60 },
+  { id: 'streak_90',     name: '3 Meses',          desc: 'Sequência de estudo de 90 dias', tier: 'gem', check: s => s.bestStreak >= 90 },
+  { id: 'hours_10',      name: '10 Horas',         desc: 'Acumule 10 horas de estudo no total', tier: 'bronze', check: s => s.totalSecs >= 10 * 3600 },
+  { id: 'hours_50',      name: '50 Horas',         desc: 'Acumule 50 horas de estudo no total', tier: 'silver', check: s => s.totalSecs >= 50 * 3600 },
+  { id: 'hours_100',     name: '100 Horas',        desc: 'Acumule 100 horas de estudo no total', tier: 'gold', check: s => s.totalSecs >= 100 * 3600 },
+  { id: 'sessions_10',   name: '10 Sessões',       desc: 'Complete 10 sessões de estudo', tier: 'bronze', check: s => s.sessions >= 10 },
+  { id: 'sessions_50',   name: '50 Sessões',       desc: 'Complete 50 sessões de estudo', tier: 'silver', check: s => s.sessions >= 50 },
+  { id: 'sessions_100',  name: '100 Sessões',      desc: 'Complete 100 sessões de estudo', tier: 'gold', check: s => s.sessions >= 100 }
 ];
 
 function achKey() {
@@ -321,6 +321,7 @@ function setCloudUser(user) {
 
   sb.user = user;
   if (user) {
+    resetLocalTimer();          // não deixa cronômetro de outra conta vazar no aparelho
     loadPendingRequests();
     subscribeTimerSync();
     loadTimerSync();
@@ -772,6 +773,17 @@ function resetTimer(clearStorage = true) {
   pushTimerSync(true);
 }
 
+/* Zera APENAS o cronômetro local (não envia nada à nuvem).
+   Usado ao trocar de conta: evita que o timer pausado de um usuário
+   "vaze" para a próxima conta no mesmo aparelho. */
+function resetLocalTimer() {
+  timer = { running: false, accumulated: 0, startedAt: null };
+  stopTick();
+  try { localStorage.removeItem(TIMER_KEY); } catch { /* ignora */ }
+  renderClock();
+  syncTimerUI();
+}
+
 function syncTimerUI() {
   const display = $('timer');
   const hint = $('timerHint');
@@ -1088,6 +1100,31 @@ function updateAchievements() {
 }
 
 /* Monta o grid de conquistas. `unlocked` = Set de ids desbloqueados (ou null p/ usar local). */
+const MEDAL_TIER_COLORS = {
+  bronze: { disk: '#cd7f32', inner: '#a8622a', rib: '#8a5a2b', light: '#e8b273' },
+  silver: { disk: '#b8c0c8', inner: '#9aa4ad', rib: '#7d8790', light: '#d8e0e8' },
+  gold:   { disk: '#e6b72e', inner: '#d19a12', rib: '#a67c10', light: '#f5d76e' },
+  gem:    { disk: '#5aa7f0', inner: '#3d8be0', rib: '#2b66a8', light: '#a6d4ff' }
+};
+
+function medalSVG(tier, unlocked) {
+  const c = MEDAL_TIER_COLORS[tier] || MEDAL_TIER_COLORS.bronze;
+  const on = unlocked;
+  const disk = on ? c.disk : '#3a3f49';
+  const inner = on ? c.inner : '#2c3038';
+  const rib = on ? c.rib : '#262a31';
+  const light = on ? c.light : '#464c57';
+  const op = on ? '1' : '0.4';
+  return `<svg class="ach-medal${on ? '' : ' locked'}" viewBox="0 0 40 46" aria-hidden="true">
+    <path d="M9 1 L16 15 L2 20 Z" fill="${rib}" opacity="${op}"/>
+    <path d="M31 1 L24 15 L38 20 Z" fill="${rib}" opacity="${op}"/>
+    <circle cx="20" cy="29" r="13.5" fill="${disk}" opacity="${op}"/>
+    <circle cx="20" cy="29" r="10.5" fill="${inner}" opacity="${op}"/>
+    <circle cx="20" cy="28.6" r="6.8" fill="none" stroke="${light}" stroke-width="1.1" opacity="${op}"/>
+    <path d="M20 24.6 l1.4 3 3.2 .4 -2.4 2.2 .6 3.2 -2.8 -1.7 -2.8 1.7 .6 -3.2 -2.4 -2.2 3.2 -.4 z" fill="${light}" opacity="${op}"/>
+  </svg>`;
+}
+
 function renderAchievements(container, unlocked /* Set|null */) {
   if (!container) return;
   container.innerHTML = '';
@@ -1099,7 +1136,7 @@ function renderAchievements(container, unlocked /* Set|null */) {
     el.title = `${a.name} — ${a.desc}`;
     const icon = document.createElement('div');
     icon.className = 'ach-icon';
-    icon.textContent = on ? a.icon : '🔒';
+    icon.innerHTML = medalSVG(a.tier, on);
     const name = document.createElement('span');
     name.className = 'ach-name';
     name.textContent = a.name;
@@ -3343,6 +3380,7 @@ async function openProfileModal(friendId) {
     $('pvToday').textContent = String(curStreak);
     $('pvMonth').textContent = fmtHM(monthSecs);
     $('pvCrystals').textContent = String(crystals);
+    if ($('pvCrystalsTile')) $('pvCrystalsTile').hidden = false;
     $('pvStreak').textContent = String(curStreak);
     $('pvWeek').textContent = fmtHM(totalSecs);
     $('pvSessions').textContent = String(sessionsCount);
@@ -3357,7 +3395,7 @@ async function openProfileModal(friendId) {
     $('pvBest').textContent = String(s.best_streak ?? 0);
     $('pvToday').textContent = String(s.streak ?? 0);
     $('pvMonth').textContent = '—';
-    $('pvCrystals').textContent = '—';
+    if ($('pvCrystalsTile')) $('pvCrystalsTile').hidden = true; // cristais são privados
     $('pvStreak').textContent = String(s.streak ?? 0);
     $('pvWeek').textContent = fmtHM(s.week_seconds ?? 0);
     $('pvSessions').textContent = String(s.total_sessions ?? 0);

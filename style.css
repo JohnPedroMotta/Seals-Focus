@@ -1003,6 +1003,29 @@ button.foot-name:hover { text-decoration: underline; }
   gap: 10px;
 }
 
+.modal-close {
+  margin-left: auto;
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 1.2rem;
+  line-height: 1;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: color 0.18s, background 0.18s;
+}
+
+.modal-close:hover {
+  color: var(--text-main);
+  background: var(--hover-bg, rgba(128, 128, 128, 0.12));
+}
+
 .modal-duration {
   font-size: 0.85rem;
   color: var(--accent-color);
@@ -1270,10 +1293,23 @@ select option { background-color: var(--modal-bg); }
 }
 
 .ach-icon {
-  font-size: 1.3rem;
   flex-shrink: 0;
-  width: 28px;
-  text-align: center;
+  width: 34px;
+  height: 38px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.ach-medal {
+  width: 34px;
+  height: 38px;
+  display: block;
+  transition: filter 0.18s;
+}
+
+.ach-medal.locked {
+  filter: grayscale(1);
 }
 
 .ach-name {
