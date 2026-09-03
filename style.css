@@ -1392,6 +1392,13 @@ select option { background-color: var(--modal-bg); }
   transition: border-color 0.18s;
 }
 
+.ach-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
 .ach-item.unlocked {
   border-color: var(--accent-color);
   background: rgba(240, 166, 60, 0.06);
@@ -1431,7 +1438,8 @@ select option { background-color: var(--modal-bg); }
 .ach-desc {
   font-size: 0.62rem;
   color: var(--text-muted);
-  line-height: 1.2;
+  line-height: 1.25;
+  overflow-wrap: break-word;
 }
 
 .profile-achievements-section {

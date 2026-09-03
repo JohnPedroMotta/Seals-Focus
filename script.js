@@ -1189,13 +1189,16 @@ function renderAchievements(container, showSet /* Set|null */) {
     const icon = document.createElement('div');
     icon.className = 'ach-icon';
     icon.innerHTML = medalSVG(a.tier, true);
+    const info = document.createElement('div');
+    info.className = 'ach-info';
     const name = document.createElement('span');
     name.className = 'ach-name';
     name.textContent = a.name;
     const desc = document.createElement('span');
     desc.className = 'ach-desc';
     desc.textContent = a.desc;
-    el.append(icon, name, desc);
+    info.append(name, desc);
+    el.append(icon, info);
     container.appendChild(el);
   });
 }
