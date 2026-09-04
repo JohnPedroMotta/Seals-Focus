@@ -853,6 +853,23 @@ function pomoSkipBreak() {
 }
 
 function pomoSetMode(mode) {
+  if (mode === pomoMode) return; // clicou no modo já ativo: nada a fazer
+
+  // Bloqueio: não troca de modo enquanto houver tempo em andamento ou salvo
+  const hasActiveTime = timer.running || elapsedSec() > 0;
+  if (hasActiveTime) {
+    const cur = pomoMode === 'livre' ? 'Livre' : 'Pomodoro';
+    const next = pomoMode === 'livre' ? 'Pomodoro' : 'Livre';
+    toast(`Em ${cur}, você tem tempo em andamento. Salve ou descarte antes de trocar para ${next}.`, '');
+    const wrap = document.querySelector('.pomo-toggle-wrap');
+    if (wrap) {
+      wrap.classList.remove('pomo-toggle-shake');
+      void wrap.offsetWidth; // reinicia a animação
+      wrap.classList.add('pomo-toggle-shake');
+    }
+    return;
+  }
+
   pomoMode = mode;
   document.querySelectorAll('.pomo-toggle').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
   const wrap = document.querySelector('.pomo-toggle-wrap');

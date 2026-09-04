@@ -3170,6 +3170,17 @@ body.light ::selection { color: #fff; }
   transform: translateX(100%);
 }
 
+.pomo-toggle-wrap.pomo-toggle-shake {
+  animation: pomoShake 0.3s ease;
+}
+
+@keyframes pomoShake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  50% { transform: translateX(4px); }
+  75% { transform: translateX(-2px); }
+}
+
 /* ---------- Pomodoro Presets ---------- */
 .pomo-presets {
   display: flex;
