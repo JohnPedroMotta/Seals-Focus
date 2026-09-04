@@ -948,16 +948,12 @@ function resetTimer(clearStorage = true) {
     pomoStopCountdown();
     pomoPhase = 'focus';
     pomoRemaining = pomoFocusMin * 60;
-    $('pomoBreakOverlay').hidden = true;
-    $('timer').classList.remove('pomo-focus', 'pomo-break-state');
+    const overlay = $('pomoBreakOverlay');
+    if (overlay) overlay.hidden = true;
+    const display = $('timer');
+    if (display) display.classList.remove('pomo-focus', 'pomo-break-state');
     renderPomoClock();
   }
-  stopTick();
-  if (clearStorage) localStorage.removeItem(TIMER_KEY);
-  renderClock();
-  syncTimerUI();
-  pushTimerSync(true);
-}
   stopTick();
   if (clearStorage) localStorage.removeItem(TIMER_KEY);
   renderClock();
