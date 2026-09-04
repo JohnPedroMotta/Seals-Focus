@@ -3174,9 +3174,11 @@ async function doExchange() {
       p_rate: EXCHANGE_RATE
     });
     if (error) throw error;
+    // o PostgREST pode devolver array com 1 elemento
+    const d = Array.isArray(data) ? data[0] : data;
     // atualiza saldos locais com o que o servidor confirmou
-    if (data && Number.isFinite(data.total_points)) userPoints = data.total_points;
-    if (data && Number.isFinite(data.total_crystals)) crystals = data.total_crystals;
+    if (d && Number.isFinite(d.total_points)) userPoints = d.total_points;
+    if (d && Number.isFinite(d.total_crystals)) crystals = d.total_crystals;
     localStorage.setItem(UPOINTS_KEY, userPoints);
     input.value = '';
     exchangePreview();
@@ -3185,15 +3187,13 @@ async function doExchange() {
     renderShop();
   } catch (e) {
     console.error('doExchange:', e);
-    const em = (e.message || '').toLowerCase();
-    if (err) {
-      err.textContent = em.includes('insuficientes')
-        ? 'Pontos insuficientes.'
-        : (em.includes('múltipla') ? `Use múltiplos de ${EXCHANGE_RATE} pontos.` : 'Não foi possível fazer a troca.');
-      err.hidden = false;
-    } else {
-      toast('Não foi possível fazer a troca.', 'error');
-    }
+    const em = (e.message || e.error_description || String(e) || '').toLowerCase();
+    const raw = (e && (e.message || e.error_description)) || 'erro desconhecido';
+    const amigavel = em.includes('insuficientes')
+      ? 'Pontos insuficientes.'
+      : (em.includes('múltipla') ? `Use múltiplos de ${EXCHANGE_RATE} pontos.` : raw);
+    if (err) { err.textContent = amigavel; err.hidden = false; }
+    toast('Troca falhou: ' + amigavel, 'error');
   } finally {
     btn.disabled = false;
     btn.textContent = 'Trocar pontos por cristais';
