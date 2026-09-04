@@ -4486,69 +4486,17 @@ function exportJson() {
 const csvCell = v => `"${String(v ?? '').replaceAll('"', '""')}"`;
 
 function exportCsv() {
-  // Gera PDF em vez de CSV - usa impressão para salvar como PDF
-  const sessions = state.sessions;
-  const today = dateKey(new Date());
-  const weekSecs = sessions
-    .filter(s => {
-      const sDate = new Date(s.dateISO);
-      return sDate >= new Date(today - 7 * 86400000);
-    })
-    .reduce((a, s) => a + s.duration, 0);
-  
-  // Cria área de impressão para PDF
-  const printWindow = window.open('', '_blank');
-  if (!printWindow) return;
-  
-  let html = `
-    <html>
-    <head>
-      <meta charset="utf-8">
-      <title>Seals Focus - Histórico em PDF</title>
-      <style>
-        body { font-family: 'Inter', sans-serif; padding: 20px; }
-        h1 { color: var(--accent-color); }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid var(--border-color); padding: 8px; text-align: left; }
-        th { background: var(--card-bg); }
-        .totals { margin-top: 20px; font-weight: bold; }
-      </style>
-    </head>
-    <body>
-      <h1>Seals Focus - Histórico de Sessões</h1>
-      <p>Exportado em: ${new Date().toLocaleDateString('pt-BR')}</p>
-      <p>Total de sessões: ${sessions.length}</p>
-      <p>Total de horas (7 dias): ${fmtHM(weekSecs)}</p>
-      <table>
-        <thead>
-          <tr>
-            <th>Data</th>
-            <th>Duração</th>
-            <th>Matéria</th>
-            <th>Tópico</th>
-            <th>Questões</th>
-          </tr>
-        </thead>
-        <tbody>
-  `;
-  
-  sessions.slice(-30).forEach(s => {
-    const date = new Date(s.dateISO).toLocaleDateString('pt-BR');
-    html += `<tr><td>${date}</td><td>${fmtHM(s.duration)}</td><td>${s.subject || 'Geral'}</td><td>${s.topic || ''}</td><td>${s.qTotal || 0}</td></tr>`;
+  const head = ['data_iso', 'duracao_seg', 'materia', 'assunto', 'observacao', 'q_total', 'q_acertos'];
+  const lines = [head.join(';')];
+  state.sessions.forEach(s => {
+    lines.push([s.dateISO, s.duration, s.subject, s.topic, s.obs || '', s.qTotal || 0, s.qRight || 0].map(csvCell).join(';'));
   });
-  
-  html += `</tbody></table><div class="totals">Total de sessões exportadas: ${sessions.length}</div>`;
-  html += `</body></html>`;
-  
-  printWindow.document.write(html);
-  printWindow.document.close();
-  printWindow.focus();
-  setTimeout(() => {
-    printWindow.print();
-    toast('Use "Salvar como PDF" no diálogo de impressão.', 'success');
-  }, 100);
-  
-  setTimeout(() => printWindow.close(), 5000);
+  downloadFile(
+    `seals-focus-sessoes-${stamp()}.csv`,
+    '\ufeff' + lines.join('\r\n'),
+    'text/csv;charset=utf-8'
+  );
+  toast(`${state.sessions.length} sessões exportadas em CSV.`, 'success');
 }
 
 function importJson(e) {
