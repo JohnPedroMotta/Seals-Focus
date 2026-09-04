@@ -28,6 +28,10 @@ let storeKey = DATA_KEY;
 
 /* ================= Recompensas ================= */
 let rewardedDays = new Set();
+// Dias de recompensa gastos na troca de pontos por cristais: não podem
+// ser readicionados pelo awardPendingRewards (a sessão ainda existe no banco).
+const SPENT_DAYS_KEY = 'foco.spentdays.v1';
+let spentRewardDays = new Set();
 const POINTS_PER_DAY = 100;
 const SIGNUP_BONUS = 200;
 
@@ -179,10 +183,15 @@ function loadRewards() {
     const raw = localStorage.getItem(REWARDS_KEY);
     if (raw) rewardedDays = new Set(JSON.parse(raw));
   } catch { /* ignora */ }
+  try {
+    const raw = localStorage.getItem(SPENT_DAYS_KEY);
+    if (raw) spentRewardDays = new Set(JSON.parse(raw));
+  } catch { /* ignora */ }
 }
 
 function saveRewards() {
   localStorage.setItem(REWARDS_KEY, JSON.stringify([...rewardedDays]));
+  localStorage.setItem(SPENT_DAYS_KEY, JSON.stringify([...spentRewardDays]));
 }
 
 function getPoints() { return getTotalPoints(); }
@@ -190,7 +199,7 @@ function getPoints() { return getTotalPoints(); }
 function awardPendingRewards(perDay) {
   const newDays = [];
   perDay.forEach((secs, key) => {
-    if (secs >= dayThreshold(key) && !rewardedDays.has(key)) {
+    if (secs >= dayThreshold(key) && !rewardedDays.has(key) && !spentRewardDays.has(key)) {
       rewardedDays.add(key);
       newDays.push(key);
     }
@@ -3181,7 +3190,11 @@ async function doExchange() {
     if (d && Number.isFinite(d.total_crystals)) crystals = d.total_crystals;
     // registra que os pontos usados (metas) estão "gastos" para não re-renderizar
     if (d && Array.isArray(d.removed_days)) {
-      d.removed_days.forEach(k => { if (k) rewardedDays.delete(k); });
+      d.removed_days.forEach(k => {
+        if (!k) return;
+        rewardedDays.delete(k);
+        spentRewardDays.add(k);
+      });
     }
     localStorage.setItem(UPOINTS_KEY, userPoints);
     saveRewards();
