@@ -632,9 +632,59 @@
         <div class="card-head">
           <h3 class="panel-title">Dados</h3>
         </div>
-        <p class="muted-p">Exporte seu histórico completo em CSV.</p>
+        <p class="muted-p">Exporte seu histórico completo em PDF.</p>
         <div class="row-btns">
-          <button class="btn btn-sm" id="exportCsvBtn"><i class="ti ti-file-export"></i> Exportar histórico (CSV)</button>
+          <button class="btn btn-sm" id="exportCsvBtn"><i class="ti ti-file-export"></i> Exportar histórico (PDF)</button>
+        </div>
+      </section>
+
+      <section class="card settings-card" id="settingsPremiumCard" hidden>
+        <div class="card-head">
+          <h3 class="panel-title">Planos</h3>
+        </div>
+        <div class="muted-p" id="premiumStatus">
+          <!-- populated by JS -->
+        </div>
+        <div class="comum-vs-premium" style="margin-top:16px;">
+          <table>
+            <thead>
+              <tr>
+                <th>Funcionalidade</th>
+                <th>Comum</th>
+                <th>Premium</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Temas e bordas personalizadas</td>
+                <td>Limitado a temas padrão</td>
+                <td>Todos os temas e bordas premium</td>
+              </tr>
+              <tr>
+                <td>Temporizadores customizáveis</td>
+                <td>Fixos (25/5, 50/10, 45/8)</td>
+                <td>Qualquer foco/pausa customizados</td>
+              </tr>
+              <tr>
+                <td>Análise semanal com IA</td>
+                <td>Blocado (mensagem de upgrade)</td>
+                <td>Diagnóstico completo: Ponto Forte, Alerta, Sugestão</td>
+              </tr>
+              <tr>
+                <td>Sincronização entre dispositivos</td>
+                <td>Não disponível</td>
+                <td>Sessões e progresso salvos na nuvem</td>
+              </tr>
+              <tr>
+                <td>Suporte prioritário</td>
+                <td>Não incluso</td>
+                <td>Suporte direto via e-mail</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div style="margin-top:20px; padding-top:20px; border-top:1px solid var(--border-color);">
+          <button class="btn btn-primary btn-block" id="openPremiumModalBtn">Saiba como tornar-se Premium</button>
         </div>
       </section>
 
@@ -959,6 +1009,45 @@
       <div class="modal-actions">
         <button class="btn" id="confirmCancelBtn">Cancelar</button>
         <button class="btn btn-danger" id="confirmOkBtn">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="premiumModal" role="dialog" aria-modal="true" aria-labelledby="premiumTitle">
+    <div class="modal card premium-modal">
+      <div class="modal-header">
+        <h2 id="premiumTitle">Planos Seals Focus</h2>
+        <button class="modal-close" id="premiumModalCloseBtn" type="button" aria-label="Fechar"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <p>Escolha o plano que melhor se adapta ao seu estilo de estudo.</p>
+        <div class="premium-comparison">
+          <div class="plan plan-common">
+            <h3>Comum</h3>
+            <ul>
+              <li>Temas e bordas padrão</li>
+              <li>Temporizadores fixos (25/5, 50/10, 45/8)</li>
+              <li>Acesso limitado ao Diagnóstico Semanal</li>
+              <li>Sessões salvas localmente</li>
+            </ul>
+          </div>
+          <div class="plan plan-premium">
+            <h3>Premium</h3>
+            <ul>
+              <li>Todos os temas e bordas premium</li>
+              <li>Temporizadores totalmente customizáveis</li>
+              <li>Análise semanal completa com IA</li>
+              <li>Sincronização entre dispositivos</li>
+              <li>Suporte prioritário</li>
+            </ul>
+          </div>
+        </div>
+        <div class="price-info" style="margin-top:24px; padding-top:24px; border-top:1px solid var(--border-color);">
+          <p>Para tornar-se Premium, entre em contato com o suporte ou solicite ao administrador do site.</p>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="premiumModalCloseBtn">Fechar</button>
       </div>
     </div>
   </div>

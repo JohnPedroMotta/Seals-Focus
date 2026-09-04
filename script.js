@@ -354,6 +354,12 @@ function setCloudUser(user) {
   loadState();
   loadAchievements();
 
+  // recarrega tracking de sync por usuário para evitar conflitos entre contas no mesmo dispositivo
+  try { pendingSync = new Set(JSON.parse(localStorage.getItem(PENDING_KEY) || '[]')); } catch { pendingSync = new Set(); }
+  try { pushedIds = new Set(JSON.parse(localStorage.getItem(PUSHED_KEY) || '[]')); } catch { pushedIds = new Set(); }
+  try { tombSynced = new Set(JSON.parse(localStorage.getItem(TOMBSYNC_KEY) || '[]')); } catch { tombSynced = new Set(); }
+  try { rewardPushed = new Set(JSON.parse(localStorage.getItem(PUSHED_REWARDS_KEY) || '[]')); } catch { rewardPushed = new Set(); }
+
   if (user) {
     resetLocalTimer();          // não deixa cronômetro de outra conta vazar no aparelho
     loadPendingRequests();
@@ -644,8 +650,8 @@ async function syncToCloud() {
 /* ================= Utils ================= */
 const $ = id => document.getElementById(id);
 
-$('syncBtn').addEventListener('click', () => { manualSync(); });
-$('syncBtnStats').addEventListener('click', () => { manualSync(); });
+$('syncBtn')?.addEventListener('click', () => { manualSync(); });
+$('syncBtnStats')?.addEventListener('click', () => { manualSync(); });
 
 function fmtHMS(sec) {
   const h = String(Math.floor(sec / 3600)).padStart(2, '0');
@@ -828,6 +834,8 @@ function pomoOnPhaseEnd() {
     $('pomoBreakOverlay').hidden = true;
     $('timerHint').textContent = 'Pronto para começar';
     renderPomoClock();
+    saveTimer();
+    pushTimerSync();
     if (elapsedSec() > 0) {
       // preserva o tempo de foco completo para salvar
       syncTimerUI();
@@ -1195,10 +1203,10 @@ let currentView = 'study';
 let progressPane = 'stats';
 function setProgressPane(pane) {
   progressPane = pane;
-  document.querySelectorAll('.progress-tab').forEach(t =>
+  document.querySelectorAll('#view-progress .progress-tab').forEach(t =>
     t.classList.toggle('active', t.dataset.pane === pane)
   );
-  document.querySelectorAll('.progress-pane').forEach(p =>
+  document.querySelectorAll('#view-progress .progress-pane').forEach(p =>
     p.hidden = p.dataset.pane !== pane
   );
 }
@@ -1323,7 +1331,11 @@ $('pomoBreakStartBtn')?.addEventListener('click', () => {
   $('pomoBreakHint').textContent = 'Aproveite para descansar';
 });
 
-$('pomoBreakSaveBtn')?.addEventListener('click', () => openModal());
+$('pomoBreakSaveBtn')?.addEventListener('click', () => {
+  pomoStopCountdown();
+  $('pomoBreakOverlay').hidden = true;
+  openModal();
+});
 
 $('pomoBreakPauseBtn')?.addEventListener('click', () => {
   pomoStopCountdown();
@@ -1885,9 +1897,17 @@ async function saveEditSession(id, err) {
     return;
   }
   err.hidden = true;
+  const changedSubject = s.subject !== vSubject;
   s.subject = vSubject;
   s.topic = vTopic;
   s.obs = vObs;
+  if (changedSubject) {
+    if (!state.subjects[vSubject]) state.subjects[vSubject] = [];
+    if (vTopic && !state.subjects[vSubject].includes(vTopic) && state.subjects[vSubject].length < 20) {
+      state.subjects[vSubject].push(vTopic);
+    }
+    pushSubjects([vSubject]);
+  }
   saveState();
   await pushSession(s);
   renderFeed();
@@ -2131,6 +2151,17 @@ function openModal() {
 function closeModal() {
   modal.classList.remove('active');
   clearModalForm(false);
+  if (pomoMode === 'pomodoro' && pomoPhase === 'break') {
+    // usuário cancelou durante a pausa: restaura o overlay de break pausado
+    $('pomoBreakOverlay').hidden = false;
+    $('pomoBreakPauseBtn').hidden = true;
+    $('pomoBreakStartBtn').hidden = false;
+    $('pomoBreakTimer').classList.remove('running');
+    $('pomoBreakHint').textContent = 'Pausado';
+    timerWasRunning = false;
+    syncTimerUI();
+    return;
+  }
   if (timerWasRunning) {
     startTimer(); // retoma de onde parou
   } else {
@@ -2215,6 +2246,7 @@ function persistSession(session) {
   toast(`Sessão salva: ${fmtHM(session.duration)} de ${session.subject}.`, 'success');
 }
 function confirmSaveSession(session) {
+  if (!$('saveModal').classList.contains('active')) return; // evita duplo clique / salvar duas vezes
   persistSession(session);
   resetTimer();
   clearModalForm();
@@ -2291,7 +2323,23 @@ $('confirmSaveBtn').addEventListener('click', () => {
   confirmSaveSession(session);
 });
 
-/* ================= Adicionar sessão manual (Histórico) ================= */
+/* ================= Modal Premium ================= */
+function openPremiumModal() {
+  const modal = $('premiumModal');
+  if (!modal) return;
+  const premium = isPremium; // usa variável global de status Premium
+  const statusEl = $('premiumStatus');
+  if (statusEl) {
+    statusEl.textContent = premium ? 'Você já é Premium!' : 'Planos disponíveis';
+  }
+  modal.classList.add('active');
+  setTimeout(() => modal.querySelector('.modal-body')?.focus ? modal.querySelector('.modal-body').focus() : null, 100);
+}
+
+$('openPremiumModalBtn')?.addEventListener('click', openPremiumModal);
+$('premiumModalCloseBtn')?.addEventListener('click', () => $('premiumModal').classList.remove('active'));
+$('premiumModal')?.addEventListener('click', e => { if (e.target === $('premiumModal')) $('premiumModal').classList.remove('active'); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') $('premiumModal').classList.remove('active'); });
 const amModal = document.getElementById('addSessionModal');
 
 function populateAddSubjects() {
@@ -2488,6 +2536,26 @@ document.addEventListener('keydown', e => {
 
   if (e.code === 'Space') {
     e.preventDefault();
+    if (pomoMode === 'pomodoro' && pomoPhase === 'break' && !$('pomoBreakOverlay').hidden) {
+      // espaço durante a pausa deve iniciar/pausar o countdown do break, não o timer base
+      const startBtn = $('pomoBreakStartBtn');
+      const pauseBtn = $('pomoBreakPauseBtn');
+      if (startBtn && !startBtn.hidden) {
+        ensurePomoAudio();
+        pomoStartCountdown();
+        startBtn.hidden = true;
+        pauseBtn.hidden = false;
+        $('pomoBreakTimer').classList.add('running');
+        $('pomoBreakHint').textContent = 'Aproveite para descansar';
+      } else {
+        pomoStopCountdown();
+        pauseBtn.hidden = true;
+        startBtn.hidden = false;
+        $('pomoBreakTimer').classList.remove('running');
+        $('pomoBreakHint').textContent = 'Pausado';
+      }
+      return;
+    }
     timer.running ? pauseTimer() : startTimer();
   }
 });
@@ -3692,7 +3760,7 @@ function renderShopGroup(grid, items) {
 
 /* Abas da loja (semelhante à barra de Progresso) */
 function setShopPane(pane) {
-  document.querySelectorAll('.shop-tabs .progress-tab').forEach(t =>
+  document.querySelectorAll('#view-shop .shop-tabs .progress-tab').forEach(t =>
     t.classList.toggle('active', t.dataset.spane === pane)
   );
   document.querySelectorAll('#view-shop .progress-pane').forEach(p =>
@@ -3741,6 +3809,7 @@ async function openShop() {
   if (!sb.client || !sb.user) { switchView('study'); return; }
   const loading = $('shopLoading');
   if (loading) loading.hidden = false;
+  setShopPane('simple');
   await loadShop();
   renderShop();
   refreshPointsUI();
@@ -4417,17 +4486,69 @@ function exportJson() {
 const csvCell = v => `"${String(v ?? '').replaceAll('"', '""')}"`;
 
 function exportCsv() {
-  const head = ['data_iso', 'duracao_seg', 'materia', 'assunto', 'observacao', 'q_total', 'q_acertos'];
-  const lines = [head.join(';')];
-  state.sessions.forEach(s => {
-    lines.push([s.dateISO, s.duration, s.subject, s.topic, s.obs || '', s.qTotal || 0, s.qRight || 0].map(csvCell).join(';'));
+  // Gera PDF em vez de CSV - usa impressão para salvar como PDF
+  const sessions = state.sessions;
+  const today = dateKey(new Date());
+  const weekSecs = sessions
+    .filter(s => {
+      const sDate = new Date(s.dateISO);
+      return sDate >= new Date(today - 7 * 86400000);
+    })
+    .reduce((a, s) => a + s.duration, 0);
+  
+  // Cria área de impressão para PDF
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) return;
+  
+  let html = `
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>Seals Focus - Histórico em PDF</title>
+      <style>
+        body { font-family: 'Inter', sans-serif; padding: 20px; }
+        h1 { color: var(--accent-color); }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid var(--border-color); padding: 8px; text-align: left; }
+        th { background: var(--card-bg); }
+        .totals { margin-top: 20px; font-weight: bold; }
+      </style>
+    </head>
+    <body>
+      <h1>Seals Focus - Histórico de Sessões</h1>
+      <p>Exportado em: ${new Date().toLocaleDateString('pt-BR')}</p>
+      <p>Total de sessões: ${sessions.length}</p>
+      <p>Total de horas (7 dias): ${fmtHM(weekSecs)}</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Duração</th>
+            <th>Matéria</th>
+            <th>Tópico</th>
+            <th>Questões</th>
+          </tr>
+        </thead>
+        <tbody>
+  `;
+  
+  sessions.slice(-30).forEach(s => {
+    const date = new Date(s.dateISO).toLocaleDateString('pt-BR');
+    html += `<tr><td>${date}</td><td>${fmtHM(s.duration)}</td><td>${s.subject || 'Geral'}</td><td>${s.topic || ''}</td><td>${s.qTotal || 0}</td></tr>`;
   });
-  downloadFile(
-    `seals-focus-sessoes-${stamp()}.csv`,
-    '\ufeff' + lines.join('\r\n'),
-    'text/csv;charset=utf-8'
-  );
-  toast(`${state.sessions.length} sessões exportadas em CSV.`, 'success');
+  
+  html += `</tbody></table><div class="totals">Total de sessões exportadas: ${sessions.length}</div>`;
+  html += `</body></html>`;
+  
+  printWindow.document.write(html);
+  printWindow.document.close();
+  printWindow.focus();
+  setTimeout(() => {
+    printWindow.print();
+    toast('Use "Salvar como PDF" no diálogo de impressão.', 'success');
+  }, 100);
+  
+  setTimeout(() => printWindow.close(), 5000);
 }
 
 function importJson(e) {
