@@ -3179,11 +3179,18 @@ async function doExchange() {
     // atualiza saldos locais com o que o servidor confirmou
     if (d && Number.isFinite(d.total_points)) userPoints = d.total_points;
     if (d && Number.isFinite(d.total_crystals)) crystals = d.total_crystals;
+    // registra que os pontos usados (metas) estão "gastos" para não re-renderizar
+    if (d && Array.isArray(d.removed_days)) {
+      d.removed_days.forEach(k => { if (k) rewardedDays.delete(k); });
+    }
     localStorage.setItem(UPOINTS_KEY, userPoints);
+    saveRewards();
     input.value = '';
     exchangePreview();
     toast(`Troca feita! +${gain} ${crystalIcon('0.9em')}`, 'success', true);
-    refreshPointsUI();
+    const bal = $('exchangePointsBalance');
+    if (bal) bal.textContent = String(getTotalPoints());
+    renderAll();
     renderShop();
   } catch (e) {
     console.error('doExchange:', e);

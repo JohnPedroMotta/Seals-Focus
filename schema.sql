@@ -570,8 +570,11 @@ $$;
 
 -- TROCA DE PONTOS POR CRISTAIS ------------------------------------
 -- Proporção: p_rate pontos = 1 cristal (padrão 6:1).
--- Converte pontos do user_points em cristais do user_crystals de forma
--- atômica: valida saldo, desconta pontos, adiciona cristais.
+-- O saldo gastável é o total combinado: user_points (bônus) +
+-- count(rewards)*100 (metas diárias). Debita primeiro dos bônus e,
+-- se faltar, remove recompensas diárias (100 pts cada) da mais antiga.
+-- Exatidão: se remover recompensas a mais (por causa do múltiplo de 100),
+-- o excedente volta como bônus, então o total debitado é exato.
 create or replace function public.exchange_points_to_crystals(
   p_points integer,
   p_rate integer default 6
@@ -582,9 +585,16 @@ security definer
 set search_path = public
 as $$
 declare
-  v_points int;
-  v_crystals int;
+  v_uid uuid := auth.uid();
+  v_user_points int;
+  v_rewards_count bigint;
+  v_total int;
   v_crystal_gain int;
+  v_remaining int;
+  v_take int;
+  v_units bigint;
+  v_excess int;
+  v_removed text[];
 begin
   if p_points is null or p_points <= 0 then
     raise exception 'quantidade inválida';
@@ -598,38 +608,75 @@ begin
     raise exception 'a quantidade deve ser múltipla de %', p_rate;
   end if;
 
-  select coalesce(total_points, 0) into v_points
-    from public.user_points where user_id = auth.uid();
+  select coalesce(total_points, 0) into v_user_points
+    from public.user_points where user_id = v_uid;
 
-  if v_points < p_points then
+  select count(*) into v_rewards_count
+    from public.rewards where user_id = v_uid;
+
+  v_total := v_user_points + (v_rewards_count * 100);
+
+  if v_total < p_points then
     raise exception 'pontos insuficientes';
   end if;
 
   v_crystal_gain := p_points / p_rate;
+  v_remaining := p_points;
 
-  insert into public.user_points (user_id, total_points, updated_at)
-  values (auth.uid(), 0, now())
-  on conflict (user_id)
-  do update set total_points = public.user_points.total_points - p_points,
-                updated_at = now();
+  -- 1) debita primeiro dos bônus (user_points) até onde der
+  v_take := least(v_user_points, v_remaining);
+  update public.user_points
+     set total_points = v_user_points - v_take,
+         updated_at = now()
+   where user_id = v_uid;
+  v_remaining := v_remaining - v_take;
 
+  -- 2) se ainda falta, remove recompensas diárias (100 pts cada), da mais antiga
+  if v_remaining > 0 then
+    v_units := ceil(v_remaining::numeric / 100);
+
+    select array_agg(r.day_key order by r.created_at asc, r.day_key asc)
+      into v_removed
+      from (
+        select day_key, created_at from public.rewards
+        where user_id = v_uid
+        order by created_at asc, day_key asc
+        limit v_units
+      ) r;
+
+    delete from public.rewards
+    where user_id = v_uid
+      and day_key = any(coalesce(v_removed, array[]::text[]));
+
+    -- excedente removido (por causa do múltiplo de 100) volta como bônus
+    v_excess := (v_units * 100) - v_remaining;
+    if v_excess > 0 then
+      update public.user_points
+         set total_points = total_points + v_excess,
+             updated_at = now()
+       where user_id = v_uid;
+    end if;
+  else
+    v_removed := array[]::text[];
+  end if;
+
+  -- 3) credita os cristais
   insert into public.user_crystals (user_id, total_crystals, updated_at)
-  values (auth.uid(), 0, now())
+  values (v_uid, v_crystal_gain, now())
   on conflict (user_id)
   do update set total_crystals = public.user_crystals.total_crystals + v_crystal_gain,
                 updated_at = now();
-
-  select total_points into v_points
-    from public.user_points where user_id = auth.uid();
-  select total_crystals into v_crystals
-    from public.user_crystals where user_id = auth.uid();
 
   return json_build_object(
     'ok', true,
     'spent_points', p_points,
     'gained_crystals', v_crystal_gain,
-    'total_points', v_points,
-    'total_crystals', v_crystals
+    'removed_days', coalesce(v_removed, array[]::text[]),
+    'total_points', (
+        (select coalesce(total_points, 0) from public.user_points where user_id = v_uid)
+        + (select count(*) from public.rewards where user_id = v_uid) * 100
+      ),
+    'total_crystals', (select coalesce(total_crystals, 0) from public.user_crystals where user_id = v_uid)
   );
 end;
 $$;
