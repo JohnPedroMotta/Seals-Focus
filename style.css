@@ -3121,6 +3121,208 @@ body.light ::selection { color: #fff; }
 
 .btn-pro:hover { opacity: 0.88; }
 
+/* ---------- Pomodoro Toggle ---------- */
+.pomo-toggle-wrap {
+  display: flex;
+  position: relative;
+  background: var(--input-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 3px;
+  margin-bottom: 18px;
+}
+
+.pomo-toggle {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  padding: 8px 20px;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: color 0.2s;
+}
+
+.pomo-toggle.active {
+  color: #fff;
+}
+
+.pomo-toggle-slider {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: calc(50% - 3px);
+  height: calc(100% - 6px);
+  background: var(--accent-color);
+  border-radius: 8px;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+}
+
+.pomo-toggle-wrap:has([data-mode="pomodoro"].active) .pomo-toggle-slider {
+  transform: translateX(100%);
+}
+
+/* ---------- Pomodoro Presets ---------- */
+.pomo-presets {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.pomo-preset {
+  padding: 7px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--input-bg);
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+
+.pomo-preset:hover {
+  border-color: var(--accent-color);
+  color: var(--text-main);
+}
+
+.pomo-preset.active {
+  background: var(--accent-color);
+  border-color: var(--accent-color);
+  color: #fff;
+}
+
+.pomo-custom-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 10px;
+}
+
+.pomo-custom {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+.pomo-custom-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.pomo-custom-label input {
+  width: 60px;
+  padding: 6px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--input-bg);
+  color: var(--text-main);
+  font: inherit;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.pomo-custom-label input:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pomo-custom-label span {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.pomo-custom-sep {
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  margin-top: -14px;
+}
+
+/* ---------- Timer Focus State ---------- */
+.timer-display.pomo-focus {
+  color: #22c55e;
+  text-shadow: 0 0 30px rgba(34, 197, 94, 0.3);
+}
+
+/* ---------- Break Overlay ---------- */
+.pomo-break-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  background: rgba(10, 12, 16, 0.92);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.3s ease;
+}
+
+.pomo-break-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 40px 32px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  text-align: center;
+  max-width: 360px;
+  width: 90%;
+}
+
+.pomo-break-card > i {
+  font-size: 2.2rem;
+  color: var(--accent-color);
+}
+
+.pomo-break-card h3 {
+  font-size: 1.1rem;
+  color: var(--text-main);
+  margin: 0;
+}
+
+.pomo-break-display {
+  font-family: 'Space Grotesk', 'Inter', sans-serif;
+  font-size: 3.2rem;
+  font-weight: 700;
+  color: var(--accent-color);
+  text-shadow: 0 0 30px var(--accent-glow);
+}
+
+.pomo-break-display.running {
+  color: var(--accent-color);
+  text-shadow: 0 0 30px var(--accent-glow);
+}
+
+.pomo-break-hint {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 
 
 

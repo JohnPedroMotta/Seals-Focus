@@ -732,6 +732,133 @@ let timer = { running: false, accumulated: 0, startedAt: null };
 let rafId = null;
 let lastShown = '';
 
+/* ================= Pomodoro ================= */
+let pomoMode = 'livre'; // 'livre' | 'pomodoro'
+let pomoFocusMin = 25;
+let pomoBreakMin = 5;
+let pomoPhase = 'focus'; // 'focus' | 'break'
+let pomoRemaining = 0;   // segundos restantes no countdown
+let pomoCountdownId = null;
+let pomoElapsedOnFocus = 0; // tempo acumulado de foco desta sessão
+
+function playBeep(freq = 660, dur = 200) {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    gain.gain.value = 0.25;
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur / 1000);
+    osc.stop(ctx.currentTime + dur / 1000);
+  } catch { /* ignora */ }
+}
+
+function playDoubleBeep() {
+  playBeep(660, 180);
+  setTimeout(() => playBeep(880, 250), 220);
+}
+
+function pomoStartCountdown() {
+  pomoStopCountdown();
+  pomoCountdownId = setInterval(() => {
+    if (pomoRemaining <= 0) {
+      pomoStopCountdown();
+      pomoOnPhaseEnd();
+      return;
+    }
+    pomoRemaining--;
+    renderPomoClock();
+    saveTimer();
+  }, 1000);
+}
+
+function pomoStopCountdown() {
+  if (pomoCountdownId !== null) {
+    clearInterval(pomoCountdownId);
+    pomoCountdownId = null;
+  }
+}
+
+function renderPomoClock() {
+  const m = String(Math.floor(pomoRemaining / 60)).padStart(2, '0');
+  const s = String(pomoRemaining % 60).padStart(2, '0');
+  const display = pomoPhase === 'break' ? $('pomoBreakTimer') : $('timer');
+  if (display) display.textContent = `${m}:${s}`;
+}
+
+function pomoOnPhaseEnd() {
+  if (pomoPhase === 'focus') {
+    playDoubleBeep();
+    timer.running = false;
+    timer.accumulated = pomoFocusMin * 60;
+    timer.startedAt = null;
+    stopTick();
+    saveTimer();
+    pomoElapsedOnFocus = pomoFocusMin * 60;
+    pomoPhase = 'break';
+    pomoRemaining = pomoBreakMin * 60;
+    $('timer').classList.remove('running');
+    $('timer').classList.add('paused');
+    $('timerHint').textContent = 'Foco concluído!';
+    $('pomoBreakOverlay').hidden = false;
+    $('pomoBreakStartBtn').hidden = false;
+    $('pomoBreakPauseBtn').hidden = true;
+    $('pomoBreakTimer').classList.remove('running');
+    renderPomoClock();
+  } else {
+    playDoubleBeep();
+    pomoPhase = 'focus';
+    pomoRemaining = pomoFocusMin * 60;
+    $('pomoBreakOverlay').hidden = true;
+    $('timerHint').textContent = 'Pronto para começar';
+    renderPomoClock();
+    resetTimer();
+  }
+}
+
+function pomoSkipBreak() {
+  pomoStopCountdown();
+  pomoPhase = 'focus';
+  pomoRemaining = pomoFocusMin * 60;
+  $('pomoBreakOverlay').hidden = true;
+  $('timerHint').textContent = 'Pronto para começar';
+  renderPomoClock();
+  resetTimer();
+}
+
+function pomoSetMode(mode) {
+  pomoMode = mode;
+  document.querySelectorAll('.pomo-toggle').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+  $('pomoPresets').hidden = mode === 'livre';
+  if (mode === 'livre') {
+    pomoStopCountdown();
+    pomoPhase = 'focus';
+    $('pomoBreakOverlay').hidden = true;
+    resetTimer();
+  } else {
+    pomoPhase = 'focus';
+    pomoRemaining = pomoFocusMin * 60;
+    resetTimer();
+    renderPomoClock();
+  }
+}
+
+function pomoSelectPreset(focusMin, breakMin) {
+  pomoFocusMin = focusMin;
+  pomoBreakMin = breakMin;
+  document.querySelectorAll('.pomo-preset[data-focus]').forEach(b => {
+    b.classList.toggle('active', parseInt(b.dataset.focus) === focusMin && parseInt(b.dataset.break) === breakMin);
+  });
+  if (pomoPhase === 'focus') {
+    pomoRemaining = pomoFocusMin * 60;
+    renderPomoClock();
+  }
+}
+
 /* ===== Timer sincronizado entre aparelhos ("luz com 2 interruptores") ===== */
 let cloudTimer = null;       // último registro de timer_sync vindo da nuvem (Realtime)
 let remoteRunning = false;   // outro aparelho está com o cronômetro RODANDO agora
@@ -755,6 +882,11 @@ function elapsedSec() {
 }
 
 function renderClock(force = false) {
+  if (pomoMode === 'pomodoro' && pomoPhase === 'focus') {
+    renderPomoClock();
+    updateMiniTimer();
+    return;
+  }
   const str = fmtHMS(elapsedSec());
   if (!force && str === lastShown) return; // só mexe no DOM quando o segundo mudou
   lastShown = str;
@@ -783,6 +915,10 @@ function startTimer() {
   timer.running = true;
   timer.startedAt = Date.now();
   saveTimer();
+  if (pomoMode === 'pomodoro' && pomoPhase === 'focus') {
+    $('timer').classList.add('pomo-focus');
+    pomoStartCountdown();
+  }
   startTick();
   syncTimerUI();
   pushTimerSync();
@@ -794,6 +930,12 @@ function pauseTimer() {
   timer.running = false;
   timer.startedAt = null;
   saveTimer();
+  if (pomoMode === 'pomodoro') {
+    pomoStopCountdown();
+    if (pomoPhase === 'focus') {
+      pomoRemaining = Math.max(pomoRemaining, 0);
+    }
+  }
   stopTick();
   renderClock();
   syncTimerUI();
@@ -802,6 +944,20 @@ function pauseTimer() {
 
 function resetTimer(clearStorage = true) {
   timer = { running: false, accumulated: 0, startedAt: null };
+  if (pomoMode === 'pomodoro') {
+    pomoStopCountdown();
+    pomoPhase = 'focus';
+    pomoRemaining = pomoFocusMin * 60;
+    $('pomoBreakOverlay').hidden = true;
+    $('timer').classList.remove('pomo-focus', 'pomo-break-state');
+    renderPomoClock();
+  }
+  stopTick();
+  if (clearStorage) localStorage.removeItem(TIMER_KEY);
+  renderClock();
+  syncTimerUI();
+  pushTimerSync(true);
+}
   stopTick();
   if (clearStorage) localStorage.removeItem(TIMER_KEY);
   renderClock();
@@ -826,13 +982,26 @@ function syncTimerUI() {
 
   $('startBtn').hidden = timer.running;
   $('pauseBtn').hidden = !timer.running;
-  const hasTime = elapsedSec() > 0 || timer.running;
+
+  let hasTime;
+  if (pomoMode === 'pomodoro' && pomoPhase === 'focus') {
+    hasTime = pomoRemaining < pomoFocusMin * 60 || timer.running;
+  } else {
+    hasTime = elapsedSec() > 0 || timer.running;
+  }
   $('saveBtn').hidden = !hasTime;
   $('resetBtn').hidden = !hasTime;
 
   display.classList.toggle('running', timer.running);
   display.classList.toggle('paused', !timer.running && hasTime);
-  hint.textContent = timer.running ? 'Registrando...' : hasTime ? 'Pausado' : 'Pronto para começar';
+
+  if (pomoMode === 'pomodoro') {
+    hint.textContent = timer.running
+      ? (pomoPhase === 'focus' ? 'Focando...' : 'Pausa em andamento')
+      : hasTime ? 'Pausado' : 'Pronto para começar';
+  } else {
+    hint.textContent = timer.running ? 'Registrando...' : hasTime ? 'Pausado' : 'Pronto para começar';
+  }
   renderTimerSync();
 }
 
@@ -1067,6 +1236,63 @@ $('resetBtn').addEventListener('click', () => {
   resetTimer();
   if (hadTime) toast('Sessão descartada.', '');
 });
+
+/* ================= Pomodoro: toggle, presets e break overlay ================= */
+document.querySelectorAll('.pomo-toggle').forEach(btn => {
+  btn.addEventListener('click', () => pomoSetMode(btn.dataset.mode));
+});
+
+document.querySelectorAll('.pomo-preset[data-focus]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const f = parseInt(btn.dataset.focus);
+    const b = parseInt(btn.dataset.break);
+    pomoSelectPreset(f, b);
+  });
+});
+
+$('pomoCustomToggle')?.addEventListener('click', () => {
+  const wrap = $('pomoCustom');
+  const isHidden = wrap.hidden;
+  wrap.hidden = !isHidden;
+  if (!isHidden) return;
+  $('pomoCustomFocus').value = pomoFocusMin;
+  $('pomoCustomBreak').value = pomoBreakMin;
+  if (!isPremium) {
+    $('pomoCustomFocus').disabled = true;
+    $('pomoCustomBreak').disabled = true;
+    $('pomoCustomFocus').title = 'Apenas para Premium';
+    $('pomoCustomBreak').title = 'Apenas para Premium';
+  } else {
+    $('pomoCustomFocus').disabled = false;
+    $('pomoCustomBreak').disabled = false;
+  }
+});
+
+$('pomoCustomApply')?.addEventListener('click', () => {
+  if (!isPremium) { toast('Apenas para Premium!', ''); return; }
+  const f = Math.max(1, Math.min(120, parseInt($('pomoCustomFocus').value) || 30));
+  const b = Math.max(1, Math.min(30, parseInt($('pomoCustomBreak').value) || 5));
+  pomoSelectPreset(f, b);
+  $('pomoCustom').hidden = true;
+});
+
+$('pomoBreakStartBtn')?.addEventListener('click', () => {
+  pomoStartCountdown();
+  $('pomoBreakStartBtn').hidden = true;
+  $('pomoBreakPauseBtn').hidden = false;
+  $('pomoBreakTimer').classList.add('running');
+  $('pomoBreakHint').textContent = 'Aproveite para descansar';
+});
+
+$('pomoBreakPauseBtn')?.addEventListener('click', () => {
+  pomoStopCountdown();
+  $('pomoBreakPauseBtn').hidden = true;
+  $('pomoBreakStartBtn').hidden = false;
+  $('pomoBreakTimer').classList.remove('running');
+  $('pomoBreakHint').textContent = 'Pausado';
+});
+
+$('pomoBreakSkipBtn')?.addEventListener('click', pomoSkipBreak);
 
 /* ================= Métricas ================= */
 function mondayOfCurrentWeek() {

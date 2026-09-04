@@ -16,7 +16,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3/dist/tabler-icons.min.css" />
   </noscript>
-  <link rel="stylesheet" href="style.css?v=66" />
+  <link rel="stylesheet" href="style.css?v=67" />
   <!-- Anti-bfcache + popup auto-close -->
   <script>
     window.addEventListener('pageshow', function(e) {
@@ -100,6 +100,31 @@
     <section class="view active" id="view-study">
 
       <section class="timer-card card">
+        <div class="pomo-toggle-wrap">
+          <button class="pomo-toggle active" data-mode="livre" type="button">Livre</button>
+          <button class="pomo-toggle" data-mode="pomodoro" type="button">Pomodoro</button>
+          <span class="pomo-toggle-slider"></span>
+        </div>
+
+        <div class="pomo-presets" id="pomoPresets" hidden>
+          <button class="pomo-preset active" data-focus="25" data-break="5" type="button">25 / 5</button>
+          <button class="pomo-preset" data-focus="50" data-break="10" type="button">50 / 10</button>
+          <button class="pomo-preset" data-focus="45" data-break="8" type="button">45 / 8</button>
+          <div class="pomo-custom" id="pomoCustom" hidden>
+            <label class="pomo-custom-label">
+              <input type="number" id="pomoCustomFocus" min="1" max="120" value="30" aria-label="Minutos de foco" />
+              <span>foco</span>
+            </label>
+            <span class="pomo-custom-sep">/</span>
+            <label class="pomo-custom-label">
+              <input type="number" id="pomoCustomBreak" min="1" max="30" value="5" aria-label="Minutos de pausa" />
+              <span>pausa</span>
+            </label>
+            <button class="pomo-preset pomo-custom-btn" id="pomoCustomApply" type="button"><i class="ti ti-check"></i></button>
+          </div>
+          <button class="pomo-preset pomo-custom-btn" id="pomoCustomToggle" type="button"><i class="ti ti-settings"></i></button>
+        </div>
+
         <p class="timer-hint" id="timerHint">Pronto para começar</p>
         <div class="timer-display" id="timer" role="timer" aria-live="off">00:00:00</div>
         <div class="timer-controls">
@@ -115,6 +140,26 @@
           <button class="btn btn-danger" id="resetBtn" hidden>Descartar</button>
         </div>
       </section>
+
+      <div class="pomo-break-overlay" id="pomoBreakOverlay" hidden>
+        <div class="pomo-break-card">
+          <i class="ti ti-coffee"></i>
+          <h3>Hora da Pausa</h3>
+          <div class="timer-display pomo-break-display" id="pomoBreakTimer">05:00</div>
+          <p class="pomo-break-hint" id="pomoBreakHint">Aproveite para descansar</p>
+          <div class="timer-controls">
+            <button class="btn btn-primary btn-lg" id="pomoBreakStartBtn">
+              <span class="btn-icon"><i class="ti ti-player-play-filled"></i></span>Iniciar Pausa
+            </button>
+            <button class="btn btn-lg" id="pomoBreakPauseBtn" hidden>
+              <span class="btn-icon"><i class="ti ti-player-pause-filled"></i></span>Pausar
+            </button>
+            <button class="btn btn-success btn-lg" id="pomoBreakSkipBtn">
+              <span class="btn-icon"><i class="ti ti-player-skip-forward"></i></span>Pular
+            </button>
+          </div>
+        </div>
+      </div>
 
       <!-- Sessão em outro aparelho (pausar num e retomar em outro) -->
       <section class="card timer-sync-card" id="timerSyncCard" hidden>
