@@ -16,7 +16,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3/dist/tabler-icons.min.css" />
   </noscript>
-  <link rel="stylesheet" href="style.css?v=65" />
+  <link rel="stylesheet" href="style.css?v=66" />
   <!-- Anti-bfcache + popup auto-close -->
   <script>
     window.addEventListener('pageshow', function(e) {
@@ -212,6 +212,28 @@
             <ul class="summary-list" id="summaryList"></ul>
           </section>
         </div>
+
+        <section class="card diagnostico-card">
+          <div class="card-head">
+            <h3 class="panel-title"><i class="ti ti-brain"></i> Diagnóstico Semanal</h3>
+            <span class="chip diag-chip">IA</span>
+          </div>
+          <div id="diagnosticoLock" class="diag-lock">
+            <div class="diag-lock-overlay">
+              <i class="ti ti-lock"></i>
+              <p>Desbloqueie a análise semanal para ver o equilíbrio das suas matérias</p>
+              <button class="btn btn-pro" type="button" onclick="openPremiumModal && openPremiumModal()">Desbloquear</button>
+            </div>
+            <div class="diag-blur-content">
+              <div class="diag-grid">
+                <div class="diag-item diag-forte"><span class="diag-label">Ponto Forte</span><span class="diag-value">Matéria X — 45% do tempo</span></div>
+                <div class="diag-item diag-alerta"><span class="diag-label">Alerta</span><span class="diag-value">Matéria Y — 8% do tempo</span></div>
+                <div class="diag-item diag-sugestao"><span class="diag-label">Sugestão</span><span class="diag-value">Redistribua parte do tempo para equilibrar seus estudos.</span></div>
+              </div>
+            </div>
+          </div>
+          <div id="diagnosticoContent" class="diag-content" hidden></div>
+        </section>
       </div>
 
       <div class="progress-pane" data-pane="feed" hidden>

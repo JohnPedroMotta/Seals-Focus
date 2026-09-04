@@ -1744,9 +1744,107 @@ function renderStats() {
   });
 }
 
+function generateDiagnostico() {
+  const last7 = sessionsInLast7();
+  if (last7.length === 0) return null;
+
+  const perSubject = new Map();
+  let totalSecs = 0;
+  last7.forEach(s => {
+    const cur = perSubject.get(s.subject) || 0;
+    perSubject.set(s.subject, cur + s.duration);
+    totalSecs += s.duration;
+  });
+
+  if (totalSecs === 0) return null;
+
+  const subjects = [...perSubject.entries()]
+    .map(([name, secs]) => ({ name, secs, pct: (secs / totalSecs) * 100 }))
+    .sort((a, b) => b.secs - a.secs);
+
+  const strongest = subjects[0];
+  const weak = subjects.filter(s => s.pct < 15);
+
+  let alerta = null;
+  if (weak.length > 0) {
+    alerta = weak.reduce((a, b) => a.pct < b.pct ? a : b);
+  }
+
+  let sugestao = '';
+  if (subjects.length >= 2 && alerta) {
+    const second = subjects[1];
+    sugestao = `Redistribua parte do tempo de "${strongest.name}" para "${alerta.name}". Tente dedicar pelo menos ${fmtHM(Math.round(totalSecs * 0.2))}/dia a "${alerta.name}".`;
+  } else if (subjects.length === 1) {
+    sugestao = `Você só estudou "${strongest.name}" esta semana. Experimente variar as matérias para um estudo mais equilibrado.`;
+  } else {
+    sugestao = `Bom equilíbrio! Mantenha a rotina e tente manter cada matéria com pelo menos 15% do tempo total.`;
+  }
+
+  return {
+    totalSecs,
+    subjects,
+    pontoForte: { name: strongest.name, pct: Math.round(strongest.pct) },
+    alerta: alerta ? { name: alerta.name, pct: Math.round(alerta.pct) } : null,
+    sugestao
+  };
+}
+
+function renderDiagnostico() {
+  const el = $('diagnosticoContent');
+  const lockEl = $('diagnosticoLock');
+  if (!el) return;
+
+  if (!isPremium) {
+    el.hidden = true;
+    lockEl.hidden = false;
+    return;
+  }
+
+  el.hidden = false;
+  lockEl.hidden = true;
+
+  const diag = generateDiagnostico();
+  if (!diag) {
+    el.innerHTML = '<p class="empty">Registre sessões esta semana para ver seu diagnóstico.</p>';
+    return;
+  }
+
+  let html = '<div class="diag-grid">';
+
+  html += `<div class="diag-item diag-forte">
+    <span class="diag-icon"><i class="ti ti-star"></i></span>
+    <div class="diag-text">
+      <span class="diag-label">Ponto Forte</span>
+      <span class="diag-value">${escapeHtml(diag.pontoForte.name)} — ${diag.pontoForte.pct}% do tempo</span>
+    </div>
+  </div>`;
+
+  if (diag.alerta) {
+    html += `<div class="diag-item diag-alerta">
+      <span class="diag-icon"><i class="ti ti-alert-triangle"></i></span>
+      <div class="diag-text">
+        <span class="diag-label">Alerta</span>
+        <span class="diag-value">${escapeHtml(diag.alerta.name)} — ${diag.alerta.pct}% do tempo (&lt;15%)</span>
+      </div>
+    </div>`;
+  }
+
+  html += `<div class="diag-item diag-sugestao">
+    <span class="diag-icon"><i class="ti ti-lightbulb"></i></span>
+    <div class="diag-text">
+      <span class="diag-label">Sugestão</span>
+      <span class="diag-value">${escapeHtml(diag.sugestao)}</span>
+    </div>
+  </div>`;
+
+  html += '</div>';
+  el.innerHTML = html;
+}
+
 function renderStatsAndFeed() {
   renderMetrics();
   renderStats();
+  renderDiagnostico();
   renderFeed();
 }
 
