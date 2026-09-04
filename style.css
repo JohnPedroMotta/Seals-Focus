@@ -3125,6 +3125,7 @@ body.light ::selection { color: #fff; }
 .pomo-toggle-wrap {
   display: flex;
   position: relative;
+  width: min(280px, 100%);
   background: var(--input-bg);
   border: 1px solid var(--border-color);
   border-radius: 10px;
@@ -3135,8 +3136,9 @@ body.light ::selection { color: #fff; }
 .pomo-toggle {
   position: relative;
   z-index: 1;
-  flex: 1;
-  padding: 8px 20px;
+  flex: 1 1 0%;
+  min-width: 0;
+  padding: 8px 16px;
   border: none;
   background: none;
   color: var(--text-muted);
@@ -3164,7 +3166,7 @@ body.light ::selection { color: #fff; }
   pointer-events: none;
 }
 
-.pomo-toggle-wrap:has([data-mode="pomodoro"].active) .pomo-toggle-slider {
+.pomo-toggle-wrap.pomo-mode-pomodoro .pomo-toggle-slider {
   transform: translateX(100%);
 }
 

@@ -833,6 +833,8 @@ function pomoSkipBreak() {
 function pomoSetMode(mode) {
   pomoMode = mode;
   document.querySelectorAll('.pomo-toggle').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+  const wrap = document.querySelector('.pomo-toggle-wrap');
+  if (wrap) wrap.classList.toggle('pomo-mode-pomodoro', mode === 'pomodoro');
   $('pomoPresets').hidden = mode === 'livre';
   if (mode === 'livre') {
     pomoStopCountdown();
