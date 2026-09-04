@@ -2553,6 +2553,47 @@ body.light ::selection { color: #fff; }
   color: var(--text-muted);
 }
 
+/* ---------- Troca de pontos por cristais ---------- */
+.exchange-box {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-start;
+}
+.exchange-input-row {
+  width: 100%;
+  max-width: 300px;
+}
+.field-label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+.exchange-input {
+  font-weight: 600;
+}
+.exchange-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.9rem;
+  color: var(--text-main);
+  flex-wrap: wrap;
+}
+.exchange-preview {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 700;
+}
+.exchange-pts {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
 .shop-subcard {
   margin-top: 14px;
   padding: 16px;

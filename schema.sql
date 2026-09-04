@@ -568,6 +568,72 @@ begin
 end;
 $$;
 
+-- TROCA DE PONTOS POR CRISTAIS ------------------------------------
+-- Proporção: p_rate pontos = 1 cristal (padrão 6:1).
+-- Converte pontos do user_points em cristais do user_crystals de forma
+-- atômica: valida saldo, desconta pontos, adiciona cristais.
+create or replace function public.exchange_points_to_crystals(
+  p_points integer,
+  p_rate integer default 6
+)
+returns json
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_points int;
+  v_crystals int;
+  v_crystal_gain int;
+begin
+  if p_points is null or p_points <= 0 then
+    raise exception 'quantidade inválida';
+  end if;
+  if p_rate <= 0 then
+    raise exception 'proporção inválida';
+  end if;
+
+  -- só permite múltiplos exatos da proporção (ex.: de 6 em 6 pontos)
+  if p_points % p_rate <> 0 then
+    raise exception 'a quantidade deve ser múltipla de %', p_rate;
+  end if;
+
+  select coalesce(total_points, 0) into v_points
+    from public.user_points where user_id = auth.uid();
+
+  if v_points < p_points then
+    raise exception 'pontos insuficientes';
+  end if;
+
+  v_crystal_gain := p_points / p_rate;
+
+  insert into public.user_points (user_id, total_points, updated_at)
+  values (auth.uid(), 0, now())
+  on conflict (user_id)
+  do update set total_points = public.user_points.total_points - p_points,
+                updated_at = now();
+
+  insert into public.user_crystals (user_id, total_crystals, updated_at)
+  values (auth.uid(), 0, now())
+  on conflict (user_id)
+  do update set total_crystals = public.user_crystals.total_crystals + v_crystal_gain,
+                updated_at = now();
+
+  select total_points into v_points
+    from public.user_points where user_id = auth.uid();
+  select total_crystals into v_crystals
+    from public.user_crystals where user_id = auth.uid();
+
+  return json_build_object(
+    'ok', true,
+    'spent_points', p_points,
+    'gained_crystals', v_crystal_gain,
+    'total_points', v_points,
+    'total_crystals', v_crystals
+  );
+end;
+$$;
+
 -- Soma cristais ao saldo do usuário (recompensas por foco) e devolve o novo saldo
 create or replace function public.add_crystals(p_amount int)
 returns int

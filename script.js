@@ -108,6 +108,9 @@ const BORDER_COLORS = {};       // id -> cor hex ou flag de efeito (preenchido d
 const EFFECT_FLAGS = { rgb: 1, gold: 1, ruby: 1, prism: 1, ice: 1, neon: 1, aurora: 1, lava: 1, cosmic: 1 }; // flags de bordas animadas
 const PREMIUM_COST = 1000; // bordas com custo >= isso entram no grupo "Premium"
 
+// Troca de pontos por cristais: a cada POINTS_TO_CRYSTAL_RATE pontos = 1 cristal
+const POINTS_TO_CRYSTAL_RATE = 6;
+
 // Pacotes de cristais exibidos na loja (bônus sobre o valor base).
 // A venda por dinheiro real ainda está por vir — hoje servem de meta/atrativo.
 const CRYSTAL_PACKAGES = [
@@ -3099,6 +3102,112 @@ async function addCrystals(amount) {
   return crystals;
 }
 
+/* ================= Troca de pontos por cristais ================= */
+const EXCHANGE_RATE = POINTS_TO_CRYSTAL_RATE;
+
+function exchangePreview() {
+  const input = $('exchangePointsInput');
+  const err = $('exchangeError');
+  const ptsPreview = Number(input ? input.value : 0);
+  const btn = $('exchangePointsBtn');
+  if (err) err.hidden = true;
+  if (!btn || !input) return;
+
+  if (!Number.isFinite(ptsPreview) || ptsPreview <= 0) {
+    if ($('exchangePreviewCrystals')) $('exchangePreviewCrystals').textContent = '0 cristais';
+    btn.disabled = true;
+    return;
+  }
+  if (ptsPreview % EXCHANGE_RATE !== 0) {
+    if ($('exchangePreviewCrystals')) $('exchangePreviewCrystals').textContent = '—';
+    btn.disabled = true;
+    return;
+  }
+  const gain = ptsPreview / EXCHANGE_RATE;
+  if ($('exchangePreviewCrystals')) $('exchangePreviewCrystals').textContent = `${gain} cristais`;
+  btn.disabled = ptsPreview > getTotalPoints();
+}
+
+function bindExchangeUI() {
+  const input = $('exchangePointsInput');
+  const btn = $('exchangePointsBtn');
+  if (!input || !btn) return;
+  input.addEventListener('input', exchangePreview);
+  btn.addEventListener('click', doExchange);
+}
+
+async function doExchange() {
+  if (!sb.client || !sb.user) return;
+  const input = $('exchangePointsInput');
+  const err = $('exchangeError');
+  const btn = $('exchangePointsBtn');
+  const pts = Number(input.value);
+  if (err) err.hidden = true;
+
+  if (!Number.isFinite(pts) || pts <= 0) {
+    if (err) { err.textContent = 'Informe a quantidade de pontos.'; err.hidden = false; }
+    return;
+  }
+  if (pts % EXCHANGE_RATE !== 0) {
+    if (err) { err.textContent = `A quantidade deve ser múltipla de ${EXCHANGE_RATE} pontos.`; err.hidden = false; }
+    return;
+  }
+  if (pts > getTotalPoints()) {
+    if (err) { err.textContent = 'Você não tem pontos suficientes.'; err.hidden = false; }
+    return;
+  }
+
+  const gain = pts / EXCHANGE_RATE;
+  const ok = await confirmDialog({
+    title: 'Trocar pontos por cristais',
+    text: `Trocar ${pts} pontos por ${gain} cristais? Essa ação não pode ser desfeita.`,
+    okText: 'Trocar',
+    okClass: 'btn-primary'
+  });
+  if (!ok) return;
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="ti ti-loader"></i> Trocando...';
+  try {
+    const { data, error } = await sb.client.rpc('exchange_points_to_crystals', {
+      p_points: pts,
+      p_rate: EXCHANGE_RATE
+    });
+    if (error) throw error;
+    // atualiza saldos locais com o que o servidor confirmou
+    if (data && Number.isFinite(data.total_points)) userPoints = data.total_points;
+    if (data && Number.isFinite(data.total_crystals)) crystals = data.total_crystals;
+    localStorage.setItem(UPOINTS_KEY, userPoints);
+    input.value = '';
+    exchangePreview();
+    toast(`Troca feita! +${gain} ${crystalIcon('0.9em')}`, 'success', true);
+    refreshPointsUI();
+    renderShop();
+  } catch (e) {
+    console.error('doExchange:', e);
+    const em = (e.message || '').toLowerCase();
+    if (err) {
+      err.textContent = em.includes('insuficientes')
+        ? 'Pontos insuficientes.'
+        : (em.includes('múltipla') ? `Use múltiplos de ${EXCHANGE_RATE} pontos.` : 'Não foi possível fazer a troca.');
+      err.hidden = false;
+    } else {
+      toast('Não foi possível fazer a troca.', 'error');
+    }
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Trocar pontos por cristais';
+    exchangePreview();
+  }
+}
+
+// Atualiza o saldo de pontos exibido na loja e o painel de progresso
+function refreshPointsUI() {
+  renderMetrics();
+  const bal = $('exchangePointsBalance');
+  if (bal) bal.textContent = String(getTotalPoints());
+}
+
 function renderShop() {
   $('shopCrystalsChip').innerHTML = `${crystalIcon()} ${crystals}`;
   renderCrystalPackages();
@@ -3223,6 +3332,7 @@ async function openShop() {
   if (loading) loading.hidden = false;
   await loadShop();
   renderShop();
+  refreshPointsUI();
   if (loading) loading.hidden = true;
   applyBorderTo($('avatarBtn'), equippedBorder);
 }
@@ -4043,6 +4153,7 @@ loadRewards();
 loadAchievements();
 initCloud();
 initSettingsUI();
+bindExchangeUI();
 initMiniTimer();
 renderAll();
 
