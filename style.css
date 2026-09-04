@@ -2594,6 +2594,15 @@ body.light ::selection { color: #fff; }
   font-size: 0.82rem;
 }
 
+/* ---------- Abas da loja ---------- */
+.shop-tabs {
+  width: 100%;
+  margin-top: 12px;
+}
+.shop-tabs .progress-tab {
+  flex: 1;
+}
+
 .shop-subcard {
   margin-top: 14px;
   padding: 16px;

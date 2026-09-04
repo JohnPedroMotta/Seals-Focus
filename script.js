@@ -3231,66 +3231,76 @@ function refreshPointsUI() {
 function renderShop() {
   $('shopCrystalsChip').innerHTML = `${crystalIcon()} ${crystals}`;
   renderCrystalPackages();
-  const grid = $('shopGrid');
-  if (!grid) return;
-  grid.innerHTML = '';
-  const normal = shopItems.filter(i => !effectType(i.id) && (i.cost || 0) < PREMIUM_COST);
+  const gSimple = $('shopGridSimple');
+  const gAnimated = $('shopGridAnimated');
+  const gPremium = $('shopGridPremium');
+  if (!gSimple) return;
+
+  const simple = shopItems.filter(i => !effectType(i.id) && (i.cost || 0) < PREMIUM_COST);
   const animated = shopItems.filter(i => effectType(i.id) && (i.cost || 0) < PREMIUM_COST);
   const premium = shopItems.filter(i => (i.cost || 0) >= PREMIUM_COST);
-  renderShopGroup(grid, 'Simples', normal);
-  if (animated.length) renderShopGroup(grid, 'Animadas', animated);
-  if (premium.length) {
-    const hdr = document.createElement('div');
-    hdr.className = 'shop-group-title premium-title';
-    hdr.innerHTML = `<span>Premium</span><span class="premium-tag"><i class="ti ti-crown"></i> Exclusivas</span>`;
-    grid.appendChild(hdr);
-    premium.forEach(item => {
-      const owned = ownedItems.has(item.id);
-      const isEquipped = equippedBorder === item.id;
-      const locked = !isPremium;
-      const el = document.createElement('div');
-      el.className = 'shop-item' + (isEquipped ? ' equipped' : '');
-      el.classList.add('premium-item');
-      let right;
-      if (!owned) {
-        right = locked
-          ? `<span class="shop-lock" title="Requer Premium para comprar"><i class="ti ti-lock"></i></span>`
-          : `<button class="btn btn-sm btn-crystal" data-act="buy" data-id="${item.id}">${crystalIcon()} ${item.cost}</button>`;
-      } else if (locked) {
-        right = `<span class="shop-lock" title="Requer Premium"><i class="ti ti-lock"></i></span>`;
-      } else {
-        right = `<span class="shop-check" title="Comprada"><i class="ti ti-circle-check-filled"></i></span>`;
-      }
-      el.innerHTML = `
-        <div class="shop-avatar">${shopPreviewAvatar()}</div>
-        <div class="shop-item-info">
-          <span class="shop-item-name">${escapeHtml(borderName(item))}<span class="premium-badge"><i class="ti ti-crown"></i></span></span>
-          <span class="shop-item-cost">${locked ? 'Requer Premium' : (owned ? (isEquipped ? 'Em uso' : 'Comprada') : 'Exclusiva')}</span>
-        </div>
-        ${right}
-      `;
-      applyBorderTo(el.querySelector('.shop-avatar'), item.id);
-      grid.appendChild(el);
-    });
-    if (!isPremium) {
-      const note = document.createElement('p');
-      note.className = 'muted-p shop-premium-note';
-      note.innerHTML = `<i class="ti ti-crown"></i> Para usar os itens <strong>Premium</strong> você precisa ser <strong>Premium</strong>.`;
-      grid.appendChild(note);
-    }
-  }
-  grid.querySelectorAll('button[data-act]').forEach(btn =>
-    btn.addEventListener('click', () => {
-      buyItem(Number(btn.dataset.id));
-    })
-  );
+
+  gSimple.innerHTML = '';
+  gAnimated.innerHTML = '';
+  gPremium.innerHTML = '';
+
+  renderShopGroup(gSimple, simple);
+  renderShopGroup(gAnimated, animated);
+  renderShopPremium(gPremium, premium);
+
+  [gSimple, gAnimated, gPremium].forEach(g => {
+    g.querySelectorAll('button[data-act]').forEach(btn =>
+      btn.addEventListener('click', () => buyItem(Number(btn.dataset.id)))
+    );
+  });
 }
 
-function renderShopGroup(grid, label, items) {
-  const header = document.createElement('div');
-  header.className = 'shop-group-title';
-  header.textContent = label;
-  grid.appendChild(header);
+function renderShopPremium(grid, items) {
+  if (!items.length) {
+    grid.appendChild(emptyRow('Nenhum item premium disponível.'));
+    return;
+  }
+  items.forEach(item => {
+    const owned = ownedItems.has(item.id);
+    const isEquipped = equippedBorder === item.id;
+    const locked = !isPremium;
+    const el = document.createElement('div');
+    el.className = 'shop-item' + (isEquipped ? ' equipped' : '');
+    el.classList.add('premium-item');
+    let right;
+    if (!owned) {
+      right = locked
+        ? `<span class="shop-lock" title="Requer Premium para comprar"><i class="ti ti-lock"></i></span>`
+        : `<button class="btn btn-sm btn-crystal" data-act="buy" data-id="${item.id}">${crystalIcon()} ${item.cost}</button>`;
+    } else if (locked) {
+      right = `<span class="shop-lock" title="Requer Premium"><i class="ti ti-lock"></i></span>`;
+    } else {
+      right = `<span class="shop-check" title="Comprada"><i class="ti ti-circle-check-filled"></i></span>`;
+    }
+    el.innerHTML = `
+      <div class="shop-avatar">${shopPreviewAvatar()}</div>
+      <div class="shop-item-info">
+        <span class="shop-item-name">${escapeHtml(borderName(item))}<span class="premium-badge"><i class="ti ti-crown"></i></span></span>
+        <span class="shop-item-cost">${locked ? 'Requer Premium' : (owned ? (isEquipped ? 'Em uso' : 'Comprada') : 'Exclusiva')}</span>
+      </div>
+      ${right}
+    `;
+    applyBorderTo(el.querySelector('.shop-avatar'), item.id);
+    grid.appendChild(el);
+  });
+  if (!isPremium) {
+    const note = document.createElement('p');
+    note.className = 'muted-p shop-premium-note';
+    note.innerHTML = `<i class="ti ti-crown"></i> Para usar os itens <strong>Premium</strong> você precisa ser <strong>Premium</strong>.`;
+    grid.appendChild(note);
+  }
+}
+
+function renderShopGroup(grid, items) {
+  if (!items.length) {
+    grid.appendChild(emptyRow('Nenhum item aqui ainda.'));
+    return;
+  }
   items.forEach(item => {
     const owned = ownedItems.has(item.id);
     const isEquipped = equippedBorder === item.id;
@@ -3313,6 +3323,22 @@ function renderShopGroup(grid, label, items) {
     applyBorderTo(el.querySelector('.shop-avatar'), item.id);
     grid.appendChild(el);
   });
+}
+
+/* Abas da loja (semelhante à barra de Progresso) */
+function setShopPane(pane) {
+  document.querySelectorAll('.shop-tabs .progress-tab').forEach(t =>
+    t.classList.toggle('active', t.dataset.spane === pane)
+  );
+  document.querySelectorAll('#view-shop .progress-pane').forEach(p =>
+    p.hidden = p.dataset.spane !== pane
+  );
+}
+
+function bindShopTabs() {
+  document.querySelectorAll('#view-shop .shop-tabs .progress-tab').forEach(t =>
+    t.addEventListener('click', () => setShopPane(t.dataset.spane))
+  );
 }
 
 function renderCrystalPackages() {
@@ -4174,6 +4200,7 @@ loadAchievements();
 initCloud();
 initSettingsUI();
 bindExchangeUI();
+bindShopTabs();
 initMiniTimer();
 renderAll();
 
