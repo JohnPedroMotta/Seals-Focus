@@ -741,19 +741,30 @@ let pomoRemaining = 0;   // segundos restantes no countdown
 let pomoCountdownId = null;
 let pomoElapsedOnFocus = 0; // tempo acumulado de foco desta sessão
 
+let pomoAudioCtx = null;
+
+function ensurePomoAudio() {
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    if (!pomoAudioCtx) pomoAudioCtx = new AC();
+    if (pomoAudioCtx.state === 'suspended') pomoAudioCtx.resume();
+  } catch { /* ignora */ }
+}
+
 function playBeep(freq = 660, dur = 200) {
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
+    if (!pomoAudioCtx) return;
+    const osc = pomoAudioCtx.createOscillator();
+    const gain = pomoAudioCtx.createGain();
     osc.type = 'sine';
     osc.frequency.value = freq;
     gain.gain.value = 0.25;
     osc.connect(gain);
-    gain.connect(ctx.destination);
+    gain.connect(pomoAudioCtx.destination);
     osc.start();
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur / 1000);
-    osc.stop(ctx.currentTime + dur / 1000);
+    gain.gain.exponentialRampToValueAtTime(0.001, pomoAudioCtx.currentTime + dur / 1000);
+    osc.stop(pomoAudioCtx.currentTime + dur / 1000);
   } catch { /* ignora */ }
 }
 
@@ -809,6 +820,7 @@ function pomoOnPhaseEnd() {
     $('pomoBreakPauseBtn').hidden = true;
     $('pomoBreakTimer').classList.remove('running');
     renderPomoClock();
+    syncTimerUI();
   } else {
     playDoubleBeep();
     pomoPhase = 'focus';
@@ -816,7 +828,12 @@ function pomoOnPhaseEnd() {
     $('pomoBreakOverlay').hidden = true;
     $('timerHint').textContent = 'Pronto para começar';
     renderPomoClock();
-    resetTimer();
+    if (elapsedSec() > 0) {
+      // preserva o tempo de foco completo para salvar
+      syncTimerUI();
+    } else {
+      resetTimer();
+    }
   }
 }
 
@@ -827,7 +844,12 @@ function pomoSkipBreak() {
   $('pomoBreakOverlay').hidden = true;
   $('timerHint').textContent = 'Pronto para começar';
   renderPomoClock();
-  resetTimer();
+  if (elapsedSec() > 0) {
+    // preserva o tempo de foco completo para salvar
+    syncTimerUI();
+  } else {
+    resetTimer();
+  }
 }
 
 function pomoSetMode(mode) {
@@ -918,6 +940,7 @@ function startTimer() {
   timer.startedAt = Date.now();
   saveTimer();
   if (pomoMode === 'pomodoro' && pomoPhase === 'focus') {
+    ensurePomoAudio();
     $('timer').classList.add('pomo-focus');
     pomoStartCountdown();
   }
@@ -1275,12 +1298,15 @@ $('pomoCustomApply')?.addEventListener('click', () => {
 });
 
 $('pomoBreakStartBtn')?.addEventListener('click', () => {
+  ensurePomoAudio();
   pomoStartCountdown();
   $('pomoBreakStartBtn').hidden = true;
   $('pomoBreakPauseBtn').hidden = false;
   $('pomoBreakTimer').classList.add('running');
   $('pomoBreakHint').textContent = 'Aproveite para descansar';
 });
+
+$('pomoBreakSaveBtn')?.addEventListener('click', () => openModal());
 
 $('pomoBreakPauseBtn')?.addEventListener('click', () => {
   pomoStopCountdown();
