@@ -729,46 +729,34 @@
         <div class="muted-p" id="premiumStatus">
           <!-- populated by JS -->
         </div>
-        <div class="comum-vs-premium" style="margin-top:16px;">
-          <table>
-            <thead>
-              <tr>
-                <th>Funcionalidade</th>
-                <th>Comum</th>
-                <th>Premium</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>Temas e bordas personalizadas</td>
-                <td>Limitado a temas padrão</td>
-                <td>Todos os temas e bordas premium</td>
-              </tr>
-              <tr>
-                <td>Temporizadores customizáveis</td>
-                <td>Fixos (25/5, 50/10, 45/8)</td>
-                <td>Qualquer foco/pausa customizados</td>
-              </tr>
-              <tr>
-                <td>Análise semanal com IA</td>
-                <td>Blocado (mensagem de upgrade)</td>
-                <td>Diagnóstico completo: Ponto Forte, Alerta, Sugestão</td>
-              </tr>
-              <tr>
-                <td>Sincronização entre dispositivos</td>
-                <td>Não disponível</td>
-                <td>Sessões e progresso salvos na nuvem</td>
-              </tr>
-              <tr>
-                <td>Suporte prioritário</td>
-                <td>Não incluso</td>
-                <td>Suporte direto via e-mail</td>
-              </tr>
-            </tbody>
-          </table>
+        <div class="plans-comparison" style="margin-top:0;">
+          <div class="plan plan-common" style="order:1;">
+            <div class="plan-header">
+              <span class="plan-title">Comum</span>
+              <span class="plan-badge"><i class="ti ti-check"></i> Gratuito</span>
+            </div>
+            <ul class="plan-features">
+              <li><i class="ti ti-lock"></i> Temas e bordas padrão</li>
+              <li><i class="ti ti-clock"></i> Temporizadores fixos (25/5, 50/10, 45/8)</li>
+              <li><i class="ti ti-brain"></i> Acesso limitado ao Diagnóstico Semanal</li>
+              <li><i class="ti ti-save"></i> Sessões salvas localmente</li>
+            </ul>
+          </div>
+          <div class="plan plan-premium" style="order:2;">
+            <div class="plan-header">
+              <span class="plan-title">Premium</span>
+              <span class="plan-badge premium-badge"><i class="ti ti-crown"></i> Premium</span>
+            </div>
+            <ul class="plan-features">
+              <li><i class="ti ti-star"></i> Todos os temas e bordas premium</li>
+              <li><i class="ti ti-adjust"></i> Temporizadores totalmente customizáveis</li>
+              <li><i class="ti ti-brain"></i> Análise semanal completa com IA</li>
+              <li><i class="ti ti-cloud"></i> Sincronização entre dispositivos</li>
+            </ul>
+          </div>
         </div>
-        <div style="margin-top:20px; padding-top:20px; border-top:1px solid var(--border-color);">
-          <button class="btn btn-primary btn-block" id="openPremiumModalBtn">Saiba como tornar-se Premium</button>
+        <div style="margin-top:24px; display:flex; justify-content:center;">
+          <button class="btn btn-primary" id="openPremiumModalBtn">Saiba como tornar-se Premium</button>
         </div>
       </section>
 
