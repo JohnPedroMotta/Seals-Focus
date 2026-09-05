@@ -2510,6 +2510,137 @@ body.light ::selection { color: #fff; }
   background: linear-gradient(135deg, #c084fc, #f0a6ff);
 }
 
+/* ---------- Comparação de planos Comum vs Premium ---------- */
+.comum-vs-premium {
+  overflow-x: auto;
+}
+.comum-vs-premium table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.86rem;
+}
+.comum-vs-premium th,
+.comum-vs-premium td {
+  padding: 10px 12px;
+  text-align: left;
+  border: 1px solid var(--border-color);
+  vertical-align: top;
+}
+.comum-vs-premium thead th {
+  background: var(--input-bg);
+  color: var(--text-main);
+  font-weight: 700;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.comum-vs-premium thead th:last-child {
+  color: #f0a6ff;
+}
+.comum-vs-premium tbody td:first-child {
+  font-weight: 600;
+  color: var(--text-main);
+  min-width: 180px;
+}
+.comum-vs-premium tbody td:last-child {
+  color: #e0b3ff;
+}
+.comum-vs-premium tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.modal-body > p {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+.premium-modal {
+  width: 100%;
+  max-width: 680px;
+}
+.premium-comparison {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 4px;
+}
+.plan {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px 16px;
+  border-radius: 14px;
+  border: 1px solid var(--border-color);
+  background: var(--input-bg);
+}
+.plan h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Space Grotesk', 'Inter', sans-serif;
+  font-size: 1.05rem;
+  letter-spacing: -0.01em;
+}
+.plan h3 .ti {
+  font-size: 1.1rem;
+  color: var(--text-muted);
+}
+.plan ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.plan li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.86rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+.plan li::before {
+  content: '✓';
+  flex-shrink: 0;
+  font-weight: 700;
+  color: var(--success-color);
+}
+.plan-premium {
+  position: relative;
+  border-color: rgba(123, 47, 247, 0.5);
+  background: linear-gradient(180deg, rgba(123, 47, 247, 0.14), rgba(247, 47, 184, 0.08)),
+    var(--input-bg);
+  box-shadow: 0 0 0 1px rgba(247, 47, 184, 0.14), 0 6px 24px rgba(123, 47, 247, 0.18);
+}
+.plan-premium h3 {
+  color: #f0a6ff;
+}
+.plan-premium h3 .ti {
+  color: #f72fb8;
+}
+.plan-premium li {
+  color: var(--text-main);
+}
+.plan-premium li::before {
+  color: #c084fc;
+}
+.price-info {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  text-align: center;
+  line-height: 1.5;
+}
+@media (max-width: 560px) {
+  .premium-comparison {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ---------- Pacotes de cristais ---------- */
 .pkg-grid {
   display: grid;

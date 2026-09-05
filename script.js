@@ -745,6 +745,7 @@ let pomoBreakMin = 5;
 let pomoPhase = 'focus'; // 'focus' | 'break'
 let pomoRemaining = 0;   // segundos restantes no countdown
 let pomoCountdownId = null;
+let pomoEndsAt = 0;      // timestamp (ms) em que a fase atual termina
 let pomoElapsedOnFocus = 0; // tempo acumulado de foco desta sessão
 
 let pomoAudioCtx = null;
@@ -781,22 +782,34 @@ function playDoubleBeep() {
 
 function pomoStartCountdown() {
   pomoStopCountdown();
-  pomoCountdownId = setInterval(() => {
-    if (pomoRemaining <= 0) {
-      pomoStopCountdown();
-      pomoOnPhaseEnd();
-      return;
-    }
-    pomoRemaining--;
-    renderPomoClock();
-    saveTimer();
-  }, 1000);
+  if (pomoRemaining <= 0) pomoRemaining = 0;
+  pomoEndsAt = Date.now() + pomoRemaining * 1000;
+  pomoCountdownId = setInterval(pomoCountdownTick, 250);
+  pomoCountdownTick();
+}
+
+function pomoCountdownTick() {
+  if (pomoEndsAt) {
+    pomoRemaining = Math.max(0, Math.ceil((pomoEndsAt - Date.now()) / 1000));
+  }
+  if (pomoRemaining <= 0) {
+    pomoStopCountdown();
+    pomoOnPhaseEnd();
+    return;
+  }
+  renderPomoClock();
+  saveTimer();
 }
 
 function pomoStopCountdown() {
   if (pomoCountdownId !== null) {
     clearInterval(pomoCountdownId);
     pomoCountdownId = null;
+  }
+  // congela o valor atual ao pausar
+  if (pomoEndsAt) {
+    pomoRemaining = Math.max(0, Math.ceil((pomoEndsAt - Date.now()) / 1000));
+    pomoEndsAt = 0;
   }
 }
 
@@ -958,6 +971,20 @@ function stopTick() {
   if (rafId !== null) cancelAnimationFrame(rafId);
   rafId = null;
 }
+
+/* Ao voltar para a aba/voltar do celular, o relógio pode ter congelado no fundo:
+   recalcula a partir do timestamp para o cronômetro continuar correto. */
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    saveTimer();
+  } else {
+    if (pomoCountdownId !== null) {
+      pomoCountdownTick();
+    } else {
+      renderClock(true);
+    }
+  }
+});
 
 function startTimer() {
   if (timer.running) return;
@@ -2324,20 +2351,23 @@ $('confirmSaveBtn').addEventListener('click', () => {
 });
 
 /* ================= Modal Premium ================= */
+function updatePremiumCardStatus() {
+  const statusEl = $('premiumStatus');
+  if (!statusEl) return;
+  statusEl.textContent = isPremium ? 'Você já é Premium! Todos os recursos premium estão liberados.' : 'Planos disponíveis';
+}
+
 function openPremiumModal() {
   const modal = $('premiumModal');
   if (!modal) return;
-  const premium = isPremium; // usa variável global de status Premium
-  const statusEl = $('premiumStatus');
-  if (statusEl) {
-    statusEl.textContent = premium ? 'Você já é Premium!' : 'Planos disponíveis';
-  }
+  updatePremiumCardStatus();
   modal.classList.add('active');
   setTimeout(() => modal.querySelector('.modal-body')?.focus ? modal.querySelector('.modal-body').focus() : null, 100);
 }
 
 $('openPremiumModalBtn')?.addEventListener('click', openPremiumModal);
 $('premiumModalCloseBtn')?.addEventListener('click', () => $('premiumModal').classList.remove('active'));
+$('premiumModalBottomCloseBtn')?.addEventListener('click', () => $('premiumModal').classList.remove('active'));
 $('premiumModal')?.addEventListener('click', e => { if (e.target === $('premiumModal')) $('premiumModal').classList.remove('active'); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') $('premiumModal').classList.remove('active'); });
 const amModal = document.getElementById('addSessionModal');
@@ -3460,6 +3490,7 @@ function applyShopState(data) {
   if (typeof data.is_premium === 'boolean') isPremium = data.is_premium;
   else if (data.is_premium == null) isPremium = false;
   enforcePremiumGuard();
+  updatePremiumCardStatus();
 }
 
 /* Se o usuário não for Premium mas tiver uma borda premium equipada,
@@ -3499,6 +3530,7 @@ async function loadShop() {
     equippedBorder = me?.border_id ?? null;
     isPremium = me?.is_premium ?? false;
     enforcePremiumGuard();
+    updatePremiumCardStatus();
   } catch (e2) { console.error('loadShop fallback:', e2); }
 }
 
@@ -4366,6 +4398,7 @@ function syncSettingsUI() {
   $('goalInput').value = Math.round(dailyGoalSecs / 60);
   renderProfileBorders();
   renderShownAchievementPicker();
+  updatePremiumCardStatus();
 }
 
 function initSettingsUI() {
