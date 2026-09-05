@@ -64,6 +64,10 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
           Loja
         </button>
+        <button class="nav-btn" data-view="premium">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.735H5.81a1 1 0 0 1-.957-.735L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z"/><path d="M5 21h14"/></svg>
+          Premium
+        </button>
         <button class="nav-btn" data-view="settings">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
           Ajustes
@@ -431,6 +435,86 @@
             <button class="btn btn-crystal" id="shopDonateBtn" type="button">❤ Doar agora</button>
           </div>
         </section>
+      </section>
+    </section>
+
+    <!-- ===================== VISÃO: PREMIUM ===================== -->
+    <section class="view" id="view-premium" hidden>
+
+      <section class="premium-hero card">
+        <div class="premium-hero-glow"></div>
+        <i class="ti ti-crown premium-hero-icon"></i>
+        <h2 class="premium-hero-title">Seals Focus <span class="premium-tag"><i class="ti ti-crown"></i>Premium</span></h2>
+        <p class="premium-hero-text">Tenha a experiência completa de foco: personalização total, análises avançadas e sincronização na nuvem — sempre sem anúncios.</p>
+        <span class="chip" id="premiumViewStatus"><i class="ti ti-crown"></i> Planos premium disponíveis</span>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <h3 class="panel-title">O que você ganha sendo Premium</h3>
+        </div>
+        <div class="benefits-grid">
+          <div class="benefit-card">
+            <span class="benefit-icon"><i class="ti ti-palette"></i></span>
+            <h4>Todos os temas e bordas</h4>
+            <p>Temas e bordas premium — algumas animadas e raras — exclusivas na loja.</p>
+          </div>
+          <div class="benefit-card">
+            <span class="benefit-icon"><i class="ti ti-timer"></i></span>
+            <h4>Temporizador 100% customizável</h4>
+            <p>Qualquer combinação de foco e pausa no Pomodoro, não só os presets padrão.</p>
+          </div>
+          <div class="benefit-card">
+            <span class="benefit-icon"><i class="ti ti-brain"></i></span>
+            <h4>Diagnóstico semanal completo</h4>
+            <p>Análise com IA: ponto forte, alerta e sugestão para equilibrar suas matérias.</p>
+          </div>
+          <div class="benefit-card">
+            <span class="benefit-icon"><i class="ti ti-cloud-upload"></i></span>
+            <h4>Sincronização na nuvem</h4>
+            <p>Suas sessões, pontos e sequência acompanham você em qualquer aparelho.</p>
+          </div>
+          <div class="benefit-card">
+            <span class="benefit-icon"><i class="ti ti-crown"></i></span>
+            <h4>Badge de destaque</h4>
+            <p>Coroinha premium no seu perfil, visível para você e seus amigos.</p>
+          </div>
+          <div class="benefit-card">
+            <span class="benefit-icon"><i class="ti ti-headset"></i></span>
+            <h4>Suporte prioritário</h4>
+            <p>Atendimento direto, com prioridade em pedidos, correções e melhorias.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <h3 class="panel-title">Planos e valores</h3>
+          <span class="chip" id="premiumPlansChip">Sem fidelidade</span>
+        </div>
+        <div class="premium-plans">
+          <div class="pricing-card plan-common">
+            <h3><i class="ti ti-calendar"></i> Mensal</h3>
+            <div class="pricing-amount">R$ 9,90<span class="pricing-period">/mês</span></div>
+            <ul>
+              <li>Acesso a todos os recursos premium</li>
+              <li>Renovação mensal — cancele quando quiser</li>
+            </ul>
+            <button class="btn btn-premium btn-block" data-araction="subscribe" data-plan="Mensal" data-price="R$ 9,90/mês">Assinar agora</button>
+          </div>
+          <div class="pricing-card plan-featured">
+            <span class="pricing-flag">Melhor valor</span>
+            <h3><i class="ti ti-calendar-stats"></i> Anual</h3>
+            <div class="pricing-amount">R$ 89,90<span class="pricing-period">/ano</span></div>
+            <p class="pricing-save">R$ 7,49/mês · economia de 25%</p>
+            <ul>
+              <li>Tudo do plano Mensal</li>
+              <li>2 meses grátis no ano</li>
+            </ul>
+            <button class="btn btn-premium btn-block" data-araction="subscribe" data-plan="Anual" data-price="R$ 89,90/ano">Assinar agora</button>
+          </div>
+        </div>
+        <p class="muted-p subscribe-note" id="premiumSubscribeNote">Sem anúncios. Sem fidelidade — cancele quando quiser. Ao solicitar a assinatura, o administrador ativa o Premium na sua conta.</p>
       </section>
     </section>
 
@@ -817,6 +901,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
       <span>Loja</span>
     </button>
+    <button class="tab-btn" data-view="premium">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.735H5.81a1 1 0 0 1-.957-.735L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z"/><path d="M5 21h14"/></svg>
+      <span>Premium</span>
+    </button>
     <button class="tab-btn" data-view="settings">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       <span>Ajustes</span>
@@ -1048,6 +1136,27 @@
       </div>
       <div class="modal-actions">
         <button class="btn btn-secondary" id="premiumModalBottomCloseBtn">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="subscribeModal" role="dialog" aria-modal="true" aria-labelledby="subscribeTitle">
+    <div class="modal card premium-modal">
+      <div class="modal-header">
+        <h2 id="subscribeTitle">Assinar Premium</h2>
+        <button class="modal-close" id="subscribeModalCloseBtn" type="button" aria-label="Fechar"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="subscribe-summary">
+          <span id="subscribePlanName">Plano</span>
+          <strong id="subscribePlanPrice">—</strong>
+        </div>
+        <p>Envie sua solicitação de assinatura. Assim que for confirmada, o Premium será ativado na sua conta.</p>
+        <p class="field-error" id="subscribeError" hidden></p>
+      </div>
+      <div class="modal-actions">
+        <button class="btn" id="subscribeCancelBtn" type="button">Cancelar</button>
+        <button class="btn btn-premium" id="subscribeConfirmBtn" type="button"><i class="ti ti-crown"></i> Solicitar assinatura</button>
       </div>
     </div>
   </div>

@@ -1224,7 +1224,7 @@ function subscribeTimerSync() {
 }
 
 /* ================= Views ================= */
-const views = ['study', 'progress', 'friends', 'shop', 'settings', 'admin'];
+const views = ['study', 'progress', 'friends', 'shop', 'premium', 'settings', 'admin'];
 let currentView = 'study';
 
 let progressPane = 'stats';
@@ -1258,6 +1258,7 @@ function switchView(name) {
   else if (name === 'study') renderTimerSync();
   else if (name === 'friends') loadFriends();
   else if (name === 'shop') { if (isShopAllowed()) openShop(); else switchView('study'); }
+  else if (name === 'premium') renderPremiumView();
   else if (name === 'admin') { if (isAdmin()) { loadAdminStats(); loadAdminFeedback(); } else switchView('study'); }
   else if (name !== 'study') renderStatsAndFeed();
 }
@@ -2370,6 +2371,70 @@ $('premiumModalCloseBtn')?.addEventListener('click', () => $('premiumModal').cla
 $('premiumModalBottomCloseBtn')?.addEventListener('click', () => $('premiumModal').classList.remove('active'));
 $('premiumModal')?.addEventListener('click', e => { if (e.target === $('premiumModal')) $('premiumModal').classList.remove('active'); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') $('premiumModal').classList.remove('active'); });
+
+/* ================= Aba Premium ================= */
+function renderPremiumView() {
+  const status = $('premiumViewStatus');
+  if (status) {
+    status.innerHTML = isPremium
+      ? '<i class="ti ti-check"></i> Você já é Premium — aproveite todos os recursos!'
+      : '<i class="ti ti-crown"></i> Planos premium disponíveis';
+    status.classList.toggle('chip-ok', isPremium);
+  }
+  document.querySelectorAll('[data-araction="subscribe"]').forEach(b => {
+    b.disabled = isPremium;
+    if (isPremium) { b.textContent = 'Premium ativo'; }
+    else { b.innerHTML = 'Assinar agora'; }
+  });
+}
+
+let pendingSubscribePlan = null;
+
+function openSubscribeModal(btn) {
+  if (isPremium) { toast('Você já é Premium!', 'success'); return; }
+  if (!sb.client || !sb.user) { toast('Conecte sua conta para assinar.', 'error'); return; }
+  pendingSubscribePlan = { name: btn.dataset.plan || '', price: btn.dataset.price || '' };
+  $('subscribePlanName').textContent = pendingSubscribePlan.name ? 'Plano ' + pendingSubscribePlan.name : 'Plano';
+  $('subscribePlanPrice').textContent = pendingSubscribePlan.price || '—';
+  $('subscribeError').hidden = true;
+  $('subscribeModal').classList.add('active');
+}
+
+function closeSubscribeModal() {
+  $('subscribeModal').classList.remove('active');
+  pendingSubscribePlan = null;
+}
+
+async function requestSubscription() {
+  const err = $('subscribeError');
+  const btn = $('subscribeConfirmBtn');
+  const plan = pendingSubscribePlan;
+  if (!plan || !plan.name) return;
+  if (!sb.client || !sb.user) { closeSubscribeModal(); return; }
+  btn.disabled = true;
+  btn.innerHTML = 'Enviando…';
+  try {
+    await sb.client.rpc('submit_feedback', { p_message: `[Assinatura Premium] Quero assinar o plano ${plan.name} (${plan.price}).` });
+    closeSubscribeModal();
+    toast('Solicitação enviada! O administrador vai ativar seu Premium em breve. 👑', 'success');
+  } catch (e) {
+    console.error('requestSubscription:', e);
+    err.textContent = 'Não foi possível enviar a solicitação agora. Tente novamente.';
+    err.hidden = false;
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti ti-crown"></i> Solicitar assinatura';
+  }
+}
+
+document.querySelectorAll('[data-araction="subscribe"]').forEach(b =>
+  b.addEventListener('click', () => openSubscribeModal(b))
+);
+$('subscribeModalCloseBtn')?.addEventListener('click', closeSubscribeModal);
+$('subscribeCancelBtn')?.addEventListener('click', closeSubscribeModal);
+$('subscribeModal')?.addEventListener('click', e => { if (e.target === $('subscribeModal')) closeSubscribeModal(); });
+$('subscribeConfirmBtn')?.addEventListener('click', requestSubscription);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSubscribeModal(); });
 const amModal = document.getElementById('addSessionModal');
 
 function populateAddSubjects() {

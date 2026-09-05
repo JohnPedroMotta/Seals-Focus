@@ -2641,6 +2641,202 @@ body.light ::selection { color: #fff; }
   }
 }
 
+/* ---------- Aba Premium ---------- */
+.premium-hero {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 26px 24px;
+  background: linear-gradient(135deg, rgba(123, 47, 247, 0.22), rgba(247, 47, 184, 0.12)), var(--card-bg);
+  border: 1px solid rgba(123, 47, 247, 0.45);
+  box-shadow: 0 0 0 1px rgba(247, 47, 184, 0.1), 0 10px 32px rgba(123, 47, 247, 0.18);
+}
+.premium-hero-glow {
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 220px;
+  height: 220px;
+  background: radial-gradient(circle, rgba(247, 47, 184, 0.28), transparent 70%);
+  pointer-events: none;
+}
+.premium-hero-icon {
+  font-size: 2rem;
+  color: #f0a6ff;
+}
+.premium-hero-title {
+  font-family: 'Space Grotesk', 'Inter', sans-serif;
+  font-size: 1.5rem;
+  letter-spacing: -0.02em;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.premium-hero-text {
+  color: var(--text-muted);
+  max-width: 560px;
+  line-height: 1.5;
+}
+.chip-ok {
+  background: rgba(52, 211, 153, 0.14);
+  color: var(--success-color);
+  border-color: rgba(52, 211, 153, 0.4);
+}
+.benefits-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+.benefit-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  background: var(--input-bg);
+}
+.benefit-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  font-size: 1.25rem;
+  color: #f0a6ff;
+  background: rgba(123, 47, 247, 0.14);
+  border-radius: 12px;
+}
+.benefit-card h4 {
+  font-size: 0.95rem;
+  letter-spacing: -0.01em;
+}
+.benefit-card p {
+  color: var(--text-muted);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+.premium-plans {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+  margin-top: 12px;
+}
+.pricing-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px 18px;
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  background: var(--input-bg);
+}
+.pricing-card h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Space Grotesk', 'Inter', sans-serif;
+  font-size: 1rem;
+  letter-spacing: -0.01em;
+}
+.pricing-card h3 .ti { color: var(--text-muted); }
+.pricing-amount {
+  font-family: 'Space Grotesk', 'Inter', sans-serif;
+  font-size: 1.7rem;
+  font-weight: 700;
+}
+.pricing-period {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+.pricing-save {
+  font-size: 0.8rem;
+  color: var(--success-color);
+  font-weight: 600;
+}
+.pricing-card ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+}
+.pricing-card li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.86rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+.pricing-card li::before {
+  content: '✓';
+  flex-shrink: 0;
+  font-weight: 700;
+  color: var(--success-color);
+}
+.plan-featured {
+  border-color: rgba(123, 47, 247, 0.5);
+  background: linear-gradient(180deg, rgba(123, 47, 247, 0.14), rgba(247, 47, 184, 0.08)), var(--input-bg);
+  box-shadow: 0 0 0 1px rgba(247, 47, 184, 0.14), 0 8px 26px rgba(123, 47, 247, 0.18);
+}
+.pricing-flag {
+  position: absolute;
+  top: -11px;
+  left: 16px;
+  padding: 3px 10px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #fff;
+  background: linear-gradient(135deg, #7b2ff7, #f72fb8);
+  border-radius: 999px;
+}
+.btn-premium {
+  background: linear-gradient(135deg, #7b2ff7, #f72fb8);
+  border: none;
+  color: #fff;
+  font-weight: 700;
+}
+.btn-premium:hover {
+  filter: brightness(1.12);
+  transform: translateY(-1px);
+}
+.btn-premium:disabled {
+  opacity: 0.7;
+  cursor: default;
+  transform: none;
+  filter: none;
+}
+.subscribe-note {
+  margin-top: 14px;
+}
+.subscribe-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--input-bg);
+}
+.subscribe-summary span {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+.subscribe-summary strong {
+  font-size: 1.1rem;
+  color: #f0a6ff;
+}
+
 /* ---------- Pacotes de cristais ---------- */
 .pkg-grid {
   display: grid;
