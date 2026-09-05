@@ -422,6 +422,11 @@ button.foot-name:hover { text-decoration: underline; }
   .progress-tabs .progress-tab { flex: 1; }
 }
 
+@media (max-width: 859px) {
+  .progress-tabs { max-width: 200px; }
+  .progress-tabs .progress-tab { flex: 0 0 33.333%; white-space: nowrap; }
+}
+
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
