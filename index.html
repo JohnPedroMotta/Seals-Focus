@@ -489,32 +489,40 @@
 
       <section class="card">
         <div class="card-head">
-          <h3 class="panel-title">Planos e valores</h3>
-          <span class="chip" id="premiumPlansChip">Sem fidelidade</span>
+          <h3 class="panel-title">Planos</h3>
         </div>
-        <div class="premium-plans">
-          <div class="pricing-card plan-common">
-            <h3><i class="ti ti-calendar"></i> Mensal</h3>
-            <div class="pricing-amount">R$ 9,90<span class="pricing-period">/mês</span></div>
-            <ul>
-              <li>Acesso a todos os recursos premium</li>
-              <li>Renovação mensal — cancele quando quiser</li>
+        <div class="muted-p" id="premiumStatus">
+          <!-- populated by JS -->
+        </div>
+        <div class="plans-comparison" style="margin-top:0;">
+          <div class="plan plan-common" style="order:1;">
+            <div class="plan-header">
+              <span class="plan-title">Comum</span>
+              <span class="plan-badge common-badge"><i class="ti ti-check"></i> Gratuito</span>
+            </div>
+            <ul class="plan-features">
+              <li><i class="ti ti-lock"></i> Temas e bordas padrão</li>
+              <li><i class="ti ti-clock"></i> Temporizadores fixos (25/5, 50/10, 45/8)</li>
+              <li><i class="ti ti-brain"></i> Acesso limitado ao Diagnóstico Semanal</li>
+              <li><i class="ti ti-save"></i> Sessões salvas localmente</li>
             </ul>
-            <button class="btn btn-premium btn-block" data-araction="subscribe" data-plan="Mensal" data-price="R$ 9,90/mês">Assinar agora</button>
           </div>
-          <div class="pricing-card plan-featured">
-            <span class="pricing-flag">Melhor valor</span>
-            <h3><i class="ti ti-calendar-stats"></i> Anual</h3>
-            <div class="pricing-amount">R$ 89,90<span class="pricing-period">/ano</span></div>
-            <p class="pricing-save">R$ 7,49/mês · economia de 25%</p>
-            <ul>
-              <li>Tudo do plano Mensal</li>
-              <li>2 meses grátis no ano</li>
+          <div class="plan plan-premium" style="order:2;">
+            <div class="plan-header">
+              <span class="plan-title">Premium</span>
+              <span class="plan-badge premium-badge"><i class="ti ti-crown"></i> Premium</span>
+            </div>
+            <ul class="plan-features">
+              <li><i class="ti ti-star"></i> Todos os temas e bordas premium</li>
+              <li><i class="ti ti-adjust"></i> Temporizadores totalmente customizáveis</li>
+              <li><i class="ti ti-brain"></i> Análise semanal completa com IA</li>
+              <li><i class="ti ti-cloud"></i> Sincronização entre dispositivos</li>
             </ul>
-            <button class="btn btn-premium btn-block" data-araction="subscribe" data-plan="Anual" data-price="R$ 89,90/ano">Assinar agora</button>
           </div>
         </div>
-        <p class="muted-p subscribe-note" id="premiumSubscribeNote">Sem anúncios. Sem fidelidade — cancele quando quiser. Ao solicitar a assinatura, o administrador ativa o Premium na sua conta.</p>
+        <div style="margin-top:24px; display:flex; justify-content:center;">
+          <button class="btn btn-primary" id="openPremiumModalBtn">Saiba como tornar-se Premium</button>
+        </div>
       </section>
     </section>
 
@@ -719,44 +727,6 @@
         <p class="muted-p">Exporte seu histórico completo em CSV.</p>
         <div class="row-btns">
           <button class="btn btn-sm" id="exportCsvBtn"><i class="ti ti-file-export"></i> Exportar histórico (CSV)</button>
-        </div>
-      </section>
-
-      <section class="card settings-card" id="settingsPremiumCard">
-        <div class="card-head">
-          <h3 class="panel-title">Planos</h3>
-        </div>
-        <div class="muted-p" id="premiumStatus">
-          <!-- populated by JS -->
-        </div>
-        <div class="plans-comparison" style="margin-top:0;">
-          <div class="plan plan-common" style="order:1;">
-            <div class="plan-header">
-              <span class="plan-title">Comum</span>
-              <span class="plan-badge"><i class="ti ti-check"></i> Gratuito</span>
-            </div>
-            <ul class="plan-features">
-              <li><i class="ti ti-lock"></i> Temas e bordas padrão</li>
-              <li><i class="ti ti-clock"></i> Temporizadores fixos (25/5, 50/10, 45/8)</li>
-              <li><i class="ti ti-brain"></i> Acesso limitado ao Diagnóstico Semanal</li>
-              <li><i class="ti ti-save"></i> Sessões salvas localmente</li>
-            </ul>
-          </div>
-          <div class="plan plan-premium" style="order:2;">
-            <div class="plan-header">
-              <span class="plan-title">Premium</span>
-              <span class="plan-badge premium-badge"><i class="ti ti-crown"></i> Premium</span>
-            </div>
-            <ul class="plan-features">
-              <li><i class="ti ti-star"></i> Todos os temas e bordas premium</li>
-              <li><i class="ti ti-adjust"></i> Temporizadores totalmente customizáveis</li>
-              <li><i class="ti ti-brain"></i> Análise semanal completa com IA</li>
-              <li><i class="ti ti-cloud"></i> Sincronização entre dispositivos</li>
-            </ul>
-          </div>
-        </div>
-        <div style="margin-top:24px; display:flex; justify-content:center;">
-          <button class="btn btn-primary" id="openPremiumModalBtn">Saiba como tornar-se Premium</button>
         </div>
       </section>
 
