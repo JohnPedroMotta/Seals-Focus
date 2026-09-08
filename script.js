@@ -117,12 +117,12 @@ const PREMIUM_COST = 1000; // bordas com custo >= isso entram no grupo "Premium"
 const POINTS_TO_CRYSTAL_RATE = 6;
 
 // Pacotes de cristais exibidos na loja (bônus sobre o valor base).
-// A venda por dinheiro real ainda está por vir — hoje servem de meta/atrativo.
+// A venda por dinheiro real usa os links de PAYMENT_LINKS (config.js).
 const CRYSTAL_PACKAGES = [
-  { id: 'pkg1', label: 'Pacote Pequeno', amount: 300,  bonus: '+0',   base: 300  },
-  { id: 'pkg2', label: 'Pacote Médio',    amount: 900,  bonus: '+100', base: 800, tag: '+100 bônus' },
-  { id: 'pkg3', label: 'Pacote Grande',   amount: 2500, bonus: '+500', base: 2000, tag: '+500 bônus' },
-  { id: 'pkg4', label: 'Pacote Mestre',   amount: 6000, bonus: '+1500', base: 4500, tag: '+1500 bônus', premium: true },
+  { id: 'pkg1', label: 'Pacote Pequeno', amount: 300,  bonus: '+0',   base: 300,  price: 'R$ 4,90' },
+  { id: 'pkg2', label: 'Pacote Médio',    amount: 900,  bonus: '+100', base: 800,  tag: '+100 bônus',  price: 'R$ 9,90' },
+  { id: 'pkg3', label: 'Pacote Grande',   amount: 2500, bonus: '+500', base: 2000, tag: '+500 bônus',  price: 'R$ 19,90' },
+  { id: 'pkg4', label: 'Pacote Mestre',   amount: 6000, bonus: '+1500', base: 4500, tag: '+1500 bônus', premium: true, price: 'R$ 39,90' },
 ];
 
 function isShopAllowed() {
@@ -2406,6 +2406,16 @@ function openSubscribeModal(btn) {
   $('subscribePlanName').textContent = pendingSubscribePlan.name ? 'Plano ' + pendingSubscribePlan.name : 'Plano';
   $('subscribePlanPrice').textContent = pendingSubscribePlan.price || '—';
   $('subscribeError').hidden = true;
+  const link = PAYMENT_LINKS.premiumMonthly || '';
+  const payBtn = $('subscribePayBtn');
+  if (payBtn) {
+    payBtn.hidden = !link;
+    if (link) {
+      payBtn.textContent = (pendingSubscribePlan.price ? pendingSubscribePlan.price + ' · ' : '') + 'Pagar com Mercado Pago';
+      payBtn.onclick = () => window.open(link, '_blank', 'noopener');
+    }
+  }
+  if ($('subscribeManualNote')) $('subscribeManualNote').hidden = !!link;
   $('subscribeModal').classList.add('active');
 }
 
@@ -3892,8 +3902,8 @@ function renderCrystalPackages() {
         <span class="pkg-amount">${crystalIcon('1em')} <strong>${pk.amount}</strong></span>
         ${pk.tag ? `<span class="pkg-bonus">${escapeHtml(pk.tag)}</span>` : ''}
       </div>
-      <span class="pkg-label">${escapeHtml(pk.label)}</span>
-      <button class="btn btn-sm btn-crystal" data-pkg="${pk.id}">Adicionar</button>
+      <span class="pkg-label">${escapeHtml(pk.label)}${pk.price ? ` · <strong class="pkg-price">${escapeHtml(pk.price)}</strong>` : ''}</span>
+      <button class="btn btn-sm btn-crystal" data-pkg="${pk.id}">${pk.price ? escapeHtml(pk.price) : 'Adicionar'}</button>
     </div>`).join('');
   grid.querySelectorAll('[data-pkg]').forEach(btn =>
     btn.addEventListener('click', onPackageClick));
@@ -3905,8 +3915,17 @@ function onPackageClick(e) {
   if (!pk) return;
   $('pkgModalName').textContent = pk.label;
   $('pkgModalText').innerHTML =
-    `Este pacote dá ${pk.amount} cristais. A compra por dinheiro real ainda não está disponível — ` +
-    `por enquanto você ganha cristais a cada sessão de foco.${crystalIcon('1em')}`;
+    `Este pacote dá <strong>${pk.amount} cristais</strong>${pk.tag ? ` (${pk.tag})` : ''}. ` +
+    `Depois que o pagamento for confirmado, os cristais entram na sua conta.${crystalIcon('1em')}`;
+  const payBtn = $('pkgModalPayBtn');
+  const link = PAYMENT_LINKS[pk.id] || '';
+  if (payBtn) {
+    payBtn.hidden = !link;
+    if (link) {
+      payBtn.textContent = (pk.price ? pk.price + ' · ' : '') + 'Pagar com Mercado Pago';
+      payBtn.onclick = () => window.open(link, '_blank', 'noopener');
+    }
+  }
   $('pkgModal').classList.add('active');
 }
 

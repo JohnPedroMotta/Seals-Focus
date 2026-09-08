@@ -3229,6 +3229,20 @@ body.light ::selection { color: #fff; }
   font-size: 1.1rem;
   color: #f0a6ff;
 }
+.subscribe-pay {
+  width: 100%;
+  margin-top: 12px;
+  justify-content: center;
+}
+.subtext {
+  margin-top: 10px;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+.pkg-price {
+  color: var(--accent-color);
+}
 
 /* ---------- Pacotes de cristais ---------- */
 .pkg-grid {
