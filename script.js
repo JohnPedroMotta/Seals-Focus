@@ -6,6 +6,7 @@ const TIMER_KEY = 'foco.timer.v1';
 const PENDING_KEY = 'foco.pending.v1';
 const PUSHED_KEY = 'foco.pushed.v1';
 const TOMBSYNC_KEY = 'foco.tombsync.v1';
+const LAST_ACCOUNT_KEY = 'foco.lastAccountId';
 const KNOWN_KEY = 'foco.known.v1';
 const PUSHED_REWARDS_KEY = 'foco.pushedrewards.v1';
 const SYNC_INTERVAL = 900000; // 15min: reduz consumo de dados/transferências no servidor
@@ -325,6 +326,14 @@ function hideLoader() {
 }
 
 function setCloudUser(user) {
+  // só reseta o cronômetro quando TROCOU de conta de verdade.
+  // Em recarga da página (celular voltando ao app), NÃO pode zerar o timer local.
+  const prevId = sb.user?.id ?? null;
+  const lastAccountId = (() => { try { return localStorage.getItem(LAST_ACCOUNT_KEY) || null; } catch { return null; } })();
+  const nextId = user?.id ?? null;
+  const switchedAccount = Boolean(nextId && lastAccountId && nextId !== lastAccountId);
+  if (nextId) { try { localStorage.setItem(LAST_ACCOUNT_KEY, nextId); } catch { /* ignora */ } }
+
   // migra dados anônimos se existirem
   if (user) {
     try {
@@ -361,7 +370,7 @@ function setCloudUser(user) {
   try { rewardPushed = new Set(JSON.parse(localStorage.getItem(PUSHED_REWARDS_KEY) || '[]')); } catch { rewardPushed = new Set(); }
 
   if (user) {
-    resetLocalTimer();          // não deixa cronômetro de outra conta vazar no aparelho
+    if (switchedAccount) resetLocalTimer(); // não deixa cronômetro de outra conta vazar no aparelho
     loadPendingRequests();
     subscribeTimerSync();
     loadTimerSync();
