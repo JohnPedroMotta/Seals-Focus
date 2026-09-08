@@ -3335,11 +3335,19 @@ body.light ::selection { color: #fff; }
   .shop-tabs .progress-tab {
     flex: none;
     min-width: 0;
-    white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     padding: 10px 6px;
     font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 559px) {
+  .shop-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .shop-tabs .progress-tab {
+    white-space: normal;
   }
 }
 
