@@ -2407,16 +2407,14 @@ function openSubscribeModal(btn) {
   $('subscribePlanPrice').textContent = pendingSubscribePlan.price || '—';
   $('subscribeError').hidden = true;
   const payKey = btn.dataset.pay || 'premiumMonthly';
-  const link = PAYMENT_LINKS[payKey] || PAYMENT_LINKS.premiumMonthly || '';
   const payBtn = $('subscribePayBtn');
   if (payBtn) {
-    payBtn.hidden = !link;
-    if (link) {
-      payBtn.textContent = (pendingSubscribePlan.price ? pendingSubscribePlan.price + ' · ' : '') + 'Pagar agora';
-      payBtn.onclick = () => window.open(link, '_blank', 'noopener');
-    }
+    payBtn.hidden = false;
+    payBtn.textContent = 'Pagar agora';
+    payBtn.disabled = false;
+    payBtn.onclick = () => startPayment(payKey, [$('subscribeModal')]);
   }
-  if ($('subscribeManualNote')) $('subscribeManualNote').hidden = !!link;
+  if ($('subscribeManualNote')) $('subscribeManualNote').hidden = true;
   $('subscribeModal').classList.add('active');
 }
 
@@ -2455,6 +2453,45 @@ $('subscribeCancelBtn')?.addEventListener('click', closeSubscribeModal);
 $('subscribeModal')?.addEventListener('click', e => { if (e.target === $('subscribeModal')) closeSubscribeModal(); });
 $('subscribeConfirmBtn')?.addEventListener('click', requestSubscription);
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSubscribeModal(); });
+/* ============ Pagamento via Checkout (automático) ============ */
+async function startPayment(itemId, closeModals) {
+  if (!sb.client || !sb.user) { toast('Conecte sua conta para pagar.', 'error'); return; }
+  if (closeModals) closeModals.forEach(fn => { if (typeof fn === 'function') fn(); else fn.classList.remove('active'); });
+  try {
+    const res = await fetch('/api/create-checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ itemId, userId: sb.user.id }),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok || !json.init_point) {
+      const msg = json.error || 'Não foi possível iniciar o pagamento.';
+      toast(msg, 'error');
+      return;
+    }
+    window.location.href = json.init_point;
+  } catch (e) {
+    console.error('startPayment:', e);
+    toast('Erro ao conectar ao servidor de pagamento. Tente novamente.', 'error');
+  }
+}
+
+function applyReturnedPayment() {
+  const params = new URLSearchParams(location.search);
+  const status = params.get('pay');
+  if (!status) return;
+  const clean = location.pathname + '?' + params.toString().replace(/[?&]pay=[^&]*/g, '').replace(/^&/, '');
+  history.replaceState(null, '', clean || location.pathname);
+  if (status === 'success') {
+    toast('Pagamento aprovado! Em alguns segundos seus créditos vão aparecer. ✅', 'success');
+    if (sb.user) loadProfile();
+  } else if (status === 'pending') {
+    toast('Pagamento em processamento. Assim que confirmar, os créditos entram sozinhos. ⏳', 'info');
+  } else {
+    toast('Pagamento não concluído.', 'error');
+  }
+}
+
 const amModal = document.getElementById('addSessionModal');
 
 function populateAddSubjects() {
@@ -3919,13 +3956,11 @@ function onPackageClick(e) {
     `Este pacote dá <strong>${pk.amount} cristais</strong>${pk.tag ? ` (${pk.tag})` : ''}. ` +
     `Depois que o pagamento for confirmado, os cristais entram na sua conta.${crystalIcon('1em')}`;
   const payBtn = $('pkgModalPayBtn');
-  const link = PAYMENT_LINKS[pk.id] || '';
   if (payBtn) {
-    payBtn.hidden = !link;
-    if (link) {
-      payBtn.textContent = (pk.price ? pk.price + ' · ' : '') + 'Pagar agora';
-      payBtn.onclick = () => window.open(link, '_blank', 'noopener');
-    }
+    payBtn.hidden = false;
+    payBtn.textContent = 'Pagar agora';
+    payBtn.disabled = false;
+    payBtn.onclick = () => startPayment(pk.id, [$('pkgModal')]);
   }
   $('pkgModal').classList.add('active');
 }
@@ -4759,6 +4794,7 @@ if (timer.running) startTick(); // retoma o loop de atualização após recarreg
 loadAppearance();
 loadPrivacy();
 loadProfile();
+applyReturnedPayment();
 loadRewards();
 loadAchievements();
 initCloud();
