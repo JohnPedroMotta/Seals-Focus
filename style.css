@@ -762,8 +762,19 @@ button.foot-name:hover { text-decoration: underline; }
 }
 
 @media (max-width: 859px) {
-  .progress-tabs { max-width: 200px; }
-  .progress-tabs .progress-tab { flex: 0 0 33.333%; white-space: nowrap; }
+  .progress-tabs {
+    width: 100%;
+    max-width: none;
+  }
+  .progress-tabs .progress-tab {
+    flex: 1 1 0;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 10px 8px;
+    font-size: 0.8rem;
+  }
 }
 
 @keyframes fadeUp {
@@ -3315,14 +3326,18 @@ body.light ::selection { color: #fff; }
 @media (max-width: 859px) {
   .shop-tabs {
     max-width: none;
+    width: 100%;
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 6px;
     padding: 5px;
   }
   .shop-tabs .progress-tab {
     flex: none;
+    min-width: 0;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
     padding: 10px 6px;
     font-size: 0.8rem;
   }
