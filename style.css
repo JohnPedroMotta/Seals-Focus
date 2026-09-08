@@ -240,6 +240,33 @@ body {
   color: var(--accent-color);
 }
 
+.plan-price {
+  font-size: 1.9rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-main);
+  margin: 2px 0 6px;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.plan-price span {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.plan-cta {
+  margin-top: auto;
+  width: 100%;
+}
+
+.plan {
+  display: flex;
+  flex-direction: column;
+}
+
 /* Responsive: stack plans on mobile */
 @media (max-width: 859px) {
   .plans-comparison {
@@ -2627,6 +2654,13 @@ body.light ::selection { color: #fff; }
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 12px;
   margin-top: 14px;
+  width: 100%;
+}
+
+@media (max-width: 560px) {
+  .shop-grid {
+    grid-template-columns: repeat(auto-fill, minmax(100%, 1fr));
+  }
 }
 
 .crystal-ico {
@@ -2648,6 +2682,34 @@ body.light ::selection { color: #fff; }
   border-radius: var(--radius);
   padding: 14px;
   position: relative;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.shop-item .btn,
+.shop-item .shop-lock,
+.shop-item .shop-check {
+  flex-shrink: 0;
+}
+
+.shop-item .btn-crystal {
+  min-width: 96px;
+  justify-content: center;
+}
+
+@media (max-width: 560px) {
+  .shop-item {
+    flex-wrap: wrap;
+  }
+  .shop-item .btn,
+  .shop-item .shop-lock,
+  .shop-item .shop-check {
+    width: 100%;
+    min-height: 38px;
+  }
+  .shop-item .btn {
+    margin-top: 2px;
+  }
 }
 
 .shop-item.equipped {
@@ -2708,6 +2770,9 @@ body.light ::selection { color: #fff; }
   font-weight: 600;
   font-size: 0.92rem;
   color: var(--text-main);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .shop-item-cost {
@@ -3245,6 +3310,22 @@ body.light ::selection { color: #fff; }
 }
 .shop-tabs .progress-tab {
   flex: 1;
+}
+
+@media (max-width: 859px) {
+  .shop-tabs {
+    max-width: none;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    padding: 5px;
+  }
+  .shop-tabs .progress-tab {
+    flex: none;
+    white-space: nowrap;
+    padding: 10px 6px;
+    font-size: 0.8rem;
+  }
 }
 
 .shop-subcard {

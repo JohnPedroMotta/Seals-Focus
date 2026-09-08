@@ -3782,6 +3782,9 @@ function renderShop() {
     g.querySelectorAll('button[data-act]').forEach(btn =>
       btn.addEventListener('click', () => buyItem(Number(btn.dataset.id)))
     );
+    g.querySelectorAll('button[data-premium-sub]').forEach(btn =>
+      btn.addEventListener('click', () => openSubscribeModal(btn))
+    );
   });
 }
 
@@ -3800,7 +3803,7 @@ function renderShopPremium(grid, items) {
     let right;
     if (!owned) {
       right = locked
-        ? `<span class="shop-lock" title="Requer Premium para comprar"><i class="ti ti-lock"></i></span>`
+        ? `<button class="btn btn-sm btn-premium" data-premium-sub data-plan="Premium" data-price="R$ 9,90/mês" type="button" title="Assinar Premium para comprar este item"><i class="ti ti-crown"></i> Assinar Premium</button>`
         : `<button class="btn btn-sm btn-crystal" data-act="buy" data-id="${item.id}">${crystalIcon()} ${item.cost}</button>`;
     } else if (locked) {
       right = `<span class="shop-lock" title="Requer Premium"><i class="ti ti-lock"></i></span>`;
