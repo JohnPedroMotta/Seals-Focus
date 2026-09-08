@@ -2412,7 +2412,7 @@ function openSubscribeModal(btn) {
   if (payBtn) {
     payBtn.hidden = !link;
     if (link) {
-      payBtn.textContent = (pendingSubscribePlan.price ? pendingSubscribePlan.price + ' · ' : '') + 'Pagar com Mercado Pago';
+      payBtn.textContent = (pendingSubscribePlan.price ? pendingSubscribePlan.price + ' · ' : '') + 'Pagar agora';
       payBtn.onclick = () => window.open(link, '_blank', 'noopener');
     }
   }
@@ -3923,7 +3923,7 @@ function onPackageClick(e) {
   if (payBtn) {
     payBtn.hidden = !link;
     if (link) {
-      payBtn.textContent = (pk.price ? pk.price + ' · ' : '') + 'Pagar com Mercado Pago';
+      payBtn.textContent = (pk.price ? pk.price + ' · ' : '') + 'Pagar agora';
       payBtn.onclick = () => window.open(link, '_blank', 'noopener');
     }
   }
