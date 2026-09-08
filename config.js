@@ -28,10 +28,10 @@ const ADMIN_USER_ID = '104915e0-319a-40db-a9f9-568bcaf2d456';
  * ========================================================= */
 
 const PAYMENT_LINKS = {
-  premiumMonthly: '', // Premium R$ 9,90/mês         → botões "Assinar Premium"
-  premiumYearly: '',  // Premium R$ 69,90/ano        → botão "Plano Anual"
-  pkg1: '',          // 300 cristais         → R$ 4,90
-  pkg2: '',          // 900 cristais         → R$ 9,90
-  pkg3: '',          // 2500 cristais        → R$ 19,90
-  pkg4: ''           // 6000 cristais        → R$ 39,90 (Premium)
+  premiumMonthly: 'https://mpago.la/2kPC7e2', // Premium R$ 9,90/mês
+  premiumYearly: 'https://mpago.la/2ZrQsjk',  // Premium R$ 69,90/ano
+  pkg1: 'https://mpago.li/2TyUUmx',           // 300 cristais → R$ 4,90
+  pkg2: 'https://mpago.li/32ywNhd',           // 900 cristais → R$ 9,90
+  pkg3: 'https://mpago.li/1DHGdSZ',           // 2500 cristais → R$ 19,90
+  pkg4: 'https://mpago.li/2wAG2cP'            // 6000 cristais → R$ 39,90
 };
