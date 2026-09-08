@@ -28,7 +28,8 @@ const ADMIN_USER_ID = '104915e0-319a-40db-a9f9-568bcaf2d456';
  * ========================================================= */
 
 const PAYMENT_LINKS = {
-  premiumMonthly: '', // Premium R$ 9,90/mês  → botão "Assinar Premium"
+  premiumMonthly: '', // Premium R$ 9,90/mês         → botões "Assinar Premium"
+  premiumYearly: '',  // Premium R$ 69,90/ano        → botão "Plano Anual"
   pkg1: '',          // 300 cristais         → R$ 4,90
   pkg2: '',          // 900 cristais         → R$ 9,90
   pkg3: '',          // 2500 cristais        → R$ 19,90

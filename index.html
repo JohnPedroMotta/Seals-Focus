@@ -25,8 +25,8 @@
     window.addEventListener('unload', function() {});
   </script>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-  <script defer src="config.js?v=5"></script>
-  <script defer src="script.js?v=98"></script>
+  <script defer src="config.js?v=6"></script>
+  <script defer src="script.js?v=99"></script>
 </head>
 <body>
 
@@ -511,7 +511,7 @@
           </div>
           <div class="plan plan-premium" style="order:2;">
             <div class="plan-header">
-              <span class="plan-title">Premium</span>
+              <span class="plan-title">Premium Mensal</span>
               <span class="plan-badge premium-badge"><i class="ti ti-crown"></i> Premium</span>
             </div>
             <div class="plan-price">R$ 9,90<span>/mês</span></div>
@@ -521,7 +521,23 @@
               <li><i class="ti ti-brain"></i> Análise semanal completa com IA</li>
               <li><i class="ti ti-cloud"></i> Sincronização entre dispositivos</li>
             </ul>
-            <button class="btn btn-premium plan-cta" data-araction="subscribe" data-plan="Premium" data-price="R$ 9,90/mês" type="button"><i class="ti ti-crown"></i> Assinar agora</button>
+            <button class="btn btn-premium plan-cta" data-araction="subscribe" data-plan="Premium Mensal" data-price="R$ 9,90/mês" data-pay="premiumMonthly" type="button"><i class="ti ti-crown"></i> Assinar</button>
+          </div>
+          <div class="plan plan-premium" style="order:3;">
+            <span class="pricing-flag">Melhor valor</span>
+            <div class="plan-header">
+              <span class="plan-title">Premium Anual</span>
+              <span class="plan-badge premium-badge"><i class="ti ti-crown"></i> Premium</span>
+            </div>
+            <div class="plan-price">R$ 69,90<span>/ano</span></div>
+            <ul class="plan-features">
+              <li><i class="ti ti-star"></i> Todos os temas e bordas premium</li>
+              <li><i class="ti ti-adjust"></i> Temporizadores totalmente customizáveis</li>
+              <li><i class="ti ti-brain"></i> Análise semanal completa com IA</li>
+              <li><i class="ti ti-cloud"></i> Sincronização entre dispositivos</li>
+              <li><i class="ti ti-discount-2"></i> Economize até 3 meses — equivale a R$ 5,83/mês</li>
+            </ul>
+            <button class="btn btn-premium plan-cta" data-araction="subscribe" data-plan="Premium Anual" data-price="R$ 69,90/ano" data-pay="premiumYearly" type="button"><i class="ti ti-crown"></i> Assinar</button>
           </div>
         </div>
         <div style="margin-top:24px; display:flex; justify-content:center;">

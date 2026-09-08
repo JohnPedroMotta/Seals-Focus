@@ -2406,7 +2406,8 @@ function openSubscribeModal(btn) {
   $('subscribePlanName').textContent = pendingSubscribePlan.name ? 'Plano ' + pendingSubscribePlan.name : 'Plano';
   $('subscribePlanPrice').textContent = pendingSubscribePlan.price || '—';
   $('subscribeError').hidden = true;
-  const link = PAYMENT_LINKS.premiumMonthly || '';
+  const payKey = btn.dataset.pay || 'premiumMonthly';
+  const link = PAYMENT_LINKS[payKey] || PAYMENT_LINKS.premiumMonthly || '';
   const payBtn = $('subscribePayBtn');
   if (payBtn) {
     payBtn.hidden = !link;
