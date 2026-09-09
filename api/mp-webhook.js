@@ -49,8 +49,8 @@ module.exports = async (req, res) => {
       if (r.error) console.error('payment_add_crystals:', r.error.message);
     }
     if (item.premium) {
-      const r = await sb.rpc('payment_set_premium', { p_user_id: userId });
-      if (r.error) console.error('payment_set_premium:', r.error.message);
+      const r = await sb.rpc('payment_add_premium', { p_user_id: userId, p_months: item.premium });
+      if (r.error) console.error('payment_add_premium:', r.error.message);
     }
   } catch (err) {
     console.error('/api/mp-webhook:', err);

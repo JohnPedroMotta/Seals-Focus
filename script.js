@@ -395,6 +395,7 @@ function setCloudUser(user) {
     $('settingsDataCard').hidden = false;
     $('settingsAccountCard').hidden = false;
     loadProfile();
+    refreshPremiumStatus();
     pullProfile().then(() => {
       syncProfileUI();
       applyBorderTo($('avatarBtn'), equippedBorder);
@@ -2388,6 +2389,12 @@ function renderPremiumView() {
     status.innerHTML = isPremium
       ? '<i class="ti ti-check"></i> Você já é Premium — aproveite todos os recursos!'
       : '<i class="ti ti-crown"></i> Planos premium disponíveis';
+    if (isPremium && premiumUntilMs) {
+      const d = new Date(premiumUntilMs);
+      const dd = ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + '/' + d.getFullYear();
+      const hh = ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+      status.innerHTML += `<br><small>Assinatura válida até ${dd} às ${hh}</small>`;
+    }
     status.classList.toggle('chip-ok', isPremium);
   }
   document.querySelectorAll('[data-araction="subscribe"]').forEach(b => {
@@ -2395,6 +2402,43 @@ function renderPremiumView() {
     if (isPremium) { b.textContent = 'Premium ativo'; }
     else { b.innerHTML = 'Assinar agora'; }
   });
+}
+
+/* Expiração do Premium (assinatura mensal/anual) */
+let premiumUntilMs = null;
+let premiumExpiryTimer = null;
+
+function applyPremiumUntil(valOrNull) {
+  premiumUntilMs = valOrNull ? new Date(valOrNull).getTime() : null;
+  if (isPremium && premiumUntilMs != null && premiumUntilMs <= Date.now()) {
+    isPremium = false;
+    enforcePremiumGuard();
+  }
+  if (premiumExpiryTimer) { clearTimeout(premiumExpiryTimer); premiumExpiryTimer = null; }
+  if (premiumUntilMs != null && premiumUntilMs > Date.now()) {
+    premiumExpiryTimer = setTimeout(() => {
+      isPremium = false;
+      enforcePremiumGuard();
+      renderShop();
+      toast('Seu Premium expirou. Renove quando quiser. 👑', 'info');
+    }, premiumUntilMs - Date.now() + 1500);
+  }
+  updatePremiumCardStatus();
+}
+
+async function refreshPremiumStatus() {
+  if (!sb.client || !sb.user) return;
+  try {
+    await sb.client.rpc('sync_premium_status');
+    const { data } = await sb.client.from('profiles')
+      .select('is_premium, premium_until')
+      .eq('user_id', sb.user.id)
+      .maybeSingle();
+    if (data) {
+      isPremium = !!data.is_premium && (!data.premium_until || new Date(data.premium_until).getTime() > Date.now());
+      applyPremiumUntil(data.premium_until);
+    }
+  } catch (e) { console.error('refreshPremiumStatus:', e); }
 }
 
 let pendingSubscribePlan = null;
@@ -2484,7 +2528,7 @@ function applyReturnedPayment() {
   history.replaceState(null, '', clean || location.pathname);
   if (status === 'success') {
     toast('Pagamento aprovado! Em alguns segundos seus créditos vão aparecer. ✅', 'success');
-    if (sb.user) loadProfile();
+    if (sb.user) { loadProfile(); refreshPremiumStatus(); setTimeout(() => loadShop().then(() => { if (currentView === 'shop') renderShop(); }), 4000); }
   } else if (status === 'pending') {
     toast('Pagamento em processamento. Assim que confirmar, os créditos entram sozinhos. ⏳', 'info');
   } else {
@@ -2822,6 +2866,7 @@ function applyCloudPrefs(r) {
   }
   if (typeof r.is_premium === 'boolean') {
     isPremium = r.is_premium;
+    if (r.premium_until != null) applyPremiumUntil(r.premium_until);
     enforcePremiumGuard();
   }
   if (typeof r.privacy_show_subjects === 'boolean') {

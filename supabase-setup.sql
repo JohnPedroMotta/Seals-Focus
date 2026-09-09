@@ -1,6 +1,7 @@
 -- =========================================================
 -- A PAGAMENTOS AUTOMÁTICOS  (rodar UMA única vez no Supabase)
 -- SQL Editor do Supabase -> colar -> Run
+-- Estrutura idempotente: pode rodar de novo sem quebrar.
 -- =========================================================
 
 -- 1) Log de pagamentos (impede creditar 2x e serve de auditoria)
@@ -27,7 +28,13 @@ begin
   return found;
 end $$;
 
--- 3) Adicionar cristais (retorna o novo saldo)
+-- 3) Coluna de expiração do Premium (assinatura mensal/anual)
+alter table public.profiles add column if not exists premium_until timestamptz;
+-- Quem já era Premium por admin sem data: vira Premium vitalício
+update public.profiles set premium_until = now() + interval '10 years'
+ where is_premium and premium_until is null;
+
+-- 4) Adicionar cristais (retorna o novo saldo)
 create or replace function public.payment_add_crystals(
   p_user_id uuid,
   p_amount integer
@@ -35,8 +42,7 @@ create or replace function public.payment_add_crystals(
 language plpgsql security definer set search_path = public as $$
 declare v_total integer;
 begin
-  update public.user_crystals
-     set total_crystals = total_crystals + p_amount
+  update public.user_crystals set total_crystals = total_crystals + p_amount
    where user_id = p_user_id;
   if not found then
     insert into public.user_crystals(user_id, total_crystals)
@@ -46,19 +52,47 @@ begin
   return v_total;
 end $$;
 
--- 4) Ativar Premium
-create or replace function public.payment_set_premium(p_user_id uuid)
-returns boolean
+-- 5) Conceder/renovar Premium por meses (usado pela assinatura recorrente)
+create or replace function public.payment_add_premium(
+  p_user_id uuid,
+  p_months integer
+) returns timestamptz
 language plpgsql security definer set search_path = public as $$
+declare v_until timestamptz;
 begin
-  update public.profiles set is_premium = true where user_id = p_user_id;
-  return found;
+  select coalesce(premium_until, now()) + (p_months || ' months')::interval
+    into v_until
+    from public.profiles where user_id = p_user_id;
+  update public.profiles
+     set premium_until = v_until,
+         is_premium = true
+   where user_id = p_user_id;
+  return v_until;
 end $$;
 
--- 5) Só o service_role (webhook) chama estas funções; usuários comuns não
+-- 6) Sincroniza o status do Premium do próprio usuário (expira automaticamente)
+create or replace function public.sync_premium_status()
+returns boolean
+language plpgsql security definer set search_path = public as $$
+declare v boolean;
+begin
+  update public.profiles
+     set is_premium = (premium_until > now())
+   where user_id = auth.uid() and premium_until is not null;
+  select is_premium into v from public.profiles where user_id = auth.uid();
+  return coalesce(v, false);
+end $$;
+
+-- 7) Remove função antiga (substituída pela payment_add_premium)
+drop function if exists public.payment_set_premium(uuid);
+
+-- 8) Permissões: webhook usa service_role; usuário sincroniza o próprio premium
 revoke execute on function public.payment_record(bigint, uuid, text, numeric) from anon, authenticated;
 revoke execute on function public.payment_add_crystals(uuid, integer) from anon, authenticated;
-revoke execute on function public.payment_set_premium(uuid) from anon, authenticated;
+revoke execute on function public.payment_add_premium(uuid, integer) from anon, authenticated;
+revoke execute on function public.sync_premium_status() from anon;
+
 grant execute on function public.payment_record(bigint, uuid, text, numeric) to service_role;
 grant execute on function public.payment_add_crystals(uuid, integer) to service_role;
-grant execute on function public.payment_set_premium(uuid) to service_role;
+grant execute on function public.payment_add_premium(uuid, integer) to service_role;
+grant execute on function public.sync_premium_status() to authenticated;
