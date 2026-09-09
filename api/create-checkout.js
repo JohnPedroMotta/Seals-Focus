@@ -1,5 +1,7 @@
 // POST /api/create-checkout
 // { itemId, userId } -> cria checkout no Mercado Pago e devolve { init_point }.
+// Cristais = pagamento único. Premium = pagamento único que concede meses
+// (Pix, QR ou cartão, sem exigir conta Mercado Pago do cliente).
 const { ITEMS } = require('./config');
 
 module.exports = async (req, res) => {
@@ -19,34 +21,6 @@ module.exports = async (req, res) => {
 
     const origin = (req.headers['x-forwarded-proto'] || 'https') + '://' + req.headers.host;
 
-    const headers = { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' };
-
-    // Premium = ASSINATURA recorrente (cobra automático todo mês/ano)
-    if (item.premium) {
-      const body = {
-        reason: item.title,
-        external_reference: itemId + '::' + userId,
-        notification_url: origin + '/api/mp-webhook',
-        back_url: origin + '/?pay=success',
-        auto_recurring: {
-          frequency: item.premium, // 1 = mensal, 12 = anual
-          frequency_type: 'months',
-          transaction_amount: item.price,
-          currency_id: 'BRL',
-        },
-      };
-      const mp = await fetch('https://api.mercadopago.com/preapproval', {
-        method: 'POST', headers, body: JSON.stringify(body),
-      });
-      const json = await mp.json();
-      if (!mp.ok) {
-        console.error('MP preapproval failed:', JSON.stringify(json));
-        return res.status(502).json({ error: 'O Mercado Pago recusou a assinatura.', detail: json });
-      }
-      return res.json({ init_point: json.init_point });
-    }
-
-    // Cristais = pagamento único (Checkout Pro)
     const body = {
       items: [{ id: itemId, title: item.title, quantity: 1, unit_price: item.price, currency_id: 'BRL' }],
       external_reference: itemId + '::' + userId,
@@ -60,8 +34,11 @@ module.exports = async (req, res) => {
       statement_descriptor: 'SEALS FOCUS',
     };
 
+    // Checkout Pro aceita Pix/QR: o cliente paga pelo próprio banco, sem conta MP
     const mp = await fetch('https://api.mercadopago.com/checkout/preferences', {
-      method: 'POST', headers, body: JSON.stringify(body),
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
     });
     const json = await mp.json();
     if (!mp.ok) {

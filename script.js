@@ -2393,7 +2393,7 @@ function renderPremiumView() {
       const d = new Date(premiumUntilMs);
       const dd = ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + '/' + d.getFullYear();
       const hh = ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
-      status.innerHTML += `<br><small>Assinatura válida até ${dd} às ${hh}</small>`;
+      status.innerHTML += `<br><small>Premium válido até ${dd} às ${hh}</small>`;
     }
     status.classList.toggle('chip-ok', isPremium);
   }

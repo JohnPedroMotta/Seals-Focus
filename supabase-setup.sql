@@ -52,7 +52,7 @@ begin
   return v_total;
 end $$;
 
--- 5) Conceder/renovar Premium por meses (usado pela assinatura recorrente)
+-- 5) Conceder/renovar Premium por meses (pagamento Pix único aprovado via webhook)
 create or replace function public.payment_add_premium(
   p_user_id uuid,
   p_months integer
