@@ -1409,57 +1409,87 @@ button.foot-name:hover { text-decoration: underline; }
 
 /* ---------- Assuntos ---------- */
 .topic-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.topic-overview {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-}
-
-@media (max-width: 900px) {
-  .topic-stats { grid-template-columns: 1fr; }
-}
-
-.topic-group {
-  background: var(--input-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  padding: 14px 16px;
-  display: flex;
-  flex-direction: column;
+  grid-template-columns: repeat(4, 1fr);
   gap: 10px;
-}
-
-.topic-group-head {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding-bottom: 10px;
+  padding-bottom: 18px;
   border-bottom: 1px solid var(--border-color);
 }
 
-.topic-group-title {
+@media (max-width: 640px) {
+  .topic-overview { grid-template-columns: repeat(2, 1fr); gap: 14px; }
+}
+
+.topic-overview .metric-card {
+  border-right: 1px solid var(--border-color);
+  padding-right: 14px;
+}
+
+.topic-overview .metric-card:nth-child(2n) { border-right: none; padding-right: 0; }
+
+@media (min-width: 641px) {
+  .topic-overview .metric-card:nth-child(2n) { border-right: 1px solid var(--border-color); padding-right: 14px; }
+  .topic-overview .metric-card:last-child { border-right: none; padding-right: 0; }
+}
+
+.topic-subject {
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.topic-subject-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.topic-subject-title {
   font-weight: 700;
-  font-size: 0.92rem;
+  font-size: 0.95rem;
   color: var(--text-main);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.topic-group-total {
+.topic-subject-total {
   font-size: 0.78rem;
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
-.topic-item {
+.topic-subject-rows {
+  display: flex;
+  flex-direction: column;
+}
+
+.topic-row {
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(56px, 1fr) minmax(96px, auto);
+  grid-template-columns: minmax(0, 1.4fr) minmax(70px, 1fr) 118px 40px;
   align-items: center;
-  gap: 10px;
-  min-width: 0;
+  gap: 12px;
+  padding: 10px 16px;
 }
 
-.topic-item-name {
+@media (max-width: 560px) {
+  .topic-row { grid-template-columns: minmax(0, 1fr) 84px 38px; }
+}
+
+.topic-row + .topic-row { border-top: 1px dashed var(--border-color); }
+
+.topic-row-name {
   color: var(--text-main);
   font-size: 0.85rem;
   overflow: hidden;
@@ -1467,42 +1497,66 @@ button.foot-name:hover { text-decoration: underline; }
   white-space: nowrap;
 }
 
-.topic-item-bar {
+.topic-row-bar {
   height: 6px;
-  background: var(--bg-color);
+  background: var(--input-bg);
   border-radius: 999px;
   overflow: hidden;
 }
 
-.topic-item-fill {
+.topic-row-fill {
   height: 100%;
   background: linear-gradient(90deg, var(--accent-hover), var(--accent-color));
   border-radius: 999px;
   transition: width 0.4s ease;
 }
 
-.topic-item-data {
+.topic-row-data {
+  font-size: 0.8rem;
   color: var(--text-muted);
-  font-size: 0.78rem;
   font-variant-numeric: tabular-nums;
   text-align: right;
   white-space: nowrap;
+}
+
+.topic-row-data strong {
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+.topic-acc {
   justify-self: end;
-}
-
-.topic-item-questions {
+  min-width: 40px;
+  text-align: center;
   font-size: 0.72rem;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
+  padding: 3px 7px;
+  border-radius: 999px;
 }
 
-.topic-item-questions .q-ok { color: var(--text-muted); }
-.topic-item-questions .q-acc { color: var(--accent-color); font-weight: 700; }
+.topic-acc.none {
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.04);
+}
 
-.topic-track {
-  display: flex;
-  justify-content: flex-end;
-  gap: 14px;
-  margin-top: -4px;
+.topic-acc.good {
+  color: #22c55e;
+  background: rgba(34, 197, 94, 0.12);
+}
+
+.topic-acc.mid {
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.12);
+}
+
+.topic-acc.low {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.12);
+}
+
+@media (max-width: 560px) {
+  .topic-row-bar { display: none; }
 }
 
 .summary-list {

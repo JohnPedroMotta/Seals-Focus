@@ -2057,67 +2057,111 @@ function renderStats() {
   if (perSubjectTopic.size === 0) {
     tbox.appendChild(emptyRow('Sem dados ainda.'));
   } else {
+    const overview = document.createElement('div');
+    overview.className = 'topic-overview';
+
+    const allSubjectSecs = [...perSubjectTopic.values()]
+      .reduce((a, topics) => a + [...topics.values()].reduce((b, t) => b + t.secs, 0), 0);
+    const allQ = [...perSubjectTopic.values()]
+      .reduce((a, topics) => a + [...topics.values()].reduce((b, t) => b + t.qTotal, 0), 0);
+    const allR = [...perSubjectTopic.values()]
+      .reduce((a, topics) => a + [...topics.values()].reduce((b, t) => b + t.qRight, 0), 0);
+
+    const ovItems = [
+      { label: 'Matérias', value: String(perSubjectTopic.size) },
+      { label: 'Assuntos', value: String([...perSubjectTopic.values()].reduce((a, t) => a + t.size, 0)) },
+      { label: 'Tempo total', value: fmtHM(allSubjectSecs) },
+      { label: 'Acerto geral', value: allQ > 0 ? `${Math.round((allR / allQ) * 100)}%` : '—' }
+    ];
+    ovItems.forEach(({ label, value }) => {
+      const mc = document.createElement('div');
+      mc.className = 'metric-card';
+      const lbl = document.createElement('span');
+      lbl.className = 'metric-label';
+      lbl.textContent = label;
+      const val = document.createElement('span');
+      val.className = 'metric-value';
+      val.style.fontSize = '1.15rem';
+      val.textContent = value;
+      mc.append(lbl, val);
+      overview.appendChild(mc);
+    });
+    tbox.appendChild(overview);
+
     const sortedSubjects = [...perSubjectTopic.entries()]
       .sort((a, b) => a[0].localeCompare(b[0], 'pt-BR'));
     sortedSubjects.forEach(([subject, topics]) => {
       const group = document.createElement('div');
-      group.className = 'topic-group';
+      group.className = 'topic-subject';
 
       const headGroup = document.createElement('div');
-      headGroup.className = 'topic-group-head';
+      headGroup.className = 'topic-subject-head';
       const groupTitle = document.createElement('span');
-      groupTitle.className = 'topic-group-title';
+      groupTitle.className = 'topic-subject-title';
       groupTitle.textContent = subject;
+      groupTitle.title = subject;
       const groupTotal = document.createElement('span');
-      groupTotal.className = 'topic-group-total';
+      groupTotal.className = 'topic-subject-total';
       const subjectSecs = [...topics.values()].reduce((a, t) => a + t.secs, 0);
       const subjectCount = [...topics.values()].reduce((a, t) => a + t.count, 0);
       const subjectQ = [...topics.values()].reduce((a, t) => a + t.qTotal, 0);
-      const subjectR = [...topics.values()].reduce((a, t) => a + t.qRight, 0);
-      const totalParts = [`${fmtHM(subjectSecs)}`, `${subjectCount}x`];
-      if (subjectQ > 0) totalParts.push(`Q: ${subjectQ}`, `Acerto ${Math.round((subjectR / subjectQ) * 100)}%`);
+      const share = allSubjectSecs > 0 ? Math.round((subjectSecs / allSubjectSecs) * 100) : 0;
+      const totalParts = [`${fmtHM(subjectSecs)}`, `${subjectCount}x`, `${share}%`];
+      if (subjectQ > 0) {
+        const subjectR = [...topics.values()].reduce((a, t) => a + t.qRight, 0);
+        totalParts.push(`Acerto ${Math.round((subjectR / subjectQ) * 100)}%`);
+      }
       groupTotal.textContent = totalParts.join(' · ');
       headGroup.append(groupTitle, groupTotal);
 
       group.appendChild(headGroup);
 
+      const rowsWrap = document.createElement('div');
+      rowsWrap.className = 'topic-subject-rows';
+
       const sortedTopics = [...topics.entries()].sort((a, b) => b[1].secs - a[1].secs);
       const maxTopic = sortedTopics[0][1].secs;
       sortedTopics.forEach(([topic, data]) => {
         const item = document.createElement('div');
-        item.className = 'topic-item';
+        item.className = 'topic-row';
 
         const nameEl = document.createElement('span');
-        nameEl.className = 'topic-item-name';
+        nameEl.className = 'topic-row-name';
         nameEl.textContent = topic;
         nameEl.title = topic;
+        item.appendChild(nameEl);
 
         const barEl = document.createElement('span');
-        barEl.className = 'topic-item-bar';
+        barEl.className = 'topic-row-bar';
         const fillEl = document.createElement('span');
-        fillEl.className = 'topic-item-fill';
+        fillEl.className = 'topic-row-fill';
         fillEl.style.width = `${maxTopic > 0 ? Math.max((data.secs / maxTopic) * 100, 4) : 0}%`;
         barEl.appendChild(fillEl);
+        item.appendChild(barEl);
 
         const dataEl = document.createElement('span');
-        dataEl.className = 'topic-item-data';
-        dataEl.textContent = `${fmtHM(data.secs)} · ${data.count}x`;
+        dataEl.className = 'topic-row-data';
+        dataEl.textContent = `${fmtHM(data.secs)}`;
+        if (data.count > 1) dataEl.textContent += ` · ${data.count}x`;
+        item.appendChild(dataEl);
 
-        item.append(nameEl, barEl, dataEl);
-        group.appendChild(item);
-
+        const accEl = document.createElement('span');
+        accEl.className = 'topic-acc';
         if (data.qTotal > 0) {
           const pct = Math.round((data.qRight / data.qTotal) * 100);
-          const track = document.createElement('div');
-          track.className = 'topic-track';
-          const qEl = document.createElement('span');
-          qEl.className = 'topic-item-questions';
-          qEl.innerHTML = `<span class="q-ok">Questões: ${data.qTotal}</span> · <span class="q-acc">${pct}% acerto</span>`;
-          track.appendChild(qEl);
-          group.appendChild(track);
+          accEl.textContent = `${pct}%`;
+          accEl.classList.add(pct >= 70 ? 'good' : pct >= 40 ? 'mid' : 'low');
+          accEl.title = `${data.qRight} de ${data.qTotal} questões`;
+        } else {
+          accEl.textContent = '—';
+          accEl.classList.add('none');
         }
+        item.appendChild(accEl);
+
+        rowsWrap.appendChild(item);
       });
 
+      group.appendChild(rowsWrap);
       tbox.appendChild(group);
     });
   }
