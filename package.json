@@ -2,6 +2,9 @@
   "name": "seals-focus",
   "private": true,
   "version": "1.0.0",
+  "engines": {
+    "node": "20.x"
+  },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0"
   }
