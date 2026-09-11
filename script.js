@@ -38,16 +38,16 @@ const SIGNUP_BONUS = 200;
 const WELCOME_SHOWN_KEY = 'seals_welcome_shown';
 
 const SUBJECT_COLORS = [
-  '#f0a63c',
-  '#22c55e',
-  '#3b82f6',
-  '#a855f7',
-  '#ec4899',
   '#ef4444',
-  '#14b8a6',
   '#f97316',
-  '#6366f1',
-  '#eab308'
+  '#eab308',
+  '#22c55e',
+  '#14b8a6',
+  '#06b6d4',
+  '#3b82f6',
+  '#8b5cf6',
+  '#ec4899',
+  '#78716c'
 ];
 
 /* ================= Conquistas ================= */
@@ -1259,6 +1259,7 @@ let currentView = 'study';
 
 let progressPane = 'stats';
 function setProgressPane(pane) {
+  if (!pane) return;
   progressPane = pane;
   document.querySelectorAll('#view-progress .progress-tab').forEach(t =>
     t.classList.toggle('active', t.dataset.pane === pane)
@@ -1297,7 +1298,7 @@ document.querySelectorAll('.nav-btn, .tab-btn').forEach(btn =>
   btn.addEventListener('click', () => switchView(btn.dataset.view))
 );
 
-document.querySelectorAll('.progress-tab').forEach(t =>
+document.querySelectorAll('#view-progress .progress-tab').forEach(t =>
   t.addEventListener('click', () => setProgressPane(t.dataset.pane))
 );
 
