@@ -1407,6 +1407,61 @@ button.foot-name:hover { text-decoration: underline; }
   transition: width 0.4s ease;
 }
 
+/* ---------- Assuntos ---------- */
+.topic-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.topic-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.topic-group-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px dashed var(--border-color);
+}
+
+.topic-group-title {
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.topic-group-total {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.topic-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  font-size: 0.85rem;
+  padding-left: 8px;
+}
+
+.topic-item-name {
+  color: var(--text-main);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.topic-item-data {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 .summary-list {
   list-style: none;
   display: flex;

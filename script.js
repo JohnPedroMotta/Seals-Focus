@@ -2038,6 +2038,68 @@ function renderStats() {
     });
   }
 
+  // Por assunto (agrupado por matéria)
+  const tbox = $('topicStats');
+  tbox.innerHTML = '';
+  const perSubjectTopic = new Map();
+  state.sessions.forEach(s => {
+    const topic = s.topic || 'Geral';
+    if (!perSubjectTopic.has(s.subject)) perSubjectTopic.set(s.subject, new Map());
+    const topics = perSubjectTopic.get(s.subject);
+    const cur = topics.get(topic) || { secs: 0, count: 0, qTotal: 0, qRight: 0 };
+    cur.secs += s.duration;
+    cur.count++;
+    cur.qTotal += s.qTotal;
+    cur.qRight += s.qRight;
+    topics.set(topic, cur);
+  });
+
+  if (perSubjectTopic.size === 0) {
+    tbox.appendChild(emptyRow('Sem dados ainda.'));
+  } else {
+    const sortedSubjects = [...perSubjectTopic.entries()]
+      .sort((a, b) => a[0].localeCompare(b[0], 'pt-BR'));
+    sortedSubjects.forEach(([subject, topics]) => {
+      const group = document.createElement('div');
+      group.className = 'topic-group';
+
+      const headGroup = document.createElement('div');
+      headGroup.className = 'topic-group-head';
+      const groupTitle = document.createElement('span');
+      groupTitle.className = 'topic-group-title';
+      groupTitle.textContent = subject;
+      const groupTotal = document.createElement('span');
+      groupTotal.className = 'topic-group-total';
+      const subjectSecs = [...topics.values()].reduce((a, t) => a + t.secs, 0);
+      const subjectCount = [...topics.values()].reduce((a, t) => a + t.count, 0);
+      groupTotal.textContent = `${fmtHM(subjectSecs)} · ${subjectCount}x`;
+      headGroup.append(groupTitle, groupTotal);
+
+      group.appendChild(headGroup);
+
+      const sortedTopics = [...topics.entries()].sort((a, b) => b[1].secs - a[1].secs);
+      sortedTopics.forEach(([topic, data]) => {
+        const item = document.createElement('div');
+        item.className = 'topic-item';
+        const nameEl = document.createElement('span');
+        nameEl.className = 'topic-item-name';
+        nameEl.textContent = topic;
+        const dataEl = document.createElement('span');
+        dataEl.className = 'topic-item-data';
+        const parts = [`${fmtHM(data.secs)}`, `${data.count}x`];
+        if (data.qTotal > 0) {
+          const pct = Math.round((data.qRight / data.qTotal) * 100);
+          parts.push(`Q: ${data.qTotal} (${pct}%)`);
+        }
+        dataEl.textContent = parts.join(' · ');
+        item.append(nameEl, dataEl);
+        group.appendChild(item);
+      });
+
+      tbox.appendChild(group);
+    });
+  }
+
   // Resumo geral
   const summary = $('summaryList');
   summary.innerHTML = '';
