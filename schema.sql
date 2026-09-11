@@ -293,6 +293,7 @@ create trigger trg_guard_friendship_insert
 -- Retorna pontos, sessões, tempo da semana, tempo de hoje e sequência.
 -- NOTA: calcula os dias pelo servidor (UTC); pode haver pequena
 -- defasagem de 1 dia perto da virada do fuso do usuário.
+drop function if exists public.get_friend_stats(uuid);
 create or replace function public.get_friend_stats(friend_id uuid)
 returns table (
   total_points bigint,
