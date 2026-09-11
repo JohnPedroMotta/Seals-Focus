@@ -238,6 +238,7 @@
       <div class="progress-tabs" role="tablist" aria-label="Visualização">
         <button class="progress-tab active" data-pane="stats" role="tab" aria-selected="true" type="button"><i class="ti ti-chart-bar"></i> Desempenho</button>
         <button class="progress-tab" data-pane="feed" role="tab" aria-selected="false" type="button"><i class="ti ti-history"></i> Histórico</button>
+        <button class="progress-tab" data-pane="topics" role="tab" aria-selected="false" type="button"><i class="ti ti-books"></i> Assuntos</button>
       </div>
 
       <div class="progress-pane" data-pane="stats">
@@ -264,11 +265,6 @@
             <ul class="summary-list" id="summaryList"></ul>
           </section>
         </div>
-
-        <section class="card">
-          <h3 class="panel-title">Assuntos</h3>
-          <div class="topic-stats" id="topicStats"><p class="empty">Sem dados ainda.</p></div>
-        </section>
 
         <section class="card diagnostico-card">
           <div class="card-head">
@@ -316,6 +312,15 @@
             <button class="link-btn" id="clearFilters" type="button">Limpar filtros</button>
           </div>
           <div class="history-list" id="feedList"></div>
+        </section>
+      </div>
+
+      <div class="progress-pane" data-pane="topics" hidden>
+        <section class="card">
+          <div class="card-head">
+            <h3 class="panel-title">Assuntos</h3>
+          </div>
+          <div class="topic-stats" id="topicStats"><p class="empty">Sem dados ainda.</p></div>
         </section>
       </div>
     </section>
