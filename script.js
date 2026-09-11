@@ -35,6 +35,7 @@ const SPENT_DAYS_KEY = 'foco.spentdays.v1';
 let spentRewardDays = new Set();
 const POINTS_PER_DAY = 100;
 const SIGNUP_BONUS = 200;
+const WELCOME_SHOWN_KEY = 'seals_welcome_shown';
 
 /* ================= Conquistas ================= */
 const ACH_KEY = 'foco.ach.v1';
@@ -164,6 +165,7 @@ async function setUserPoints(pts) {
 
 async function awardSignupBonus() {
   if (!sb.client || !sb.user) return;
+  if (localStorage.getItem(WELCOME_SHOWN_KEY)) return;
   try {
     const { data } = await sb.client.from('user_points').select('total_points').eq('user_id', sb.user.id).maybeSingle();
     if (!data) {
@@ -176,6 +178,7 @@ async function awardSignupBonus() {
       localStorage.setItem(UPOINTS_KEY, userPoints);
       $('welcomeOverlay').hidden = false;
     }
+    localStorage.setItem(WELCOME_SHOWN_KEY, '1');
   } catch (e) { console.error('awardSignupBonus:', e); }
 }
 
