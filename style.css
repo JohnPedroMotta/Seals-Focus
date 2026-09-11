@@ -1152,25 +1152,6 @@ button.foot-name:hover { text-decoration: underline; }
   flex-shrink: 0;
 }
 
-.hc-subject-name-wrap {
-  gap: 6px;
-  min-width: 0;
-}
-
-.hc-subject-name-wrap .subject-name-dot {
-  width: 9px;
-  height: 9px;
-}
-
-.hc-subject-name-wrap .hc-subject-name {
-  font-size: 0.95rem;
-  font-weight: 700;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  flex: 1;
-}
-
 .hc-topic {
   font-size: 0.8rem;
   color: var(--text-muted);

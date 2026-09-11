@@ -1692,25 +1692,21 @@ function renderWeekStrip(perDay) {
 function buildSessionCard(session, showDelete) {
   const card = document.createElement('div');
   card.className = 'history-item';
+  if (state.subjectColors?.[session.subject]) {
+    card.style.borderColor = state.subjectColors[session.subject];
+  }
 
   // Matéria / assunto
   const cellSubject = document.createElement('div');
   cellSubject.className = 'hc-subject';
-  const nameWrap = document.createElement('div');
-  nameWrap.className = 'subject-row-name-wrap hc-subject-name-wrap';
-  const nameDot = document.createElement('i');
-  nameDot.className = 'subject-name-dot';
-  nameDot.style.background = state.subjectColors?.[session.subject] || 'var(--text-muted)';
   const h4 = document.createElement('h4');
   h4.className = 'hc-subject-name';
   h4.textContent = session.subject;
-  nameWrap.append(nameDot, h4);
-  nameWrap.title = session.subject;
 
   const p = document.createElement('p');
   p.className = 'hc-topic';
   p.textContent = session.topic || '';
-  cellSubject.append(nameWrap, p);
+  cellSubject.append(h4, p);
 
   // Observação (expandida, de cima pra baixo, quebra de linha natural)
   if (session.obs) {
