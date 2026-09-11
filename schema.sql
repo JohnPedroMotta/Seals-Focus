@@ -27,8 +27,12 @@ create table if not exists public.subjects (
   user_id  uuid not null references auth.users (id) on delete cascade,
   name     text not null,
   topics   jsonb not null default '[]'::jsonb,
+  color    text,
   primary key (user_id, name)
 );
+
+-- Cor da matéria (recurso Premium) para bancos já existentes
+alter table public.subjects add column if not exists color text;
 
 -- Segurança: cada usuário só acessa os PRÓPRIOS dados ----------
 alter table public.sessions enable row level security;

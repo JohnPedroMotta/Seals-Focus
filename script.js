@@ -23,7 +23,7 @@ const DONATION_LINK = '';
 const REWARDS_KEY = 'foco.rewards.v1';
 const UPOINTS_KEY = 'foco.points.v1';
 
-const defaultState = () => ({ sessions: [], subjects: {}, deletedIds: [] });
+const defaultState = () => ({ sessions: [], subjects: {}, subjectColors: {}, deletedIds: [] });
 let state = defaultState();
 let storeKey = DATA_KEY;
 
@@ -36,6 +36,19 @@ let spentRewardDays = new Set();
 const POINTS_PER_DAY = 100;
 const SIGNUP_BONUS = 200;
 const WELCOME_SHOWN_KEY = 'seals_welcome_shown';
+
+const SUBJECT_COLORS = [
+  '#f0a63c',
+  '#22c55e',
+  '#3b82f6',
+  '#a855f7',
+  '#ec4899',
+  '#ef4444',
+  '#14b8a6',
+  '#f97316',
+  '#6366f1',
+  '#eab308'
+];
 
 /* ================= Conquistas ================= */
 const ACH_KEY = 'foco.ach.v1';
@@ -222,6 +235,7 @@ function loadState() {
     const parsed = JSON.parse(raw);
     state.sessions = Array.isArray(parsed.sessions) ? parsed.sessions : [];
     state.subjects = parsed.subjects && typeof parsed.subjects === 'object' ? parsed.subjects : {};
+    state.subjectColors = parsed.subjectColors && typeof parsed.subjectColors === 'object' ? parsed.subjectColors : {};
     state.deletedIds = Array.isArray(parsed.deletedIds) ? parsed.deletedIds : [];
   } catch { /* dados corrompidos: começa limpo */ }
 }
@@ -346,12 +360,13 @@ function setCloudUser(user) {
         if (Array.isArray(anon.sessions) && anon.sessions.length > 0) {
           const userKey = `${DATA_KEY}.u.${user.id}`;
           const userRaw = localStorage.getItem(userKey);
-          const userState = userRaw ? JSON.parse(userRaw) : { sessions: [], subjects: {}, deletedIds: [] };
+          const userState = userRaw ? JSON.parse(userRaw) : { sessions: [], subjects: {}, subjectColors: {}, deletedIds: [] };
           const existingIds = new Set((userState.sessions || []).map(s => s.id));
           const merged = (anon.sessions || []).filter(s => !existingIds.has(s.id));
           userState.sessions = [...merged, ...(userState.sessions || [])]
             .sort((a, b) => new Date(b.dateISO) - new Date(a.dateISO));
           userState.subjects = { ...(userState.subjects || {}), ...(anon.subjects || {}) };
+          userState.subjectColors = { ...(userState.subjectColors || {}), ...(anon.subjectColors || {}) };
           localStorage.setItem(userKey, JSON.stringify(userState));
           localStorage.removeItem(DATA_KEY);
         }
@@ -512,6 +527,7 @@ async function syncFromCloud() {
     (rj || []).forEach(r => {
       const topics = Array.isArray(r.topics) ? r.topics : [];
       state.subjects[r.name] = [...new Set([...(state.subjects[r.name] || []), ...topics])];
+      if (r.color) state.subjectColors[r.name] = r.color;
     });
 
     // recompensas: união de dias
@@ -594,7 +610,8 @@ async function pushSubjects(names) {
   const rows = names.map(name => ({
     user_id: sb.user.id,
     name,
-    topics: state.subjects[name] || []
+    topics: state.subjects[name] || [],
+    color: state.subjectColors?.[name] || null
   }));
   try { await sb.client.from('subjects').upsert(rows); }
   catch (e) { console.error('pushSubjects:', e); }
@@ -2020,17 +2037,24 @@ function renderStats() {
 
       const head = document.createElement('div');
       head.className = 'subject-row-head';
+      const subjNameWrap = document.createElement('div');
+      subjNameWrap.className = 'subject-row-name-wrap';
+      const nameDot = document.createElement('i');
+      nameDot.className = 'subject-name-dot';
+      nameDot.style.background = state.subjectColors?.[name] || 'var(--text-muted)';
       const nameEl = document.createElement('strong');
       nameEl.textContent = name;
+      subjNameWrap.append(nameDot, nameEl);
       const valEl = document.createElement('span');
       valEl.textContent = `${fmtHM(data.secs)} · ${data.count}x`;
-      head.append(nameEl, valEl);
+      head.append(subjNameWrap, valEl);
 
       const track = document.createElement('div');
       track.className = 'bar-track';
       const fill = document.createElement('div');
       fill.className = 'bar-fill';
       fill.style.width = `${Math.max((data.secs / maxSub) * 100, 3)}%`;
+      if (state.subjectColors?.[name]) fill.style.background = state.subjectColors[name];
       track.appendChild(fill);
 
       row.append(head, track);
@@ -2096,10 +2120,17 @@ function renderStats() {
 
       const headGroup = document.createElement('div');
       headGroup.className = 'topic-subject-head';
+      const headLeft = document.createElement('div');
+      headLeft.className = 'topic-subject-title-wrap';
+      const colorDot = document.createElement('i');
+      colorDot.className = 'topic-subject-dot';
+      const subjColor = state.subjectColors?.[subject] || null;
+      colorDot.style.background = subjColor || 'var(--text-muted)';
       const groupTitle = document.createElement('span');
       groupTitle.className = 'topic-subject-title';
       groupTitle.textContent = subject;
       groupTitle.title = subject;
+      headLeft.append(colorDot, groupTitle);
       const groupTotal = document.createElement('span');
       groupTotal.className = 'topic-subject-total';
       const subjectSecs = [...topics.values()].reduce((a, t) => a + t.secs, 0);
@@ -2112,9 +2143,38 @@ function renderStats() {
         totalParts.push(`Acerto ${Math.round((subjectR / subjectQ) * 100)}%`);
       }
       groupTotal.textContent = totalParts.join(' · ');
-      headGroup.append(groupTitle, groupTotal);
+      headGroup.append(headLeft, groupTotal);
 
       group.appendChild(headGroup);
+
+      // Paleta de cores (Premium)
+      const palette = document.createElement('div');
+      palette.className = 'topic-palette' + (isPremium ? '' : ' locked');
+      const paletteLabel = document.createElement('span');
+      paletteLabel.className = 'topic-palette-label';
+      paletteLabel.textContent = isPremium ? 'Cor:' : 'Cor (Premium)';
+      palette.appendChild(paletteLabel);
+      SUBJECT_COLORS.forEach((hex, i) => {
+        const swatch = document.createElement('button');
+        swatch.type = 'button';
+        swatch.className = 'topic-swatch'
+          + (subjColor === hex ? ' active' : '')
+          + (isPremium ? '' : ' locked');
+        swatch.style.background = hex;
+        swatch.dataset.color = hex;
+        swatch.setAttribute('aria-label', `Atribuir cor ${i + 1}`);
+        swatch.addEventListener('click', () => {
+          if (!isPremium) { openPremiumModal(); return; }
+          const next = state.subjectColors[subject] === hex ? null : hex;
+          if (next) state.subjectColors[subject] = next;
+          else delete state.subjectColors[subject];
+          saveState();
+          pushSubjects([subject]);
+          renderStats();
+        });
+        palette.appendChild(swatch);
+      });
+      group.appendChild(palette);
 
       const rowsWrap = document.createElement('div');
       rowsWrap.className = 'topic-subject-rows';
@@ -2136,6 +2196,7 @@ function renderStats() {
         const fillEl = document.createElement('span');
         fillEl.className = 'topic-row-fill';
         fillEl.style.width = `${maxTopic > 0 ? Math.max((data.secs / maxTopic) * 100, 4) : 0}%`;
+        if (subjColor) fillEl.style.background = subjColor;
         barEl.appendChild(fillEl);
         item.appendChild(barEl);
 
